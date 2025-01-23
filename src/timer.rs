@@ -79,8 +79,8 @@ impl Timer {
 // Public API
 impl Timer {
     pub fn tick(&mut self) -> TimerPayload {
-        thread::sleep(Duration::from_millis(self.tick_duration));
-        //thread::sleep(Duration::from_millis(1));
+        //thread::sleep(Duration::from_millis(self.tick_duration));
+        thread::sleep(Duration::from_millis(5));
 
         self.tick_count = self.tick_count.wrapping_add(1);
 

@@ -2,16 +2,18 @@ use std::ops::Add;
 
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
-use crate::environment_types::{
-    Cloud, CloudSize, SunBrightness, TheSun, WindDirection, CLOUD_SIZES,
-};
+use crate::environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};
 
 const WINDSPEED_MAX: SimInt = 120;
-const CLOUDS_MAX: SimInt = 16;
+const CLOUD_POS_MAX: SimInt = 16;
+const CLOUDS_MAX: SimInt = 32;
 const SUN_POS_MAX: SimInt = 16;
+pub const SUNSHINE_MAX: SimFlo = 150.0;
+
+const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Normal, CloudSize::Big];
 
 #[derive(Debug)]
 pub struct Environment {
@@ -29,12 +31,12 @@ impl Environment {
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX);
 
-        let cloud_generate_count =
-            rng.gen_range(0..CLOUDS_MAX) as SimFlo * timer_payload.month_data.cloud_forming_factor;
+        let cloud_generate_count = rng.gen_range(0..CLOUD_POS_MAX) as SimFlo
+            * timer_payload.month_data.cloud_forming_factor;
 
         for _ in 0..cloud_generate_count as SimInt {
             let size = *CLOUD_SIZES.choose(&mut rng).unwrap();
-            let position = rng.gen_range(0..CLOUDS_MAX);
+            let position = rng.gen_range(0..CLOUD_POS_MAX);
             clouds.push(Cloud { size, position });
         }
 
@@ -47,21 +49,23 @@ impl Environment {
             WindDirection::Rtl
         };
 
-        let the_sun = Self::get_the_sun(timer_payload.date.hour, timer_payload.month_data);
-
-        Self {
+        let mut new_self = Self {
             clouds,
             wind_speed,
             wind_direction,
-            the_sun,
+            the_sun: TheSun::default(),
             rng,
-        }
+        };
+
+        new_self.the_sun = new_self.get_the_sun(timer_payload.date.hour, timer_payload.month_data);
+
+        new_self
     }
 }
 
 // Private methods
 impl Environment {
-    fn get_the_sun(hour: SimInt, month: &MonthData) -> TheSun {
+    fn get_the_sun(&self, hour: SimInt, month: &MonthData) -> TheSun {
         let (start, end) = month.get_day_start_end();
 
         // It's still night out there...
@@ -81,8 +85,12 @@ impl Environment {
         // Dead middle of the day
         let mid_point = start as SimFlo + mid_unit;
 
-        let brightness: SunBrightness;
-        // Strong sunshine is 2 units wide, mid is 10 units wide and weak is 1 units wide on each end from a total of 12
+        let mut brightness: SunBrightness;
+        // Strong sunshine is 2 units wide, mid is 8 units wide and weak is 1 unit wide
+        // on each end (middle out like in pied piper) from a total of 12.
+        // So it's like WMMMMSSMMMMW in unit terms
+        // And when we turn it to integers at the most it should look like:
+        // WMMMSMMMW in winter and something like WWMMMMSSSMMMMWW in a hot summer day.
         if ((mid_point - unit)..=(mid_point + unit)).contains(&float_hour) {
             brightness = SunBrightness::STRONG;
         } else if ((mid_point - (unit * 5.0))..=(mid_point + (unit * 5.0))).contains(&float_hour) {
@@ -91,7 +99,38 @@ impl Environment {
             brightness = SunBrightness::WEAK;
         }
 
+        // Different months have varying degrees of sunshine
+        brightness.set(brightness.val() * month.sunshine_factor);
+
+        // If any clouds cover the sun, firstly shame on them
+        // and secondly they should cumulatively reduce the
+        // brightness of sun depending on their sizes.
+        if let Some(position) = self.the_sun.position {
+            let brightness_reduction = self
+                .clouds
+                .iter()
+                .filter(|cloud| cloud.position == position)
+                .fold(0.0, |acc, cloud| match cloud.size {
+                    CloudSize::Small => acc + 5.0,
+                    CloudSize::Normal => acc + 15.0,
+                    CloudSize::Big => acc + 25.0,
+                });
+
+            if brightness_reduction > 0.0 {
+                brightness.set(brightness.val() - brightness_reduction);
+                println!(
+                    "REDUCING SUNSHINE! by {} and new brightness is {:?}",
+                    brightness_reduction, brightness
+                );
+            }
+        }
+
+        // Nudge the sunrise position to the right depending on season.
+        // Sun rises late in winter and early in summer.
+        // And then reposition the sun so it can do it's thing.
         let sunrise_shift = ((SUN_POS_MAX - total_day_hours) / 2) as SimFlo;
+        // Not saturated_sub'ing because this should not fail
+        // given the check at the start of this function works and nothing else is faulty.
         let position = Some(hour - start + (sunrise_shift.ceil() as SimInt));
 
         TheSun {
@@ -100,6 +139,13 @@ impl Environment {
         }
     }
 
+    // New cloud generator.
+    // Position of the new cloud depends on the wind direction.
+    // If tail_pos and sibling_pos have some clouds already,
+    // the chance of generation is greater.
+    // This is a simple way to model
+    // natural-like cloud migrations that follow each other
+    // and form clusters of clouds.
     fn maybe_new_cloud(
         &mut self,
         tail_pos: SimInt,
@@ -138,7 +184,7 @@ impl Environment {
     }
 
     fn update_clouds(&mut self, cloud_forming_factor: SimFlo) {
-        if self.wind_speed < 10 {
+        if self.wind_speed <= 5 {
             return;
         }
 
@@ -158,14 +204,14 @@ impl Environment {
                 0..40 => movement / 3.0,
                 40..80 => movement / 2.0,
                 80..=WINDSPEED_MAX => movement,
-                _ => unreachable!(),
+                _ => unreachable!(), // Should be unreachable because we clamp the windspeed (hopefully)
             };
 
             let movement = movement.round() as SimInt;
 
             if self.wind_direction == WindDirection::Rtl {
-                tail_pos = CLOUDS_MAX - 1;
-                sibling_pos = CLOUDS_MAX - 2;
+                tail_pos = CLOUD_POS_MAX - 1;
+                sibling_pos = CLOUD_POS_MAX - 2;
                 let subtractable_position = *position as isize;
                 if (subtractable_position - movement as isize) < 0 {
                     false
@@ -175,7 +221,7 @@ impl Environment {
                     true
                 }
             } else {
-                if *position + movement > CLOUDS_MAX {
+                if *position + movement > CLOUD_POS_MAX {
                     false
                 } else {
                     *position += movement as SimInt;
@@ -185,8 +231,10 @@ impl Environment {
             }
         });
 
-        if let Some(cloud) = self.maybe_new_cloud(tail_pos, sibling_pos, cloud_forming_factor) {
-            self.clouds.push(cloud);
+        if self.clouds.len() < CLOUDS_MAX {
+            if let Some(cloud) = self.maybe_new_cloud(tail_pos, sibling_pos, cloud_forming_factor) {
+                self.clouds.push(cloud);
+            }
         }
     }
 }
@@ -234,19 +282,19 @@ impl Environment {
 
             self.update_clouds(month_data.cloud_forming_factor);
 
-            self.the_sun = Self::get_the_sun(timer_payload.date.hour, month_data);
-        }
+            self.the_sun = self.get_the_sun(timer_payload.date.hour, month_data);
 
-        if timer_payload.event != TimerEvent::NothingUnusual {
-            println!(
-                "TIMER: hour: {}, month: {}",
-                timer_payload.date.hour, timer_payload.month_data.name
-            );
-            println!(
-                "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
-                self.the_sun, self.wind_speed, self.wind_direction
-            );
-            println!("CLOUDS: {:?}", self.clouds);
+            if timer_payload.event != TimerEvent::NothingUnusual {
+                println!(
+                    "TIMER: hour: {}, month: {}",
+                    timer_payload.date.hour, timer_payload.month_data.name
+                );
+                println!(
+                    "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
+                    self.the_sun, self.wind_speed, self.wind_direction
+                );
+                println!("CLOUDS: {:?}", self.clouds);
+            }
         }
     }
 }
