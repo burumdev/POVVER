@@ -20,7 +20,7 @@ pub struct Simulation {
 impl Simulation {
     pub fn new() -> Self {
         let speed = Speed::NORMAL;
-        let mut timer = Timer::new(speed.get_duration(), 12);
+        let mut timer = Timer::new(speed.get_tick_duration(), 12);
 
         let timer_result = timer.tick();
 
@@ -54,7 +54,7 @@ impl Simulation {
 
     pub fn quit(&mut self) {
         self.is_running = false;
-        println!("Simulation ended...");
+        println!("This simulation ended. Now your's continue.");
     }
 
     pub fn toggle_paused(&mut self) {

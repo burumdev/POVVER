@@ -1,7 +1,7 @@
 use std::thread;
 use std::time::Duration;
 
-use crate::months::{Month, MONTHS};
+use crate::months::{get_month_data, MonthData};
 use crate::simulation::{SimInt, TickDuration};
 
 #[derive(Debug, Default, Copy, Clone)]
@@ -9,7 +9,7 @@ pub struct Date {
     pub minute: SimInt,
     pub hour: SimInt,
     pub day: SimInt,
-    pub month: Month,
+    pub month: SimInt,
     pub year: SimInt,
 }
 
@@ -26,6 +26,7 @@ pub enum TimerEvent {
 pub struct TimerPayload {
     pub date: Date,
     pub event: TimerEvent,
+    pub month_data: &'static MonthData,
 }
 
 #[derive(Debug)]
@@ -61,8 +62,7 @@ impl Timer {
         let day = ((total_days % 30) + 1) as SimInt;
 
         let total_months = total_days / 30;
-        let month_num = (total_months % 12) as usize;
-        let month = MONTHS[month_num];
+        let month = (total_months % 12) as usize + 1;
 
         let year = (total_months / 12) as SimInt;
 
@@ -80,7 +80,7 @@ impl Timer {
 impl Timer {
     pub fn tick(&mut self) -> TimerPayload {
         thread::sleep(Duration::from_millis(self.tick_duration));
-        //thread::sleep(Duration::from_micros(1));
+        //thread::sleep(Duration::from_millis(1));
 
         self.tick_count = self.tick_count.wrapping_add(1);
 
@@ -101,6 +101,7 @@ impl Timer {
 
         TimerPayload {
             date: self.date,
+            month_data: get_month_data(date.month),
             event,
         }
     }

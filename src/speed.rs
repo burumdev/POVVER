@@ -20,7 +20,7 @@ impl Default for Speed {
 }
 
 impl Speed {
-    pub fn get_duration(&self) -> TickDuration {
+    pub fn get_tick_duration(&self) -> TickDuration {
         self.0
     }
 }

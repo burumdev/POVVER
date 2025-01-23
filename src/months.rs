@@ -1,126 +1,133 @@
-use crate::simulation::SimInt;
+use crate::simulation::{SimFlo, SimInt};
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Month {
+#[derive(Debug, PartialEq)]
+pub struct MonthData {
     pub number: SimInt,
     pub day_start: SimInt,
     pub day_end: SimInt,
     pub name: &'static str,
-    pub sunshine_factor: f32,
-    pub windspeed_factor: f32,
+    pub sunshine_factor: SimFlo,
+    pub windspeed_factor: SimFlo,
+    pub cloud_forming_factor: SimFlo,
 }
 
-impl Default for Month {
-    fn default() -> Self {
-        MONTHS[0]
-    }
-}
-
-impl Month {
+impl MonthData {
     pub fn get_day_start_end(&self) -> (SimInt, SimInt) {
         (self.day_start, self.day_end)
     }
 }
 
-pub fn get_month(index: usize) -> &'static Month {
-    &MONTHS[index]
+pub fn get_month_data(number: usize) -> &'static MonthData {
+    &MONTHS[number - 1]
 }
 
-pub const MONTHS: [Month; 12] = [
-    Month {
+pub const MONTHS: [MonthData; 12] = [
+    MonthData {
         number: 1,
         name: "January",
         day_start: 8,
         day_end: 17,
         sunshine_factor: 0.5,
         windspeed_factor: 1.0,
+        cloud_forming_factor: 1.1,
     },
-    Month {
+    MonthData {
         number: 2,
         name: "February",
         day_start: 8,
         day_end: 18,
         sunshine_factor: 0.5,
         windspeed_factor: 1.1,
+        cloud_forming_factor: 1.1,
     },
-    Month {
+    MonthData {
         number: 3,
         name: "March",
         day_start: 7,
         day_end: 18,
         sunshine_factor: 0.65,
         windspeed_factor: 1.0,
+        cloud_forming_factor: 1.2,
     },
-    Month {
+    MonthData {
         number: 4,
         name: "April",
         day_start: 6,
         day_end: 18,
         sunshine_factor: 0.75,
         windspeed_factor: 0.8,
+        cloud_forming_factor: 1.4,
     },
-    Month {
+    MonthData {
         number: 5,
         name: "May",
         day_start: 6,
         day_end: 18,
         sunshine_factor: 1.0,
         windspeed_factor: 0.75,
+        cloud_forming_factor: 1.0,
     },
-    Month {
+    MonthData {
         number: 6,
         name: "June",
         day_start: 6,
         day_end: 19,
         sunshine_factor: 1.25,
         windspeed_factor: 0.75,
+        cloud_forming_factor: 0.8,
     },
-    Month {
+    MonthData {
         number: 7,
         name: "July",
         day_start: 5,
         day_end: 19,
         sunshine_factor: 1.5,
         windspeed_factor: 0.9,
+        cloud_forming_factor: 0.7,
     },
-    Month {
+    MonthData {
         number: 8,
         name: "August",
         day_start: 6,
         day_end: 19,
         sunshine_factor: 1.5,
         windspeed_factor: 1.2,
+        cloud_forming_factor: 0.7,
     },
-    Month {
+    MonthData {
         number: 9,
         name: "September",
         day_start: 7,
         day_end: 19,
         sunshine_factor: 1.1,
         windspeed_factor: 1.2,
+        cloud_forming_factor: 1.3,
     },
-    Month {
+    MonthData {
         number: 10,
         name: "October",
         day_start: 7,
         day_end: 18,
         sunshine_factor: 0.75,
         windspeed_factor: 1.5,
+        cloud_forming_factor: 1.5,
     },
-    Month {
+    MonthData {
         number: 11,
         name: "November",
         day_start: 7,
         day_end: 18,
         sunshine_factor: 0.65,
         windspeed_factor: 1.2,
+        cloud_forming_factor: 1.4,
     },
-    Month {
+    MonthData {
         number: 12,
         name: "December",
         day_start: 8,
         day_end: 18,
         sunshine_factor: 0.5,
         windspeed_factor: 1.0,
+        cloud_forming_factor: 1.2,
     },
 ];
