@@ -47,3 +47,17 @@ pub enum WindDirection {
     Rtl,
     Ltr,
 }
+
+impl WindDirection {
+    pub fn flip(&mut self) -> Self {
+        if *self == Self::Rtl {
+            *self = Self::Ltr;
+
+            Self::Ltr
+        } else {
+            *self = Self::Rtl;
+
+            Self::Rtl
+        }
+    }
+}

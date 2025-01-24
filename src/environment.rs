@@ -8,9 +8,9 @@ use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};
 
 const WINDSPEED_MAX: SimInt = 120;
-const CLOUD_POS_MAX: SimInt = 16;
+const CLOUD_POS_MAX: SimInt = 15;
 const CLOUDS_MAX: SimInt = 32;
-const SUN_POS_MAX: SimInt = 16;
+const SUN_POS_MAX: SimInt = 15;
 pub const SUNSHINE_MAX: SimFlo = 150.0;
 
 const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Normal, CloudSize::Big];
@@ -128,7 +128,7 @@ impl Environment {
         // Nudge the sunrise position to the right depending on season.
         // Sun rises late in winter and early in summer.
         // And then reposition the sun so it can do it's thing.
-        let sunrise_shift = ((SUN_POS_MAX - total_day_hours) / 2) as SimFlo;
+        let sunrise_shift = ((SUN_POS_MAX + 1 - total_day_hours) / 2) as SimFlo;
         // Not saturated_sub'ing because this should not fail
         // given the check at the start of this function works and nothing else is faulty.
         let position = Some(hour - start + (sunrise_shift.ceil() as SimInt));
@@ -183,6 +183,9 @@ impl Environment {
         None
     }
 
+    // This mainly moves the clouds and
+    // removes clouds that exit the scene from left or right.
+    // Also maybe adds another cloud.
     fn update_clouds(&mut self, cloud_forming_factor: SimFlo) {
         if self.wind_speed <= 5 {
             return;
@@ -210,8 +213,8 @@ impl Environment {
             let movement = movement.round() as SimInt;
 
             if self.wind_direction == WindDirection::Rtl {
-                tail_pos = CLOUD_POS_MAX - 1;
-                sibling_pos = CLOUD_POS_MAX - 2;
+                tail_pos = CLOUD_POS_MAX;
+                sibling_pos = CLOUD_POS_MAX - 1;
                 let subtractable_position = *position as isize;
                 if (subtractable_position - movement as isize) < 0 {
                     false
@@ -233,6 +236,7 @@ impl Environment {
 
         if self.clouds.len() < CLOUDS_MAX {
             if let Some(cloud) = self.maybe_new_cloud(tail_pos, sibling_pos, cloud_forming_factor) {
+                println!("PUSHING IN A NEW CLOUD: {:?}", cloud);
                 self.clouds.push(cloud);
             }
         }
@@ -269,32 +273,23 @@ impl Environment {
             // Every 6th hour there is a 1 in 10 chance
             // the wind direction will change
             // but only if it's sufficiently weak currently.
-            if hour % 6 == 0 && self.wind_speed < 20 {
-                let change_wind_direction = self.rng.gen_range(1..=10) == 10;
-                if change_wind_direction {
-                    self.wind_direction = if self.wind_direction == WindDirection::Ltr {
-                        WindDirection::Rtl
-                    } else {
-                        WindDirection::Ltr
-                    };
-                }
+            if hour % 6 == 0 && self.wind_speed < 20 && self.rng.gen_range(1..=10) == 10 {
+                self.wind_direction.flip();
             }
 
             self.update_clouds(month_data.cloud_forming_factor);
 
             self.the_sun = self.get_the_sun(timer_payload.date.hour, month_data);
 
-            if timer_payload.event != TimerEvent::NothingUnusual {
-                println!(
-                    "TIMER: hour: {}, month: {}",
-                    timer_payload.date.hour, timer_payload.month_data.name
-                );
-                println!(
-                    "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
-                    self.the_sun, self.wind_speed, self.wind_direction
-                );
-                println!("CLOUDS: {:?}", self.clouds);
-            }
+            println!(
+                "TIMER: hour: {}, month: {}",
+                timer_payload.date.hour, timer_payload.month_data.name
+            );
+            println!(
+                "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
+                self.the_sun, self.wind_speed, self.wind_direction
+            );
+            println!("CLOUDS: {:?}", self.clouds);
         }
     }
 }
