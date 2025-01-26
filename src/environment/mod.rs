@@ -2,7 +2,8 @@ use std::ops::Add;
 
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
-use crate::environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
+mod environment_types;
+use environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};

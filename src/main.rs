@@ -1,5 +1,4 @@
 mod environment;
-mod environment_types;
 mod months;
 mod simulation;
 mod speed;

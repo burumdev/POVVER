@@ -1,4 +1,4 @@
-use crate::environment::SUNSHINE_MAX;
+use super::SUNSHINE_MAX;
 use crate::simulation::{SimFlo, SimInt};
 
 #[derive(Debug, Copy, Clone)]
