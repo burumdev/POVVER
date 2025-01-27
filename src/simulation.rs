@@ -54,7 +54,7 @@ impl Simulation {
 
     pub fn quit(&mut self) {
         self.is_running = false;
-        println!("This simulation ended. Now your's continue.");
+        println!("This simulation ended. Now yours continue.");
     }
 
     pub fn toggle_paused(&mut self) {

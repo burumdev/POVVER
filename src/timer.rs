@@ -39,6 +39,8 @@ pub struct Timer {
 // Constructor
 impl Timer {
     pub fn new(tick_duration: TickDuration, init_hours: SimInt) -> Self {
+        let init_hours = init_hours.clamp(0, 23);
+
         Self {
             tick_duration,
             tick_count: (init_hours * 60) as u128,

@@ -1,4 +1,5 @@
 mod environment;
+mod entities;
 mod months;
 mod simulation;
 mod speed;

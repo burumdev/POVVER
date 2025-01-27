@@ -3,6 +3,9 @@ use std::ops::Add;
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod environment_types;
+mod economy;
+
+use economy::Economy;
 use environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
@@ -18,6 +21,7 @@ const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Normal, CloudSi
 
 #[derive(Debug)]
 pub struct Environment {
+    economy: Economy,
     clouds: Vec<Cloud>,
     wind_speed: SimInt,
     wind_direction: WindDirection,
@@ -29,6 +33,8 @@ pub struct Environment {
 impl Environment {
     pub fn new(timer_payload: TimerPayload) -> Self {
         let mut rng = thread_rng();
+
+        let mut economy = Economy::new(&mut rng);
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX);
 
@@ -51,6 +57,7 @@ impl Environment {
         };
 
         let mut new_self = Self {
+            economy,
             clouds,
             wind_speed,
             wind_direction,
