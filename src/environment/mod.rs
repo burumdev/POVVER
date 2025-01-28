@@ -34,7 +34,7 @@ impl Environment {
     pub fn new(timer_payload: TimerPayload) -> Self {
         let mut rng = thread_rng();
 
-        let mut economy = Economy::new(&mut rng);
+        let mut economy = Economy::new();
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX);
 
@@ -298,6 +298,11 @@ impl Environment {
                 self.the_sun, self.wind_speed, self.wind_direction
             );
             println!("CLOUDS: {:?}", self.clouds);
+        }
+
+        if timer_payload.event == TimerEvent::MonthChange {
+            self.economy.update();
+            println!("ECONOMY: {:?}", self.economy);
         }
     }
 }

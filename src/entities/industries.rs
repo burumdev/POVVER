@@ -10,7 +10,7 @@ pub const INDUSTRIES: &[Industry] = &[
     Industry {
         id: 1,
         name: "Semiconductors",
-        description: "Processes sand and wires to construct calculating gadgets.",
+        description: "Processes sand and wires to construct calculating glass gadgets.",
     },
     Industry {
         id: 2,
@@ -25,7 +25,7 @@ pub const INDUSTRIES: &[Industry] = &[
     Industry {
         id: 4,
         name: "Cosmetics",
-        description: "Converts toxic chemicals to mildly toxic beauty substances.",
+        description: "Converts toxic chemicals to mildly toxic beautifiers.",
     },
     Industry {
         id: 5,
@@ -35,7 +35,7 @@ pub const INDUSTRIES: &[Industry] = &[
     Industry {
         id: 6,
         name: "Arms",
-        description: "Produces metal tools that sell exceptionally well with high crime rates.",
+        description: "Produces metal shooting tools that sell exceptionally well with high crime rates.",
     },
     Industry {
         id: 7,
@@ -55,6 +55,6 @@ pub const INDUSTRIES: &[Industry] = &[
     Industry {
         id: 10,
         name: "University",
-        description: "A conglomeration of academia elites that sell several years of fun time and treats to students, indebting them."
+        description: "A conglomeration of academia elites that sell several years of fun time and treats to students, indebting them in the process."
     }
 ];

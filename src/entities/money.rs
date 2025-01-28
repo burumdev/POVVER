@@ -1,9 +1,10 @@
 use crate::simulation::SimFlo;
 
-pub struct Credit(SimFlo);
+#[derive(Debug)]
+pub struct Money(SimFlo);
 
-impl Credit {
-    pub const fn new(credit: SimFlo) -> Self {
-        Self(credit)
+impl Money {
+    pub const fn new(amount: SimFlo) -> Self {
+        Self(amount)
     }
 }
