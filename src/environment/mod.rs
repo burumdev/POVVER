@@ -11,6 +11,8 @@ use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};
 
+use crate::utils::random_inc_dec_clamp_unsigned;
+
 const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
 const CLOUDS_MAX: SimInt = 32;
@@ -201,11 +203,15 @@ impl Environment {
 
         let mut tail_pos = 0;
         let mut sibling_pos = 1;
+        if self.wind_direction == WindDirection::Rtl {
+            tail_pos = CLOUD_POS_MAX;
+            sibling_pos = CLOUD_POS_MAX - 1;
+        }
 
         self.clouds.retain_mut(|cloud| {
             let Cloud { size, position } = cloud;
 
-            let mut movement: f32 = match size {
+            let mut movement: SimFlo = match size {
                 CloudSize::Small => 3.0,
                 CloudSize::Normal => 2.0,
                 CloudSize::Big => 1.0,
@@ -221,13 +227,11 @@ impl Environment {
             let movement = movement.round() as SimInt;
 
             if self.wind_direction == WindDirection::Rtl {
-                tail_pos = CLOUD_POS_MAX;
-                sibling_pos = CLOUD_POS_MAX - 1;
                 let subtractable_position = *position as isize;
                 if (subtractable_position - movement as isize) < 0 {
                     false
                 } else {
-                    *position -= movement as SimInt;
+                    *position -= movement;
 
                     true
                 }
@@ -235,7 +239,7 @@ impl Environment {
                 if *position + movement > CLOUD_POS_MAX {
                     false
                 } else {
-                    *position += movement as SimInt;
+                    *position += movement;
 
                     true
                 }
@@ -269,13 +273,10 @@ impl Environment {
                 } else {
                     0
                 };
-                let ws_lower = self.wind_speed.saturating_sub(5 + lower_modifier);
-                let ws_upper = self.wind_speed.add(5).clamp(0, WINDSPEED_MAX);
 
-                let wind_speed = (self.rng.gen_range(ws_lower..ws_upper) as f32
-                    * month_data.windspeed_factor) as SimInt;
-
-                self.wind_speed = wind_speed.clamp(0, WINDSPEED_MAX);
+                self.wind_speed =
+                    random_inc_dec_clamp_unsigned(&mut self.rng, self.wind_speed, lower_modifier + 5, 5, 0, WINDSPEED_MAX)
+                        * month_data.windspeed_factor as SimInt;
             }
 
             // Every 6th hour there is a 1 in 10 chance
@@ -289,10 +290,7 @@ impl Environment {
 
             self.the_sun = self.get_the_sun(timer_payload.date.hour, month_data);
 
-            println!(
-                "TIMER: hour: {}, month: {}",
-                timer_payload.date.hour, timer_payload.month_data.name
-            );
+            println!("TIMER: {:?}", timer_payload.date);
             println!(
                 "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
                 self.the_sun, self.wind_speed, self.wind_direction
