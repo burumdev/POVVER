@@ -11,7 +11,7 @@ use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};
 
-use crate::utils::random_inc_dec_clamp_unsigned;
+use crate::utils::{one_chance_in_many, random_inc_dec_clamp_unsigned};
 
 const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
@@ -282,7 +282,7 @@ impl Environment {
             // Every 6th hour there is a 1 in 10 chance
             // the wind direction will change
             // but only if it's sufficiently weak currently.
-            if hour % 6 == 0 && self.wind_speed < 20 && self.rng.gen_range(1..=10) == 10 {
+            if hour % 6 == 0 && self.wind_speed < 20 && one_chance_in_many(&mut self.rng, 10) {
                 self.wind_direction.flip();
             }
 

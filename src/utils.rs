@@ -3,6 +3,7 @@ use rand::{
     Rng,
     distributions::uniform::SampleUniform,
 };
+use crate::simulation::SimInt;
 
 /// Pick a random number between `lower_end` and `upper_end` that also clamps between a `min` and `max`.
 /// This is the signed version of this helper for f32, f64 and signed integer types.
@@ -28,4 +29,12 @@ where
     let upper = if value.saturating_add(&upper_end) > max { max } else { value.saturating_add(&upper_end) };
 
     rng.gen_range(lower..upper)
+}
+
+/// If one in `how_many` chance happens, it will return true else returns false
+pub fn one_chance_in_many<R>(rng: &mut R, how_many: SimInt) -> bool
+where
+    R: Rng,
+{
+   rng.gen_range(0..how_many) == 0
 }
