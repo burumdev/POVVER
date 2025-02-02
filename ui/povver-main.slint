@@ -1,4 +1,5 @@
-import { Button, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox } from "std-widgets.slint";
+import { GlobCallbacks } from "./globals.slint";
 import { UIState } from "./state.slint";
 
 import { Utils } from "./utils.slint";
@@ -13,34 +14,58 @@ export {
 
 export component PovverMain inherits Window {
     title: "POVVER";
-
-    in property <UIState> state;
     default-font-family: "Monaspice Ar Nerd Font";
 
-    HorizontalLayout {
+    in property <UIState> state;
+
+    pure callback pause <=> GlobCallbacks.pause_clicked;
+
+    Rectangle {
         width: 600px;
-        spacing: 20px;
-        Text {
-            text: state.timer.month_name + "/";
-            font-size: 64px;
+        height: 300px;
+        HorizontalLayout {
+            Text {
+                text: state.timer.month_name + "/";
+                font-size: 64px;
+            }
+            Text {
+                text: Utils.date_int_to_string(state.timer.date.day) + "/";
+                font-size: 64px;
+            }
+            Text {
+                text: Utils.date_int_to_string(state.timer.date.year);
+                font-size: 64px;
+            }
         }
-        Text {
-            text: Utils.date_int_to_string(state.timer.date.day) + "/";
-            font-size: 64px;
+    }
+
+    Rectangle {
+        width: 400px;
+        height: 200px;
+        background: #220000;
+        HorizontalLayout {
+            padding: 40px;
+            Text {
+                text: Utils.date_int_to_string(state.timer.date.hour) + ":";
+                font-size: 164px;
+                font-family: "DIGITAL-7";
+                color: #AB0000;
+            }
+            Text {
+                text: Utils.date_int_to_string(state.timer.date.minute);
+                font-size: 164px;
+                font-family: "DIGITAL-7";
+                color: #AB0000;
+            }
         }
-        Text {
-            text: Utils.date_int_to_string(state.timer.date.year);
-            font-size: 64px;
-        }
-        Text {
-            text: Utils.date_int_to_string(state.timer.date.hour) + ":";
-            font-size: 64px;
-            font-family: "DIGITAL-7";
-        }
-        Text {
-            text: Utils.date_int_to_string(state.timer.date.minute);
-            font-size: 64px;
-            font-family: "DIGITAL-7";
+    }
+
+    Button {
+        text: "Pause";
+        out property <bool> is_paused: false;
+        clicked => {
+            is_paused = !is_paused;
+            GlobCallbacks.pause_clicked(is_paused);
         }
     }
 }

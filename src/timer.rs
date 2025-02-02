@@ -1,6 +1,8 @@
 use std::thread;
 use std::time::Duration;
 
+use crate::ui_controller::UIDate;
+
 use crate::months::{get_month_data, MonthData};
 use crate::simulation::{SimInt, TickDuration};
 
@@ -11,6 +13,18 @@ pub struct Date {
     pub day: SimInt,
     pub month: SimInt,
     pub year: SimInt,
+}
+
+impl Into<UIDate> for Date {
+    fn into(self) -> UIDate {
+        UIDate {
+            minute: self.minute as i32,
+            hour: self.hour as i32,
+            day: self.day as i32,
+            month: self.month as i32,
+            year: self.year as i32,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -83,7 +97,7 @@ impl Timer {
 impl Timer {
     pub fn tick(&mut self) -> TimerPayload {
         //thread::sleep(Duration::from_millis(self.tick_duration));
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(5));
 
         self.tick_count = self.tick_count.wrapping_add(1);
 

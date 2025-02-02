@@ -1,7 +1,8 @@
 use crate::{environment::Environment, speed::Speed, timer::Timer, ui_controller::UIController};
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use slint::ToSharedString;
-use crate::ui_controller::{TimerData, UIState, Date as UIDate};
+use crate::timer::TimerPayload;
+use crate::ui_controller::{TimerData, UIState, UIDate};
 
 pub type SimInt = usize;
 pub type SimFlo = f32;
@@ -41,14 +42,30 @@ impl Simulation {
 }
 
 impl Simulation {
+    fn get_ui_state(&self, timer_result: &TimerPayload) -> UIState {
+        UIState {
+            timer: TimerData {
+                date: timer_result.date.into(),
+                month_name: timer_result.month_data.name.to_shared_string(),
+            }
+        }
+    }
+}
+
+impl Simulation {
     pub fn run(&mut self) {
         self.is_running = true;
 
         let ui_quit_flag = Arc::new(Mutex::new(false));
+        let ui_pause_flag = Arc::new(Mutex::new(false));
         let ui_state = Arc::new(Mutex::new(UIState::default()));
         let ui_join_handle = self
             .ui_controller
-            .run(Arc::clone(&ui_quit_flag), Arc::clone(&ui_state));
+            .run(
+                Arc::clone(&ui_quit_flag),
+                Arc::clone(&ui_pause_flag),
+                Arc::clone(&ui_state)
+            );
 
         loop {
             if !self.is_running {
@@ -61,18 +78,14 @@ impl Simulation {
                 self.env.update(&timer_result);
 
                 let mut state_lock = ui_state.lock().unwrap();
-                *state_lock = UIState {
-                    timer: TimerData {
-                        date: UIDate {
-                            day: timer_result.date.day as i32,
-                            hour: timer_result.date.hour as i32,
-                            minute: timer_result.date.minute as i32,
-                            month: timer_result.date.month as i32,
-                            year: timer_result.date.year as i32,
-                        },
-                        month_name: timer_result.month_data.name.to_shared_string(),
-                    }
-                };
+                *state_lock = self.get_ui_state(&timer_result);
+            }
+
+            let paused = ui_pause_flag.lock().unwrap();
+            if *paused {
+                self.set_paused(true);
+            } else {
+                self.set_paused(false);
             }
 
             let quit = ui_quit_flag.lock().unwrap();
@@ -87,7 +100,7 @@ impl Simulation {
         println!("SIM: This simulation ended. Now yours continue.");
     }
 
-    pub fn toggle_paused(&mut self) {
-        self.is_paused = !self.is_paused;
+    pub fn set_paused(&mut self, paused: bool) {
+        self.is_paused = paused;
     }
 }
