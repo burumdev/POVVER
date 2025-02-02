@@ -46,6 +46,7 @@ impl Timer {
             tick_count: (init_hours * 60) as u128,
             date: Date {
                 hour: init_hours,
+                year: 2025,
                 ..Date::default()
             },
         }
@@ -66,7 +67,7 @@ impl Timer {
         let total_months = total_days / 30;
         let month = (total_months % 12) as usize + 1;
 
-        let year = (total_months / 12) as SimInt;
+        let year = self.date.year + (total_months / 12) as SimInt;
 
         Date {
             minute,
@@ -82,7 +83,7 @@ impl Timer {
 impl Timer {
     pub fn tick(&mut self) -> TimerPayload {
         //thread::sleep(Duration::from_millis(self.tick_duration));
-        thread::sleep(Duration::from_millis(5));
+        thread::sleep(Duration::from_millis(100));
 
         self.tick_count = self.tick_count.wrapping_add(1);
 

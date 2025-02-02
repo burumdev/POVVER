@@ -2,14 +2,14 @@ use std::ops::Add;
 
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
-mod environment_types;
 mod economy;
+mod environment_types;
 
-use economy::Economy;
-use environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};
+use economy::Economy;
+use environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
 
 use crate::utils::{one_chance_in_many, random_inc_dec_clamp_unsigned};
 
@@ -257,7 +257,7 @@ impl Environment {
 
 // Public API
 impl Environment {
-    pub fn update(&mut self, timer_payload: TimerPayload) {
+    pub fn update(&mut self, timer_payload: &TimerPayload) {
         // We don't change stuff too often to prevent erratic changes
         // so the changes are done on an hourly basis.
         if timer_payload.event != TimerEvent::NothingUnusual {
@@ -274,9 +274,14 @@ impl Environment {
                     0
                 };
 
-                self.wind_speed =
-                    random_inc_dec_clamp_unsigned(&mut self.rng, self.wind_speed, lower_modifier + 5, 5, 0, WINDSPEED_MAX)
-                        * month_data.windspeed_factor as SimInt;
+                self.wind_speed = random_inc_dec_clamp_unsigned(
+                    &mut self.rng,
+                    self.wind_speed,
+                    lower_modifier + 5,
+                    5,
+                    0,
+                    WINDSPEED_MAX,
+                ) * month_data.windspeed_factor as SimInt;
             }
 
             // Every 6th hour there is a 1 in 10 chance

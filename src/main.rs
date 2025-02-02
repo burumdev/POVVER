@@ -1,9 +1,10 @@
-mod environment;
 mod entities;
+mod environment;
 mod months;
 mod simulation;
 mod speed;
 mod timer;
+mod ui_controller;
 mod utils;
 
 use simulation::Simulation;

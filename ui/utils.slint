@@ -1,0 +1,9 @@
+export global Utils {
+    public pure function date_int_to_string(date_int: int) -> string {
+        if (date_int < 10) {
+            return "0" + date_int;
+        } else {
+            return date_int;
+        }
+    }
+}

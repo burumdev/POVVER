@@ -1,0 +1,46 @@
+import { Button, HorizontalBox } from "std-widgets.slint";
+import { UIState } from "./state.slint";
+
+import { Utils } from "./utils.slint";
+
+import "./fonts/digital-7.ttf";
+import "./fonts/MonaspiceArNerdFont-Medium.otf";
+import "./fonts/MonaspiceArNerdFont-Bold.otf";
+
+export {
+    UIState,
+}
+
+export component PovverMain inherits Window {
+    title: "POVVER";
+
+    in property <UIState> state;
+    default-font-family: "Monaspice Ar Nerd Font";
+
+    HorizontalLayout {
+        width: 600px;
+        spacing: 20px;
+        Text {
+            text: state.timer.month_name + "/";
+            font-size: 64px;
+        }
+        Text {
+            text: Utils.date_int_to_string(state.timer.date.day) + "/";
+            font-size: 64px;
+        }
+        Text {
+            text: Utils.date_int_to_string(state.timer.date.year);
+            font-size: 64px;
+        }
+        Text {
+            text: Utils.date_int_to_string(state.timer.date.hour) + ":";
+            font-size: 64px;
+            font-family: "DIGITAL-7";
+        }
+        Text {
+            text: Utils.date_int_to_string(state.timer.date.minute);
+            font-size: 64px;
+            font-family: "DIGITAL-7";
+        }
+    }
+}

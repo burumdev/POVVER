@@ -1,5 +1,5 @@
-use crate::entities::EnergyUnit;
 use crate::entities::money::Money;
+use crate::entities::EnergyUnit;
 use crate::simulation::SimInt;
 
 pub struct UnitProductionCost {

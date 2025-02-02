@@ -1,5 +1,5 @@
-use crate::simulation::SimInt;
 use crate::entities::energy::EnergyUnit;
+use crate::simulation::SimInt;
 
 pub struct PovverPlant {
     fuel: SimInt,

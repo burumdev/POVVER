@@ -1,0 +1,16 @@
+struct Date {
+   minute: int,
+   hour: int,
+   day: int,
+   month: int,
+   year: int,
+}
+
+struct TimerData {
+    date: Date,
+    month_name: string,
+}
+
+export struct UIState {
+    timer: TimerData,
+}

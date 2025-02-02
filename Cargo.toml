@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 num-traits = "0.2.19"
 rand = "0.8.5"
+slint = "1.9.2"
+
+[build-dependencies]
+slint-build = "1.9.2"
