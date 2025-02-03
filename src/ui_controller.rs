@@ -1,10 +1,11 @@
 use slint::CloseRequestResponse;
 use std::{
-    sync::{Arc, Mutex},
+    sync::{mpsc, Arc, Mutex},
     thread,
     time::Duration,
 };
 use slint::{ Timer, TimerMode };
+use crate::simulation::UIFlag;
 
 slint::include_modules!();
 
@@ -19,25 +20,23 @@ impl UIController {
 impl UIController {
     pub fn run(
         &mut self,
-        quit_flag: Arc<Mutex<bool>>,
-        pause_flag: Arc<Mutex<bool>>,
+        flag_sender: mpsc::Sender<UIFlag>,
         state: Arc<Mutex<UIState>>,
     ) -> thread::JoinHandle<()> {
+        let flag_sender_clone = flag_sender.clone();
+
         thread::spawn(move || {
             let app = PovverMain::new().unwrap();
             let timer = Timer::default();
 
             // Event handlers
-            app.on_pause(move |paused| {
-                let mut pause_lock = pause_flag.lock().unwrap();
-                *pause_lock = paused;
+            app.on_toggle_pause(move || {
+                flag_sender.send(UIFlag::Pause).unwrap();
             });
 
             // Update state from simulation data
-            let app_weak = app.as_weak();
+            let appw = app.as_weak().clone();
             timer.start(TimerMode::Repeated, Duration::from_millis(5), move || {
-                let appw = app_weak.clone();
-
                 let state_lock = state.lock().unwrap();
 
                 appw.unwrap().set_state((*state_lock).clone());
@@ -45,9 +44,8 @@ impl UIController {
 
             // User clicked quit
             app.window().on_close_requested(move || {
-                let mut quit = quit_flag.lock().unwrap();
                 println!("UI: Shutting down the user interface");
-                *quit = true;
+                flag_sender_clone.send(UIFlag::Quit).unwrap();
 
                 CloseRequestResponse::HideWindow
             });

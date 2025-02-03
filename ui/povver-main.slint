@@ -1,8 +1,11 @@
 import { Button, VerticalBox } from "std-widgets.slint";
-import { GlobCallbacks } from "./globals.slint";
+import { GlobCallbacks, Globs } from "./globals.slint";
 import { UIState } from "./state.slint";
 
 import { Utils } from "./utils.slint";
+
+import { Map } from "./components/map/map.slint";
+import { ControlPanel } from "./components/control-panel/control-panel.slint";
 
 import "./fonts/digital-7.ttf";
 import "./fonts/MonaspiceArNerdFont-Medium.otf";
@@ -16,56 +19,19 @@ export component PovverMain inherits Window {
     title: "POVVER";
     default-font-family: "Monaspice Ar Nerd Font";
 
-    in property <UIState> state;
+    in property <UIState> state <=> Globs.state;
 
-    pure callback pause <=> GlobCallbacks.pause_clicked;
+    pure callback toggle_pause <=> GlobCallbacks.toggle_pause;
 
-    Rectangle {
-        width: 600px;
-        height: 300px;
-        HorizontalLayout {
-            Text {
-                text: state.timer.month_name + "/";
-                font-size: 64px;
-            }
-            Text {
-                text: Utils.date_int_to_string(state.timer.date.day) + "/";
-                font-size: 64px;
-            }
-            Text {
-                text: Utils.date_int_to_string(state.timer.date.year);
-                font-size: 64px;
-            }
-        }
-    }
-
-    Rectangle {
-        width: 400px;
-        height: 200px;
-        background: #220000;
-        HorizontalLayout {
-            padding: 40px;
-            Text {
-                text: Utils.date_int_to_string(state.timer.date.hour) + ":";
-                font-size: 164px;
-                font-family: "DIGITAL-7";
-                color: #AB0000;
-            }
-            Text {
-                text: Utils.date_int_to_string(state.timer.date.minute);
-                font-size: 164px;
-                font-family: "DIGITAL-7";
-                color: #AB0000;
-            }
-        }
+    HorizontalLayout {
+       Map {}
+       ControlPanel {}
     }
 
     Button {
         text: "Pause";
-        out property <bool> is_paused: false;
         clicked => {
-            is_paused = !is_paused;
-            GlobCallbacks.pause_clicked(is_paused);
+            GlobCallbacks.toggle_pause();
         }
     }
 }

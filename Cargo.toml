@@ -10,3 +10,6 @@ slint = "1.9.2"
 
 [build-dependencies]
 slint-build = "1.9.2"
+
+[env]
+SLINT_BACKEND = "winit-femtovg"

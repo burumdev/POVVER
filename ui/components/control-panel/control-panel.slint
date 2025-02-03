@@ -1,0 +1,26 @@
+import { Utils } from "../../utils.slint";
+import { Globs } from "../../globals.slint";
+
+export component ControlPanel inherits Rectangle {
+    background: darkgray;
+    width: 20%;
+    height: 100%;
+
+    Rectangle {
+        background: #410008;
+        height: 100px;
+
+        HorizontalLayout {
+            Text {
+                text: Utils.date_int_to_string(Globs.state.timer.date.month) + "/"
+                        + Utils.date_int_to_string(Globs.state.timer.date.day) + "/"
+                        + Utils.date_int_to_string(Globs.state.timer.date.year) + " "
+                        + Utils.date_int_to_string(Globs.state.timer.date.hour) + ":"
+                        + Utils.date_int_to_string(Globs.state.timer.date.minute);
+                font-size: 42px;
+                font-family: "DIGITAL-7";
+                color: #AB0000;
+            }
+        }
+    }
+}
