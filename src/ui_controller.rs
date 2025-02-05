@@ -4,7 +4,7 @@ use std::{
     thread,
     time::Duration,
 };
-use slint::{ Timer, TimerMode };
+use slint::{Timer, TimerMode};
 use crate::simulation::UIFlag;
 
 slint::include_modules!();
@@ -23,7 +23,8 @@ impl UIController {
         flag_sender: mpsc::Sender<UIFlag>,
         state: Arc<Mutex<UIState>>,
     ) -> thread::JoinHandle<()> {
-        let flag_sender_clone = flag_sender.clone();
+        let flag_sender_close = flag_sender.clone();
+        let flag_sender_speed = flag_sender.clone();
 
         thread::spawn(move || {
             let app = PovverMain::new().unwrap();
@@ -33,9 +34,12 @@ impl UIController {
             app.on_toggle_pause(move || {
                 flag_sender.send(UIFlag::Pause).unwrap();
             });
+            app.on_speed_change(move |speed_index| {
+                flag_sender_speed.send(UIFlag::SpeedChange(speed_index)).unwrap();
+            });
             app.window().on_close_requested(move || {
                 println!("UI: Shutting down the user interface");
-                flag_sender_clone.send(UIFlag::Quit).unwrap();
+                flag_sender_close.send(UIFlag::Quit).unwrap();
 
                 CloseRequestResponse::HideWindow
             });

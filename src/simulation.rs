@@ -4,7 +4,11 @@ use std::{
 
 use slint::ToSharedString;
 
-use crate::{environment::Environment, speed::Speed, timer::Timer, ui_controller::UIController};
+use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
+use crate::speed::{
+    Speed,
+    SPEEDS_ARRAY,
+};
 use crate::timer::TimerPayload;
 use crate::ui_controller::{TimerData, UIState};
 
@@ -12,16 +16,17 @@ pub type SimInt = usize;
 pub type SimFlo = f32;
 pub type TickDuration = u64;
 
-pub const DEFAULT_TICK_DURATION: TickDuration = 500;
+pub const DEFAULT_TICK_DURATION: TickDuration = 128;
 
 pub enum UIFlag {
     Pause,
     Quit,
+    SpeedChange(i32),
 }
 
 pub struct Simulation {
     timer: Timer,
-    speed: Speed,
+    speed_index: usize,
     env: Environment,
     ui_controller: UIController,
     entities: bool,
@@ -31,8 +36,8 @@ pub struct Simulation {
 
 impl Simulation {
     pub fn new() -> Self {
-        let speed = Speed::NORMAL;
-        let mut timer = Timer::new(speed.get_tick_duration(), 12);
+        let speed_index = 3;
+        let mut timer = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), 12);
 
         let timer_result = timer.tick(true);
 
@@ -40,7 +45,7 @@ impl Simulation {
 
         Self {
             timer,
-            speed,
+            speed_index,
             env: Environment::new(timer_result),
             ui_controller,
             entities: true,
@@ -58,7 +63,13 @@ impl Simulation {
                 month_name: timer_result.month_data.name.to_shared_string(),
             },
             is_paused: self.is_paused,
+            speed_index: self.speed_index as i32,
         }
+    }
+
+    fn change_speed(&mut self, speed_index: i32) {
+        self.speed_index = speed_index as usize;
+        self.timer.set_tick_duration(SPEEDS_ARRAY[self.speed_index].get_tick_duration());
     }
 }
 
@@ -73,7 +84,7 @@ impl Simulation {
             .ui_controller
             .run(
                 ui_flag_sender,
-                Arc::clone(&ui_state)
+                Arc::clone(&ui_state),
             );
 
         loop {
@@ -82,6 +93,7 @@ impl Simulation {
                 match flag {
                     UIFlag::Pause => self.toggle_paused(),
                     UIFlag::Quit => self.quit(),
+                    UIFlag::SpeedChange(speed_index) => self.change_speed(speed_index),
                 }
             }
 

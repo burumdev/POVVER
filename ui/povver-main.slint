@@ -20,7 +20,9 @@ export component PovverMain inherits Window {
 
     in property <UIState> state <=> Globs.state;
 
+	// Event callbacks
     pure callback toggle_pause <=> GlobCallbacks.toggle_pause;
+    pure callback speed_change <=> GlobCallbacks.speed_change;
 
     HorizontalLayout {
         Map {}
