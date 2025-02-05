@@ -29,6 +29,7 @@ impl Into<UIDate> for Date {
 
 #[derive(Debug, PartialEq)]
 pub enum TimerEvent {
+    Paused,
     NothingUnusual,
     DayChange,
     HourChange,
@@ -61,6 +62,7 @@ impl Timer {
             date: Date {
                 hour: init_hours,
                 year: 2025,
+                month: 1,
                 ..Date::default()
             },
         }
@@ -95,31 +97,36 @@ impl Timer {
 
 // Public API
 impl Timer {
-    pub fn tick(&mut self) -> TimerPayload {
+    pub fn tick(&mut self, is_paused: bool) -> TimerPayload {
         //thread::sleep(Duration::from_millis(self.tick_duration));
-        thread::sleep(Duration::from_millis(5));
+        thread::sleep(Duration::from_millis(1));
 
-        self.tick_count = self.tick_count.wrapping_add(1);
+        let mut event: TimerEvent;
+        if !is_paused {
+            self.tick_count = self.tick_count.wrapping_add(1);
 
-        let mut event = TimerEvent::NothingUnusual;
+            let date = self.get_updated_date();
+            if date.year != self.date.year {
+                event = TimerEvent::YearChange;
+            } else if date.month != self.date.month {
+                event = TimerEvent::MonthChange;
+            } else if date.day != self.date.day {
+                event = TimerEvent::DayChange;
+            } else if date.hour != self.date.hour {
+                event = TimerEvent::HourChange;
+            } else {
+                event = TimerEvent::NothingUnusual;
+            }
 
-        let date = self.get_updated_date();
-        if date.year != self.date.year {
-            event = TimerEvent::YearChange;
-        } else if date.month != self.date.month {
-            event = TimerEvent::MonthChange;
-        } else if date.day != self.date.day {
-            event = TimerEvent::DayChange;
-        } else if date.hour != self.date.hour {
-            event = TimerEvent::HourChange;
+            self.date = date;
+        } else { // Paused
+            event = TimerEvent::Paused;
         }
-
-        self.date = date;
 
         TimerPayload {
             date: self.date,
-            month_data: get_month_data(date.month),
-            event,
+            month_data: get_month_data(self.date.month),
+            event: TimerEvent::Paused,
         }
     }
 

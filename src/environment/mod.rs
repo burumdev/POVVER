@@ -1,5 +1,3 @@
-use std::ops::Add;
-
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod economy;
@@ -36,7 +34,7 @@ impl Environment {
     pub fn new(timer_payload: TimerPayload) -> Self {
         let mut rng = thread_rng();
 
-        let mut economy = Economy::new();
+        let economy = Economy::new();
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX);
 

@@ -33,6 +33,12 @@ impl UIController {
             app.on_toggle_pause(move || {
                 flag_sender.send(UIFlag::Pause).unwrap();
             });
+            app.window().on_close_requested(move || {
+                println!("UI: Shutting down the user interface");
+                flag_sender_clone.send(UIFlag::Quit).unwrap();
+
+                CloseRequestResponse::HideWindow
+            });
 
             // Update state from simulation data
             let appw = app.as_weak().clone();
@@ -40,14 +46,6 @@ impl UIController {
                 let state_lock = state.lock().unwrap();
 
                 appw.unwrap().set_state((*state_lock).clone());
-            });
-
-            // User clicked quit
-            app.window().on_close_requested(move || {
-                println!("UI: Shutting down the user interface");
-                flag_sender_clone.send(UIFlag::Quit).unwrap();
-
-                CloseRequestResponse::HideWindow
             });
 
             // Start fullscreen

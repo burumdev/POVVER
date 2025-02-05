@@ -1,9 +1,22 @@
+export enum DigitPlace {
+	One,
+	Ten,
+	Hundred,
+	Thousand
+}
+
 export global Utils {
-    public pure function date_int_to_string(date_int: int) -> string {
-        if (date_int < 10) {
-            return "0" + date_int;
+    public pure function date_int_to_char(date_int: int, digit_place: DigitPlace) -> string {
+        if (date_int < 10 && digit_place == DigitPlace.Ten) {
+            return "0";
+        } else if (digit_place == DigitPlace.One) {
+            return Math.mod(date_int, 10);
+        } else if (digit_place == DigitPlace.Ten) {
+            return Math.floor(Math.mod(date_int, 100) / 10);
+        } else if (digit_place == DigitPlace.Hundred) {
+            return Math.floor(Math.mod(date_int, 1000) / 100);
         } else {
-            return date_int;
+            return Math.floor(date_int / 1000);
         }
     }
 }

@@ -1,4 +1,3 @@
-import { Button, VerticalBox } from "std-widgets.slint";
 import { GlobCallbacks, Globs } from "./globals.slint";
 import { UIState } from "./state.slint";
 
@@ -16,22 +15,15 @@ export {
 }
 
 export component PovverMain inherits Window {
-    title: "POVVER";
     default-font-family: "Monaspice Ar Nerd Font";
+    title: "POVVER";
 
     in property <UIState> state <=> Globs.state;
 
     pure callback toggle_pause <=> GlobCallbacks.toggle_pause;
 
     HorizontalLayout {
-       Map {}
-       ControlPanel {}
-    }
-
-    Button {
-        text: "Pause";
-        clicked => {
-            GlobCallbacks.toggle_pause();
-        }
+        Map {}
+        ControlPanel {}
     }
 }

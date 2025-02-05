@@ -1,26 +1,142 @@
-import { Utils } from "../../utils.slint";
-import { Globs } from "../../globals.slint";
+import { ComboBox } from "std-widgets.slint";
+import { Utils, DigitPlace } from "../../utils.slint";
+import { Globs, GlobCallbacks } from "../../globals.slint";
+import { Palette } from "../../theme.slint";
 
-export component ControlPanel inherits Rectangle {
-    background: darkgray;
+import { DigitCell } from "../digitcell.slint";
+
+component CPDigitCell inherits DigitCell {
+	font-size: 42px;
+	horizontal-alignment: center;
+	stroke: #660000;
+	stroke-width: 1px;
+	width: 20px;
+}
+
+component CPDigitSeparator inherits CPDigitCell {
+	font-size: 42px;
+	text: "/";
+	width: 21px;
+}
+
+export component ControlPanel inherits VerticalLayout {
     width: 20%;
     height: 100%;
 
-    Rectangle {
-        background: #410008;
-        height: 100px;
+    VerticalLayout {
+        Rectangle {
+            height: 50px;
+            background: Palette.bg_lcd;
 
-        HorizontalLayout {
-            Text {
-                text: Utils.date_int_to_string(Globs.state.timer.date.month) + "/"
-                        + Utils.date_int_to_string(Globs.state.timer.date.day) + "/"
-                        + Utils.date_int_to_string(Globs.state.timer.date.year) + " "
-                        + Utils.date_int_to_string(Globs.state.timer.date.hour) + ":"
-                        + Utils.date_int_to_string(Globs.state.timer.date.minute);
-                font-size: 42px;
-                font-family: "DIGITAL-7";
-                color: #AB0000;
+            HorizontalLayout {
+                padding: 8px;
+                alignment: space-between;
+
+                Rectangle {
+                    width: 34px;
+                    height: 34px;
+
+                    Image {
+                        source: Globs.state.is_paused ? @image-url("../../images/icons/play.svg") : @image-url("../../images/icons/pause.svg");
+                        height: 20px;
+                    }
+
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            GlobCallbacks.toggle_pause();
+                            debug(Globs.state.is_paused);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: 85%;
+
+					HorizontalLayout {
+						alignment: space-between;
+
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.month, DigitPlace.Ten);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.month, DigitPlace.One);
+						}
+						CPDigitSeparator {}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.day, DigitPlace.Ten);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.day, DigitPlace.One);
+						}
+						CPDigitSeparator {}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.Thousand);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.Hundred);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.Ten);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.One);
+						}
+						Rectangle {
+							width: 20px;
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.hour, DigitPlace.Ten);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.hour, DigitPlace.One);
+						}
+						CPDigitCell {
+							text: ":";
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.minute, DigitPlace.Ten);
+						}
+						CPDigitCell {
+							text: Utils.date_int_to_char(Globs.state.timer.date.minute, DigitPlace.One);
+						}
+					}
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            GlobCallbacks.toggle_pause();
+                        }
+                    }
+                }
+/*
+                Text {
+                    horizontal-alignment: center;
+                    width: 80%;
+                    text: Utils.date_int_to_char(Globs.state.timer.date.month) + "/"
+                            + Utils.date_int_to_char(Globs.state.timer.date.day) + "/"
+                            + Utils.date_int_to_char(Globs.state.timer.date.year) + " "
+                            + Utils.date_int_to_char(Globs.state.timer.date.hour) + ":"
+                            + Utils.date_int_to_char(Globs.state.timer.date.minute);
+                    font-size: 42px;
+                    font-family: "DIGITAL-7";
+                    color: Palette.fg_lcdtext;
+
+                    Rectangle {
+                        background: rgba(10,10,10,0.5);
+                    }
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            GlobCallbacks.toggle_pause();
+                        }
+                    }
+                }
+*/
             }
+        }
+
+        Rectangle {
+            background: Palette.bg_darkgray;
         }
     }
 }
