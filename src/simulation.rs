@@ -2,13 +2,11 @@ use std::{
     sync::{mpsc, Arc, Mutex}
 };
 
+use tokio::sync::Notify;
 use slint::ToSharedString;
 
 use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
-use crate::speed::{
-    Speed,
-    SPEEDS_ARRAY,
-};
+use crate::speed::SPEEDS_ARRAY;
 use crate::timer::TimerPayload;
 use crate::ui_controller::{TimerData, UIState};
 
@@ -80,11 +78,13 @@ impl Simulation {
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
         let ui_state = Arc::new(Mutex::new(UIState::default()));
+        let ui_state_notifier = Arc::new(Notify::new());
         let ui_join_handle = self
             .ui_controller
             .run(
                 ui_flag_sender,
                 Arc::clone(&ui_state),
+                Arc::clone(&ui_state_notifier),
             );
 
         loop {
@@ -109,6 +109,7 @@ impl Simulation {
 
             let mut state_lock = ui_state.lock().unwrap();
             *state_lock = self.get_ui_state(&timer_result);
+            ui_state_notifier.notify_one();
         }
     }
 

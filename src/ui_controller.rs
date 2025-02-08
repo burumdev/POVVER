@@ -1,10 +1,9 @@
-use slint::CloseRequestResponse;
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
-    time::Duration,
 };
-use slint::{Timer, TimerMode};
+use tokio::sync::Notify;
+use slint::CloseRequestResponse;
 use crate::simulation::UIFlag;
 
 slint::include_modules!();
@@ -22,13 +21,13 @@ impl UIController {
         &mut self,
         flag_sender: mpsc::Sender<UIFlag>,
         state: Arc<Mutex<UIState>>,
+        state_notifier: Arc<Notify>,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
         let flag_sender_speed = flag_sender.clone();
 
         thread::spawn(move || {
             let app = PovverMain::new().unwrap();
-            let timer = Timer::default();
 
             // Event handlers
             app.on_toggle_pause(move || {
@@ -44,13 +43,16 @@ impl UIController {
                 CloseRequestResponse::HideWindow
             });
 
-            // Update state from simulation data
-            let appw = app.as_weak().clone();
-            timer.start(TimerMode::Repeated, Duration::from_millis(5), move || {
-                let state_lock = state.lock().unwrap();
+            let app_weak = app.as_weak();
+            slint::spawn_local(async move {
+                let appw = app_weak.clone();
+                loop {
+                    state_notifier.notified().await;
 
-                appw.unwrap().set_state((*state_lock).clone());
-            });
+                    let state_lock = state.lock().unwrap();
+                    appw.unwrap().set_state((*state_lock).clone());
+                }
+            }).unwrap();
 
             // Start fullscreen
             let app_weak = app.as_weak();

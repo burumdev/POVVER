@@ -7,9 +7,7 @@ edition = "2021"
 num-traits = "0.2.19"
 rand = "0.8.5"
 slint = "1.9.2"
+tokio = { version = "1.43.0", features = ["sync"] }
 
 [build-dependencies]
 slint-build = "1.9.2"
-
-[env]
-SLINT_BACKEND = "winit-femtovg"
