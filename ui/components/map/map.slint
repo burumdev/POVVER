@@ -1,5 +1,15 @@
+import { Sky } from "./sky.slint";
+
 export component Map inherits Rectangle {
     background: lightgray;
     width: 80%;
     height: 100%;
+
+    VerticalLayout {
+        Sky {}
+		Rectangle {
+			height: 100%;
+			background: #AAAAAA;
+		}
+    }
 }

@@ -1,3 +1,2 @@
 [env]
 SLINT_BACKEND = "qt-qt"
-

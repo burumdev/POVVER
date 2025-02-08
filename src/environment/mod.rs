@@ -3,11 +3,13 @@ use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 mod economy;
 mod environment_types;
 
+pub use environment_types::Cloud;
+
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{TimerEvent, TimerPayload};
 use economy::Economy;
-use environment_types::{Cloud, CloudSize, SunBrightness, TheSun, WindDirection};
+use environment_types::{CloudSize, SunBrightness, TheSun, SunStage, WindDirection};
 
 use crate::utils::{one_chance_in_many, random_inc_dec_clamp_unsigned};
 
@@ -22,10 +24,10 @@ const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Normal, CloudSi
 #[derive(Debug)]
 pub struct Environment {
     economy: Economy,
-    clouds: Vec<Cloud>,
+    pub clouds: Vec<Cloud>,
     wind_speed: SimInt,
     wind_direction: WindDirection,
-    the_sun: TheSun,
+    pub the_sun: TheSun,
     rng: ThreadRng,
 }
 
@@ -76,74 +78,88 @@ impl Environment {
     fn get_the_sun(&self, hour: SimInt, month: &MonthData) -> TheSun {
         let (start, end) = month.get_day_start_end();
 
-        // It's still night out there...
-        if hour < start || hour > end {
-            return TheSun {
-                position: None,
+        match hour {
+            // It's still night out there...
+            h if h < start => TheSun {
+                position: 17,
                 brightness: SunBrightness::NONE,
-            };
-        }
+                stage: SunStage::Set,
+            },
+            h if h > end => TheSun {
+                position: -1,
+                brightness: SunBrightness::NONE,
+                stage: SunStage::Set,
+            },
+            // Sun is rising!
+            _ => {
+                let float_hour = hour as SimFlo;
+                let total_day_hours = end - start;
+                let unit = (total_day_hours as SimFlo) / 12.0;
+                let mid_unit = unit * 6.0;
 
-        // It's daytime. Let's create the sun!
-        let float_hour = hour as SimFlo;
-        let total_day_hours = end - start;
-        let unit = (total_day_hours as SimFlo) / 12.0;
-        let mid_unit = unit * 6.0;
+                // Dead middle of the day
+                let mid_point = start as SimFlo + mid_unit;
 
-        // Dead middle of the day
-        let mid_point = start as SimFlo + mid_unit;
+                let mut brightness: SunBrightness;
+                let stage: SunStage;
+                // Strong sunshine is 2 units wide, mid is 8 units wide and weak is 1 unit wide
+                // on each end (middle out like in pied piper) from a total of 12.
+                // So it's like WMMMMSSMMMMW in unit terms
+                // And when we turn it to integers at the most it should look like:
+                // WMMMSMMMW in winter and something like WWMMMMSSSMMMMWW in a hot summer day.
+                if ((mid_point - unit)..=(mid_point + unit)).contains(&float_hour) {
+                    brightness = SunBrightness::STRONG;
+                    stage = SunStage::Bright;
+                } else if ((mid_point - (unit * 5.0))..=(mid_point + (unit * 5.0))).contains(&float_hour) {
+                    brightness = SunBrightness::NORMAL;
+                    stage = SunStage::Normal;
+                } else {
+                    brightness = SunBrightness::WEAK;
+                    stage = SunStage::Weak;
+                }
 
-        let mut brightness: SunBrightness;
-        // Strong sunshine is 2 units wide, mid is 8 units wide and weak is 1 unit wide
-        // on each end (middle out like in pied piper) from a total of 12.
-        // So it's like WMMMMSSMMMMW in unit terms
-        // And when we turn it to integers at the most it should look like:
-        // WMMMSMMMW in winter and something like WWMMMMSSSMMMMWW in a hot summer day.
-        if ((mid_point - unit)..=(mid_point + unit)).contains(&float_hour) {
-            brightness = SunBrightness::STRONG;
-        } else if ((mid_point - (unit * 5.0))..=(mid_point + (unit * 5.0))).contains(&float_hour) {
-            brightness = SunBrightness::NORMAL;
-        } else {
-            brightness = SunBrightness::WEAK;
-        }
+                // Different months have varying degrees of sunshine
+                brightness.set(brightness.val() * month.sunshine_factor);
 
-        // Different months have varying degrees of sunshine
-        brightness.set(brightness.val() * month.sunshine_factor);
+                // If any clouds cover the sun, firstly shame on them
+                // and secondly they should cumulatively reduce the
+                // brightness of sun depending on their sizes.
+                let brightness_reduction = self
+                    .clouds
+                    .iter()
+                    .filter(|cloud| cloud.position == self.the_sun.position as SimInt)
+                    .fold(0.0, |acc, cloud| match cloud.size {
+                        CloudSize::Small => acc + 5.0,
+                        CloudSize::Normal => acc + 15.0,
+                        CloudSize::Big => acc + 25.0,
+                    });
 
-        // If any clouds cover the sun, firstly shame on them
-        // and secondly they should cumulatively reduce the
-        // brightness of sun depending on their sizes.
-        if let Some(position) = self.the_sun.position {
-            let brightness_reduction = self
-                .clouds
-                .iter()
-                .filter(|cloud| cloud.position == position)
-                .fold(0.0, |acc, cloud| match cloud.size {
-                    CloudSize::Small => acc + 5.0,
-                    CloudSize::Normal => acc + 15.0,
-                    CloudSize::Big => acc + 25.0,
-                });
+                if brightness_reduction > 0.0 {
+                    brightness.set(brightness.val() - brightness_reduction);
+                    println!(
+                        "REDUCING SUNSHINE! by {} and new brightness is {:?}",
+                        brightness_reduction, brightness
+                    );
+                }
 
-            if brightness_reduction > 0.0 {
-                brightness.set(brightness.val() - brightness_reduction);
-                println!(
-                    "REDUCING SUNSHINE! by {} and new brightness is {:?}",
-                    brightness_reduction, brightness
-                );
+                // Nudge the sunrise position to the right depending on season.
+                // Sun rises late in winter and early in summer.
+                // And then reposition the sun so it can do it's thing.
+                let sunrise_shift = ((SUN_POS_MAX + 1 - total_day_hours) / 2) as SimFlo;
+                // Not saturated_sub'ing because this should not fail
+                // given the night check at the start of this function works.
+                let position = ((hour - start) as f32 + sunrise_shift.ceil()) as i32;
+
+                // Now invert the position of the sun so it
+                // rises from the east and sets from the west.
+                let position = SUN_POS_MAX as i32 - position;
+
+                TheSun {
+                    position,
+                    brightness,
+                    stage,
+                }
             }
-        }
-
-        // Nudge the sunrise position to the right depending on season.
-        // Sun rises late in winter and early in summer.
-        // And then reposition the sun so it can do it's thing.
-        let sunrise_shift = ((SUN_POS_MAX + 1 - total_day_hours) / 2) as SimFlo;
-        // Not saturated_sub'ing because this should not fail
-        // given the check at the start of this function works and nothing else is faulty.
-        let position = Some(hour - start + (sunrise_shift.ceil() as SimInt));
-
-        TheSun {
-            position,
-            brightness,
         }
     }
 
@@ -178,13 +194,13 @@ impl Environment {
                 CloudSize::Big => acc + 10.0,
             }) * cloud_forming_factor;
 
-            if self.rng.gen_range(0..=100) <= probability as SimInt {
-                return Some(Cloud {
+            return if self.rng.gen_range(0..=100) <= probability as SimInt {
+                Some(Cloud {
                     size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
                     position: tail_pos,
-                });
+                })
             } else {
-                return None;
+                None
             }
         }
 

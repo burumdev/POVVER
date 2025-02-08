@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, Mutex}
+    sync::{mpsc, Arc, Mutex},
 };
 
 use tokio::sync::Notify;
@@ -8,7 +8,7 @@ use slint::ToSharedString;
 use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
 use crate::speed::SPEEDS_ARRAY;
 use crate::timer::TimerPayload;
-use crate::ui_controller::{TimerData, UIState};
+use crate::ui_controller::{TimerData, EnvData, UIState};
 
 pub type SimInt = usize;
 pub type SimFlo = f32;
@@ -62,6 +62,9 @@ impl Simulation {
             },
             is_paused: self.is_paused,
             speed_index: self.speed_index as i32,
+            env: EnvData {
+                the_sun: self.env.the_sun.into(),
+            }
         }
     }
 
@@ -78,12 +81,15 @@ impl Simulation {
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
         let ui_state = Arc::new(Mutex::new(UIState::default()));
+        let clouds = Arc::new(Mutex::new(self.env.clouds.clone()));
+
         let ui_state_notifier = Arc::new(Notify::new());
         let ui_join_handle = self
             .ui_controller
             .run(
                 ui_flag_sender,
                 Arc::clone(&ui_state),
+                Arc::clone(&clouds),
                 Arc::clone(&ui_state_notifier),
             );
 

@@ -11,8 +11,31 @@ struct TimerData {
     month_name: string,
 }
 
+export enum SunStage {
+	Set,
+	Weak,
+	Normal,
+	Bright
+}
+
+struct SunData {
+	position: int,
+	brightness: float,
+	stage: SunStage,
+}
+
+export struct CloudData {
+	size: int,
+	position: int,
+}
+
+struct EnvData {
+	the_sun: SunData,
+}
+
 export struct UIState {
     timer: TimerData,
+    env: EnvData,
     is_paused: bool,
     speed_index: int,
 }

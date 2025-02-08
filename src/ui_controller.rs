@@ -1,10 +1,15 @@
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
+    rc::Rc,
 };
 use tokio::sync::Notify;
+
+use slint::{ModelRc, VecModel};
 use slint::CloseRequestResponse;
+
 use crate::simulation::UIFlag;
+use crate::environment::Cloud;
 
 slint::include_modules!();
 
@@ -18,9 +23,10 @@ impl UIController {
 
 impl UIController {
     pub fn run(
-        &mut self,
+        &self,
         flag_sender: mpsc::Sender<UIFlag>,
         state: Arc<Mutex<UIState>>,
+        clouds: Arc<Mutex<Vec<Cloud>>>,
         state_notifier: Arc<Notify>,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
@@ -50,6 +56,16 @@ impl UIController {
                     state_notifier.notified().await;
 
                     let state_lock = state.lock().unwrap();
+                    let clouds_lock = clouds.lock().unwrap();
+
+                    let clouddata_vec: Vec<CloudData> = (*clouds_lock).iter().map(|cloud| {
+                        CloudData::from((*cloud).into())
+                    }).collect();
+                    let clouds_model: Rc<VecModel<CloudData>> =
+                        Rc::new(VecModel::from(clouddata_vec));
+                    let clouds_model_rc = ModelRc::from(clouds_model);
+
+                    appw.unwrap().set_clouds(clouds_model_rc);
                     appw.unwrap().set_state((*state_lock).clone());
                 }
             }).unwrap();

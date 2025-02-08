@@ -1,5 +1,5 @@
 import { GlobCallbacks, Globs } from "./globals.slint";
-import { UIState } from "./state.slint";
+import { UIState, CloudData, SunStage } from "./state.slint";
 
 import { Utils } from "./utils.slint";
 
@@ -12,6 +12,8 @@ import "./fonts/MonaspiceArNerdFont-Bold.otf";
 
 export {
     UIState,
+    CloudData,
+    SunStage,
 }
 
 export component PovverMain inherits Window {
@@ -19,6 +21,7 @@ export component PovverMain inherits Window {
     title: "POVVER";
 
     in property <UIState> state <=> Globs.state;
+    in property <[CloudData]> clouds <=> Globs.clouds;
 
 	// Event callbacks
     pure callback toggle_pause <=> GlobCallbacks.toggle_pause;
