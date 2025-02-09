@@ -1,4 +1,4 @@
-struct UIDate {
+export struct Date {
    minute: int,
    hour: int,
    day: int,
@@ -7,7 +7,7 @@ struct UIDate {
 }
 
 struct TimerData {
-    date: UIDate,
+    date: Date,
     month_name: string,
 }
 
@@ -24,9 +24,20 @@ struct SunData {
 	stage: SunStage,
 }
 
-export struct CloudData {
-	size: int,
+export enum CloudSize {
+	Small,
+	Medium,
+	Big
+}
+
+export struct Cloud {
+	size: CloudSize,
 	position: int,
+}
+
+export enum WindDirection {
+	Ltr,
+	Rtl
 }
 
 struct EnvData {

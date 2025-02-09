@@ -1,29 +1,6 @@
 use super::SUNSHINE_MAX;
-use crate::simulation::{SimFlo, SimInt};
-use crate::ui_controller::{SunData, CloudData};
-
-pub use crate::ui_controller::SunStage;
-#[derive(Debug, Copy, Clone)]
-pub enum CloudSize {
-    Small,
-    Normal,
-    Big,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Cloud {
-    pub size: CloudSize,
-    pub position: SimInt,
-}
-
-impl Into<CloudData> for Cloud {
-    fn into(self) -> CloudData {
-        CloudData {
-            size: self.size as i32,
-            position: self.position as i32,
-        }
-    }
-}
+use crate::simulation::SimFlo;
+use crate::ui_controller::{SunData, SunStage, WindDirection};
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TheSun {
@@ -46,9 +23,9 @@ impl Into<SunData> for TheSun {
 pub struct SunBrightness(SimFlo);
 impl SunBrightness {
     pub const NONE: Self = Self(0.0);
-    pub const WEAK: Self = Self(30.0);
-    pub const NORMAL: Self = Self(70.0);
-    pub const STRONG: Self = Self(100.0);
+    pub const WEAK: Self = Self(20.0);
+    pub const NORMAL: Self = Self(50.0);
+    pub const STRONG: Self = Self(75.0);
 }
 impl Default for SunBrightness {
     fn default() -> Self {
@@ -64,22 +41,19 @@ impl SunBrightness {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum WindDirection {
-    Rtl,
-    Ltr,
-}
-
 impl WindDirection {
     pub fn flip(&mut self) -> Self {
-        if *self == Self::Rtl {
-            *self = Self::Ltr;
+        match self {
+            Self::Rtl => {
+                *self = Self::Ltr;
 
-            Self::Ltr
-        } else {
-            *self = Self::Rtl;
+                Self::Ltr
+            },
+            Self::Ltr => {
+                *self = Self::Rtl;
 
-            Self::Rtl
+                Self::Rtl
+            },
         }
     }
 }

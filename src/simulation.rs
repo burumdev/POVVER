@@ -1,5 +1,7 @@
 use std::{
     sync::{mpsc, Arc, Mutex},
+    rc::Rc,
+    cell::RefCell,
 };
 
 use tokio::sync::Notify;
@@ -8,9 +10,9 @@ use slint::ToSharedString;
 use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
 use crate::speed::SPEEDS_ARRAY;
 use crate::timer::TimerPayload;
-use crate::ui_controller::{TimerData, EnvData, UIState};
+use crate::ui_controller::{TimerData, EnvData, UIState, Date};
 
-pub type SimInt = usize;
+pub type SimInt = i32;
 pub type SimFlo = f32;
 pub type TickDuration = u64;
 
@@ -19,11 +21,11 @@ pub const DEFAULT_TICK_DURATION: TickDuration = 128;
 pub enum UIFlag {
     Pause,
     Quit,
-    SpeedChange(i32),
+    SpeedChange(SimInt),
 }
 
 pub struct Simulation {
-    timer: Timer,
+    timer: Rc<RefCell<Timer>>,
     speed_index: usize,
     env: Environment,
     ui_controller: UIController,
@@ -35,20 +37,29 @@ pub struct Simulation {
 impl Simulation {
     pub fn new() -> Self {
         let speed_index = 3;
-        let mut timer = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), 12);
+        let init_date = Date {
+            minute: 0,
+            hour: 12,
+            day: 1,
+            month: 6,
+            year: 2025,
+        };
+        let is_paused = true;
+        let timer = Rc::new(RefCell::new(Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date)));
+        let timer_result = timer.borrow_mut().tick(is_paused);
 
-        let timer_result = timer.tick(true);
+        let env = Environment::new(&timer_result, Rc::clone(&timer));
 
         let ui_controller = UIController::new();
 
         Self {
             timer,
             speed_index,
-            env: Environment::new(timer_result),
+            env,
             ui_controller,
             entities: true,
             is_running: false,
-            is_paused: true,
+            is_paused,
         }
     }
 }
@@ -57,7 +68,7 @@ impl Simulation {
     fn get_ui_state(&self, timer_result: &TimerPayload) -> UIState {
         UIState {
             timer: TimerData {
-                date: timer_result.date.into(),
+                date: self.timer.borrow().date.clone(),
                 month_name: timer_result.month_data.name.to_shared_string(),
             },
             is_paused: self.is_paused,
@@ -68,9 +79,9 @@ impl Simulation {
         }
     }
 
-    fn change_speed(&mut self, speed_index: i32) {
+    fn change_speed(&mut self, speed_index: SimInt) {
         self.speed_index = speed_index as usize;
-        self.timer.set_tick_duration(SPEEDS_ARRAY[self.speed_index].get_tick_duration());
+        self.timer.borrow_mut().set_tick_duration(SPEEDS_ARRAY[self.speed_index].get_tick_duration());
     }
 }
 
@@ -108,7 +119,7 @@ impl Simulation {
                 break;
             }
 
-            let timer_result = self.timer.tick(self.is_paused);
+            let timer_result = self.timer.borrow_mut().tick(self.is_paused);
             if !self.is_paused {
                 self.env.update(&timer_result);
             }

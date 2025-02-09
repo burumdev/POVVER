@@ -1,4 +1,3 @@
-use crate::simulation::SimInt;
 use num_traits::{SaturatingAdd, SaturatingSub, Signed, Unsigned};
 use rand::{distributions::uniform::SampleUniform, Rng};
 
@@ -59,7 +58,7 @@ where
 }
 
 /// If one in `how_many` chance happens, it will return true else returns false
-pub fn one_chance_in_many<R>(rng: &mut R, how_many: SimInt) -> bool
+pub fn one_chance_in_many<R>(rng: &mut R, how_many: u32) -> bool
 where
     R: Rng,
 {

@@ -9,7 +9,6 @@ use slint::{ModelRc, VecModel};
 use slint::CloseRequestResponse;
 
 use crate::simulation::UIFlag;
-use crate::environment::Cloud;
 
 slint::include_modules!();
 
@@ -58,11 +57,8 @@ impl UIController {
                     let state_lock = state.lock().unwrap();
                     let clouds_lock = clouds.lock().unwrap();
 
-                    let clouddata_vec: Vec<CloudData> = (*clouds_lock).iter().map(|cloud| {
-                        CloudData::from((*cloud).into())
-                    }).collect();
-                    let clouds_model: Rc<VecModel<CloudData>> =
-                        Rc::new(VecModel::from(clouddata_vec));
+                    let clouds_model: Rc<VecModel<Cloud>> =
+                        Rc::new(VecModel::from((*clouds_lock).clone()));
                     let clouds_model_rc = ModelRc::from(clouds_model);
 
                     appw.unwrap().set_clouds(clouds_model_rc);

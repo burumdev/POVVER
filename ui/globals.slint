@@ -1,4 +1,4 @@
-import { UIState, CloudData } from "./state.slint";
+import { UIState, Cloud } from "./state.slint";
 
 export global GlobCallbacks {
     pure callback toggle_pause;
@@ -7,5 +7,5 @@ export global GlobCallbacks {
 
 export global Globs {
     in property <UIState> state;
-    in property <[CloudData]> clouds;
+    in property <[Cloud]> clouds;
 }

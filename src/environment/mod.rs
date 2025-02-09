@@ -1,25 +1,29 @@
+use std::{
+    cell::RefCell,
+    rc::Rc,
+};
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod economy;
 mod environment_types;
 
-pub use environment_types::Cloud;
+use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection};
 
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
-use crate::timer::{TimerEvent, TimerPayload};
+use crate::timer::{Timer, TimerEvent, TimerPayload};
 use economy::Economy;
-use environment_types::{CloudSize, SunBrightness, TheSun, SunStage, WindDirection};
+use environment_types::{SunBrightness, TheSun};
 
-use crate::utils::{one_chance_in_many, random_inc_dec_clamp_unsigned};
+use crate::utils::{one_chance_in_many, random_inc_dec_clamp_signed};
 
 const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
 const CLOUDS_MAX: SimInt = 32;
 const SUN_POS_MAX: SimInt = 15;
-pub const SUNSHINE_MAX: SimFlo = 150.0;
+pub const SUNSHINE_MAX: SimFlo = 100.0;
 
-const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Normal, CloudSize::Big];
+const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 
 #[derive(Debug)]
 pub struct Environment {
@@ -29,16 +33,17 @@ pub struct Environment {
     wind_direction: WindDirection,
     pub the_sun: TheSun,
     rng: ThreadRng,
+    timer: Rc<RefCell<Timer>>,
 }
 
 // Constructor
 impl Environment {
-    pub fn new(timer_payload: TimerPayload) -> Self {
+    pub fn new(timer_payload: &TimerPayload, timer: Rc<RefCell<Timer>>) -> Self {
         let mut rng = thread_rng();
 
         let economy = Economy::new();
 
-        let mut clouds = Vec::with_capacity(CLOUDS_MAX);
+        let mut clouds = Vec::with_capacity(CLOUDS_MAX as usize);
 
         let cloud_generate_count = rng.gen_range(0..CLOUD_POS_MAX) as SimFlo
             * timer_payload.month_data.cloud_forming_factor;
@@ -65,9 +70,10 @@ impl Environment {
             wind_direction,
             the_sun: TheSun::default(),
             rng,
+            timer,
         };
 
-        new_self.the_sun = new_self.get_the_sun(timer_payload.date.hour, timer_payload.month_data);
+        new_self.the_sun = new_self.get_the_sun(new_self.timer.borrow().date.hour, timer_payload.month_data);
 
         new_self
     }
@@ -94,23 +100,23 @@ impl Environment {
             _ => {
                 let float_hour = hour as SimFlo;
                 let total_day_hours = end - start;
-                let unit = (total_day_hours as SimFlo) / 12.0;
-                let mid_unit = unit * 6.0;
+                let unit = (total_day_hours as SimFlo) / 14.0;
+                let mid_unit = unit * 7.0;
 
                 // Dead middle of the day
                 let mid_point = start as SimFlo + mid_unit;
 
                 let mut brightness: SunBrightness;
                 let stage: SunStage;
-                // Strong sunshine is 2 units wide, mid is 8 units wide and weak is 1 unit wide
-                // on each end (middle out like in pied piper) from a total of 12.
+                // Strong sunshine is 3 units wide, mid is 9 units wide and weak is 2 unit wide
+                // on each end (middle out like in pied piper) from a total of 14.
                 // So it's like WMMMMSSMMMMW in unit terms
                 // And when we turn it to integers at the most it should look like:
                 // WMMMSMMMW in winter and something like WWMMMMSSSMMMMWW in a hot summer day.
-                if ((mid_point - unit)..=(mid_point + unit)).contains(&float_hour) {
+                if ((mid_point - unit * 1.5)..=(mid_point + unit * 1.5)).contains(&float_hour) {
                     brightness = SunBrightness::STRONG;
                     stage = SunStage::Bright;
-                } else if ((mid_point - (unit * 5.0))..=(mid_point + (unit * 5.0))).contains(&float_hour) {
+                } else if ((mid_point - (unit * 6.0))..=(mid_point + (unit * 6.0))).contains(&float_hour) {
                     brightness = SunBrightness::NORMAL;
                     stage = SunStage::Normal;
                 } else {
@@ -130,7 +136,7 @@ impl Environment {
                     .filter(|cloud| cloud.position == self.the_sun.position as SimInt)
                     .fold(0.0, |acc, cloud| match cloud.size {
                         CloudSize::Small => acc + 5.0,
-                        CloudSize::Normal => acc + 15.0,
+                        CloudSize::Medium => acc + 15.0,
                         CloudSize::Big => acc + 25.0,
                     });
 
@@ -190,7 +196,7 @@ impl Environment {
 
             let probability = siblings.fold(10.0, |acc, cloud| match cloud.size {
                 CloudSize::Small => acc + 2.0,
-                CloudSize::Normal => acc + 5.0,
+                CloudSize::Medium => acc + 5.0,
                 CloudSize::Big => acc + 10.0,
             }) * cloud_forming_factor;
 
@@ -227,7 +233,7 @@ impl Environment {
 
             let mut movement: SimFlo = match size {
                 CloudSize::Small => 3.0,
-                CloudSize::Normal => 2.0,
+                CloudSize::Medium => 2.0,
                 CloudSize::Big => 1.0,
             };
 
@@ -260,7 +266,7 @@ impl Environment {
             }
         });
 
-        if self.clouds.len() < CLOUDS_MAX {
+        if self.clouds.len() < CLOUDS_MAX as usize {
             if let Some(cloud) = self.maybe_new_cloud(tail_pos, sibling_pos, cloud_forming_factor) {
                 println!("PUSHING IN A NEW CLOUD: {:?}", cloud);
                 self.clouds.push(cloud);
@@ -275,7 +281,7 @@ impl Environment {
         // We don't change stuff too often to prevent erratic changes
         // so the changes are done on an hourly basis.
         if timer_payload.event != TimerEvent::NothingUnusual {
-            let hour = timer_payload.date.hour;
+            let hour = self.timer.borrow().date.hour;
             let month_data = timer_payload.month_data;
 
             // Every 2nd hour we update wind speed
@@ -288,7 +294,7 @@ impl Environment {
                     0
                 };
 
-                self.wind_speed = random_inc_dec_clamp_unsigned(
+                self.wind_speed = random_inc_dec_clamp_signed(
                     &mut self.rng,
                     self.wind_speed,
                     lower_modifier + 5,
@@ -307,9 +313,9 @@ impl Environment {
 
             self.update_clouds(month_data.cloud_forming_factor);
 
-            self.the_sun = self.get_the_sun(timer_payload.date.hour, month_data);
+            self.the_sun = self.get_the_sun(self.timer.borrow().date.hour, month_data);
 
-            println!("TIMER: {:?}", timer_payload.date);
+            println!("TIMER: {:?}", self.timer.borrow().date);
             println!(
                 "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
                 self.the_sun, self.wind_speed, self.wind_direction

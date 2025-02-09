@@ -1,31 +1,10 @@
 use std::thread;
 use std::time::Duration;
 
-use crate::ui_controller::UIDate;
+use crate::ui_controller::Date;
 
 use crate::months::{get_month_data, MonthData};
 use crate::simulation::{SimInt, TickDuration};
-
-#[derive(Debug, Default, Copy, Clone)]
-pub struct Date {
-    pub minute: SimInt,
-    pub hour: SimInt,
-    pub day: SimInt,
-    pub month: SimInt,
-    pub year: SimInt,
-}
-
-impl Into<UIDate> for Date {
-    fn into(self) -> UIDate {
-        UIDate {
-            minute: self.minute as i32,
-            hour: self.hour as i32,
-            day: self.day as i32,
-            month: self.month as i32,
-            year: self.year as i32,
-        }
-    }
-}
 
 #[derive(Debug, PartialEq)]
 pub enum TimerEvent {
@@ -39,7 +18,6 @@ pub enum TimerEvent {
 
 #[derive(Debug)]
 pub struct TimerPayload {
-    pub date: Date,
     pub event: TimerEvent,
     pub month_data: &'static MonthData,
 }
@@ -48,23 +26,22 @@ pub struct TimerPayload {
 pub struct Timer {
     tick_duration: TickDuration,
     tick_count: u128,
-    date: Date,
+    pub date: Date,
 }
 
 // Constructor
 impl Timer {
-    pub fn new(tick_duration: TickDuration, init_hours: SimInt) -> Self {
-        let init_hours = init_hours.clamp(0, 23);
-
+    pub fn new(tick_duration: TickDuration, init_date: Date) -> Self {
         Self {
             tick_duration,
-            tick_count: (init_hours * 60) as u128,
-            date: Date {
-                hour: init_hours,
-                year: 2025,
-                month: 1,
-                ..Date::default()
-            },
+            tick_count:
+                (init_date.minute +
+                    init_date.hour * 60 +
+                    init_date.day * 24 * 60 +
+                    init_date.month * 30 * 24 * 60 +
+                    init_date.year * 12 * 30 * 24 * 60
+                ) as u128,
+            date: init_date,
         }
     }
 }
@@ -81,9 +58,9 @@ impl Timer {
         let day = ((total_days % 30) + 1) as SimInt;
 
         let total_months = total_days / 30;
-        let month = (total_months % 12) as usize + 1;
+        let month = (total_months % 12) as SimInt + 1;
 
-        let year = self.date.year + (total_months / 12) as SimInt;
+        let year = (total_months / 12) as SimInt;
 
         Date {
             minute,
@@ -122,8 +99,7 @@ impl Timer {
         }
 
         TimerPayload {
-            date: self.date,
-            month_data: get_month_data(self.date.month),
+            month_data: get_month_data(self.date.month as usize),
             event,
         }
     }
