@@ -193,7 +193,7 @@ impl Environment {
             .filter(|cloud| cloud.position == tail_pos)
             .count();
 
-        if tail_clouds_count < 2 {
+        if tail_clouds_count > 1 {
             let siblings = self
                 .clouds
                 .iter()
@@ -205,7 +205,17 @@ impl Environment {
                 CloudSize::Big => acc + 10.0,
             }) * cloud_forming_factor;
 
-            return if self.rng.gen_range(0..=100) <= probability as SimInt {
+            if self.rng.gen_range(0..=100) <= probability as SimInt {
+                Some(Cloud {
+                    size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
+                    position: tail_pos,
+                    image_index: self.rng.gen_range(0..4),
+                })
+            } else {
+                None
+            }
+        } else {
+            if one_chance_in_many(&mut self.rng, 30) {
                 Some(Cloud {
                     size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
                     position: tail_pos,
@@ -215,8 +225,6 @@ impl Environment {
                 None
             }
         }
-
-        None
     }
 
     // This mainly moves the clouds and
@@ -240,11 +248,12 @@ impl Environment {
             let mut movement: SimFlo = match size {
                 CloudSize::Small => 3.0,
                 CloudSize::Medium => 2.0,
-                CloudSize::Big => 1.0,
+                CloudSize::Big => 1.5,
             };
 
             movement = match self.wind_speed {
-                0..40 => movement / 3.0,
+                0..10 => movement / 5.0,
+                10..40 => movement / 3.0,
                 40..80 => movement / 2.0,
                 80..=WINDSPEED_MAX => movement,
                 _ => unreachable!(), // Should be unreachable because we clamp the windspeed (hopefully)
@@ -294,20 +303,22 @@ impl Environment {
             // not deviating much from the current one.
             if hour % 2 == 0 {
                 // Make tropical typhoons that last weeks less likely
-                let lower_modifier = if self.wind_speed >= WINDSPEED_MAX - (WINDSPEED_MAX / 6) {
-                    20
+                let lower_modifier = if self.wind_speed >= WINDSPEED_MAX - 30 {
+                    30
                 } else {
                     0
                 };
 
-                self.wind_speed = random_inc_dec_clamp_signed(
+                let randomized = random_inc_dec_clamp_signed(
                     &mut self.rng,
                     self.wind_speed,
                     lower_modifier + 5,
-                    5,
+                    10,
                     0,
                     WINDSPEED_MAX,
-                ) * month_data.windspeed_factor as SimInt;
+                );
+
+                self.wind_speed = ((randomized as SimFlo * month_data.windspeed_factor) as SimInt).clamp(0, WINDSPEED_MAX);
             }
 
             // Every 6th hour there is a 1 in 10 chance

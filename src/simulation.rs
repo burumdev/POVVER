@@ -126,6 +126,9 @@ impl Simulation {
 
             let mut state_lock = ui_state.lock().unwrap();
             *state_lock = self.get_ui_state(&timer_result);
+            let mut clouds_lock = clouds.lock().unwrap();
+            *clouds_lock = self.env.clouds.clone();
+
             ui_state_notifier.notify_one();
         }
     }
