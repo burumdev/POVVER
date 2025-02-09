@@ -4,19 +4,22 @@ import { Globs } from "../../globals.slint";
 export component Sky inherits Rectangle {
     height: 100px;
 	width: 100%;
+	y: 0;
 
 	Image {
 		property <int> pos: Globs.state.env.the_sun.position;
-		property <SunStage> stage: Globs.state.env.the_sun.stage;
+		property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
+
 		opacity: pos > -1 && pos < 17 ? 1 : 0;
-		source: stage == SunStage.Weak ? @image-url("../../images/sun-weak.svg") :
-			stage == SunStage.Normal ? @image-url("../../images/sun.svg") :
-			stage == SunStage.Bright ? @image-url("../../images/sun-bright.svg") :
+
+		source: sun_stage == SunStage.Weak ? @image-url("../../images/sun-weak.svg") :
+			sun_stage == SunStage.Normal ? @image-url("../../images/sun.svg") :
+			sun_stage == SunStage.Bright ? @image-url("../../images/sun-bright.svg") :
 			@image-url("../../images/sun-weak.svg");
 		x: (parent.width / 16) * pos;
 
 		animate x, opacity {
-			duration: 100ms;
+			duration: 200ms;
 		}
 	}
 }

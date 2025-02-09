@@ -1,6 +1,8 @@
 use super::SUNSHINE_MAX;
 use crate::simulation::{SimFlo, SimInt};
-use crate::ui_controller::{SunData, CloudData, SunStage as SlintSunStage};
+use crate::ui_controller::{SunData, CloudData};
+
+pub use crate::ui_controller::SunStage;
 #[derive(Debug, Copy, Clone)]
 pub enum CloudSize {
     Small,
@@ -30,32 +32,12 @@ pub struct TheSun {
     pub stage: SunStage,
 }
 
-#[derive(Debug, Default, Copy, Clone)]
-pub enum SunStage {
-    #[default]
-    Set,
-    Weak,
-    Normal,
-    Bright,
-}
-
-impl Into<SlintSunStage> for SunStage {
-    fn into(self) -> SlintSunStage {
-        match self {
-            SunStage::Set => SlintSunStage::Set,
-            SunStage::Weak => SlintSunStage::Weak,
-            SunStage::Normal => SlintSunStage::Normal,
-            SunStage::Bright => SlintSunStage::Bright,
-        }
-    }
-}
-
 impl Into<SunData> for TheSun {
     fn into(self) -> SunData {
         SunData {
             position: self.position,
             brightness: self.brightness.val(),
-            stage: self.stage.into(),
+            stage: self.stage,
         }
     }
 }

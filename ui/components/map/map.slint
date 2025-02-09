@@ -1,15 +1,27 @@
+import { SunStage } from "../../state.slint";
+import { Globs } from "../../globals.slint";
+import { Palette } from "../../theme.slint";
+
 import { Sky } from "./sky.slint";
 
 export component Map inherits Rectangle {
-    background: lightgray;
     width: 80%;
     height: 100%;
 
+	property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
+
     VerticalLayout {
-        Sky {}
 		Rectangle {
 			height: 100%;
-			background: #AAAAAA;
+			background: sun_stage == SunStage.Set ? Palette.sky_night :
+				sun_stage == SunStage.Weak ? Palette.sky_setting :
+				sun_stage == SunStage.Normal ? Palette.sky_normal :
+				Palette.sky_bright;
+
+			animate background {
+				duration: 200ms;
+			}
+            Sky {}
 		}
     }
 }
