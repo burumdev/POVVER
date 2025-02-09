@@ -5,15 +5,15 @@ use std::{
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod economy;
+use economy::Economy;
 mod environment_types;
+use environment_types::{SunBrightness, TheSun};
 
 use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection};
 
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{Timer, TimerEvent, TimerPayload};
-use economy::Economy;
-use environment_types::{SunBrightness, TheSun};
 
 use crate::utils::{one_chance_in_many, random_inc_dec_clamp_signed};
 
@@ -51,7 +51,12 @@ impl Environment {
         for _ in 0..cloud_generate_count as SimInt {
             let size = *CLOUD_SIZES.choose(&mut rng).unwrap();
             let position = rng.gen_range(0..CLOUD_POS_MAX);
-            clouds.push(Cloud { size, position });
+            let image_index = rng.gen_range(0..4);
+            clouds.push(Cloud {
+                    size,
+                    position,
+                    image_index
+                });
         }
 
         let wind_speed = rng.gen_range(0..=WINDSPEED_MAX);
@@ -110,7 +115,7 @@ impl Environment {
                 let stage: SunStage;
                 // Strong sunshine is 3 units wide, mid is 9 units wide and weak is 2 unit wide
                 // on each end (middle out like in pied piper) from a total of 14.
-                // So it's like WMMMMSSMMMMW in unit terms
+                // So it's like WWMMMMMSSSMMMMMWW in unit terms
                 // And when we turn it to integers at the most it should look like:
                 // WMMMSMMMW in winter and something like WWMMMMSSSMMMMWW in a hot summer day.
                 if ((mid_point - unit * 1.5)..=(mid_point + unit * 1.5)).contains(&float_hour) {
@@ -133,7 +138,7 @@ impl Environment {
                 let brightness_reduction = self
                     .clouds
                     .iter()
-                    .filter(|cloud| cloud.position == self.the_sun.position as SimInt)
+                    .filter(|cloud| cloud.position == self.the_sun.position)
                     .fold(0.0, |acc, cloud| match cloud.size {
                         CloudSize::Small => acc + 5.0,
                         CloudSize::Medium => acc + 15.0,
@@ -204,6 +209,7 @@ impl Environment {
                 Some(Cloud {
                     size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
                     position: tail_pos,
+                    image_index: self.rng.gen_range(0..4),
                 })
             } else {
                 None
@@ -229,7 +235,7 @@ impl Environment {
         }
 
         self.clouds.retain_mut(|cloud| {
-            let Cloud { size, position } = cloud;
+            let Cloud { size, position, .. } = cloud;
 
             let mut movement: SimFlo = match size {
                 CloudSize::Small => 3.0,

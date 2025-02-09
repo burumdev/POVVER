@@ -8,4 +8,25 @@ export global GlobCallbacks {
 export global Globs {
     in property <UIState> state;
     in property <[Cloud]> clouds;
+
+	out property <{ small: [image], medium: [image], big: [image]}> cloud_images: {
+		small: [
+			@image-url("./images/cloud_small1.svg"),
+			@image-url("./images/cloud_small2.svg"),
+			@image-url("./images/cloud_small3.svg"),
+			@image-url("./images/cloud_small4.svg"),
+		],
+		medium: [
+			@image-url("./images/cloud_mid1.svg"),
+			@image-url("./images/cloud_mid2.svg"),
+			@image-url("./images/cloud_mid3.svg"),
+			@image-url("./images/cloud_mid4.svg"),
+		],
+		big: [
+			@image-url("./images/cloud_big1.svg"),
+			@image-url("./images/cloud_big2.svg"),
+			@image-url("./images/cloud_big3.svg"),
+			@image-url("./images/cloud_big4.svg"),
+		],
+	};
 }

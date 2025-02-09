@@ -1,7 +1,6 @@
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
-    rc::Rc,
 };
 use tokio::sync::Notify;
 
@@ -57,9 +56,8 @@ impl UIController {
                     let state_lock = state.lock().unwrap();
                     let clouds_lock = clouds.lock().unwrap();
 
-                    let clouds_model: Rc<VecModel<Cloud>> =
-                        Rc::new(VecModel::from((*clouds_lock).clone()));
-                    let clouds_model_rc = ModelRc::from(clouds_model);
+                    let slice = (*clouds_lock).as_slice();
+                    let clouds_model_rc = ModelRc::from(VecModel::from_slice(slice));
 
                     appw.unwrap().set_clouds(clouds_model_rc);
                     appw.unwrap().set_state((*state_lock).clone());

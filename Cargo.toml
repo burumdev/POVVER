@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 num-traits = "0.2.19"
 rand = "0.8.5"
-slint = "1.9.2"
+slint = { version = "1.9.2", features = [ "backend-winit", "renderer-winit-skia" ] }
 tokio = { version = "1.43.0", features = ["sync"] }
 
 [build-dependencies]

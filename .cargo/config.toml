@@ -1,2 +1,2 @@
 [env]
-SLINT_BACKEND = "qt-qt"
+#SLINT_BACKEND = "winit-skia"
