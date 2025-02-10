@@ -7,8 +7,8 @@ use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 mod economy;
 use economy::Economy;
 mod environment_types;
-use environment_types::{SunBrightness, TheSun};
-
+use environment_types::{SunBrightness, TheSun, WindSpeed};
+use crate::environment::environment_types::WindSpeedLevel;
 use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection};
 
 use crate::months::MonthData;
@@ -17,7 +17,7 @@ use crate::timer::{Timer, TimerEvent, TimerPayload};
 
 use crate::utils::{one_chance_in_many, random_inc_dec_clamp_signed};
 
-const WINDSPEED_MAX: SimInt = 120;
+pub const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
 const CLOUDS_MAX: SimInt = 32;
 const SUN_POS_MAX: SimInt = 15;
@@ -29,7 +29,7 @@ const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSi
 pub struct Environment {
     economy: Economy,
     pub clouds: Vec<Cloud>,
-    wind_speed: SimInt,
+    wind_speed: WindSpeed,
     wind_direction: WindDirection,
     pub the_sun: TheSun,
     rng: ThreadRng,
@@ -55,12 +55,15 @@ impl Environment {
             clouds.push(Cloud {
                     size,
                     position,
-                    image_index
+                    image_index,
+                    image_rotated: random(),
                 });
         }
 
-        let wind_speed = rng.gen_range(0..=WINDSPEED_MAX);
-        let wind_speed = (wind_speed as f32 * timer_payload.month_data.windspeed_factor) as SimInt;
+        let mut wind_speed = WindSpeed::default();
+        wind_speed.set(
+            (rng.gen_range(0..=WINDSPEED_MAX) as SimFlo * timer_payload.month_data.windspeed_factor) as SimInt
+        );
 
         let wind_direction = if random() {
             WindDirection::Ltr
@@ -205,21 +208,36 @@ impl Environment {
                 CloudSize::Big => acc + 10.0,
             }) * cloud_forming_factor;
 
-            if self.rng.gen_range(0..=100) <= probability as SimInt {
+            let wind_speed_rnd_ceiling = match WindSpeedLevel::from(&self.wind_speed) {
+                WindSpeedLevel::Faint => 120,
+                WindSpeedLevel::Mild => 100,
+                WindSpeedLevel::Strong => 80,
+                WindSpeedLevel::Typhoon => 60,
+            };
+
+            if self.rng.gen_range(0..=wind_speed_rnd_ceiling) <= probability as SimInt {
                 Some(Cloud {
                     size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
                     position: tail_pos,
                     image_index: self.rng.gen_range(0..4),
+                    image_rotated: random(),
                 })
             } else {
                 None
             }
         } else {
-            if one_chance_in_many(&mut self.rng, 30) {
+            let wind_speed_rnd_how_many = match WindSpeedLevel::from(&self.wind_speed) {
+                WindSpeedLevel::Faint => 60,
+                WindSpeedLevel::Mild => 30,
+                WindSpeedLevel::Strong => 20,
+                WindSpeedLevel::Typhoon => 10,
+            };
+            if one_chance_in_many(&mut self.rng, wind_speed_rnd_how_many) {
                 Some(Cloud {
                     size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
                     position: tail_pos,
                     image_index: self.rng.gen_range(0..4),
+                    image_rotated: random(),
                 })
             } else {
                 None
@@ -251,29 +269,23 @@ impl Environment {
                 CloudSize::Big => 1.5,
             };
 
-            movement = match self.wind_speed {
-                0..10 => movement / 5.0,
-                10..40 => movement / 3.0,
-                40..80 => movement / 2.0,
-                80..=WINDSPEED_MAX => movement,
-                _ => unreachable!(), // Should be unreachable because we clamp the windspeed (hopefully)
+            movement = match WindSpeedLevel::from(&self.wind_speed) {
+                WindSpeedLevel::Faint => movement / 5.0,
+                WindSpeedLevel::Mild => movement / 3.0,
+                WindSpeedLevel::Strong => movement / 2.0,
+                WindSpeedLevel::Typhoon => movement,
             };
 
             let movement = movement.round() as SimInt;
 
             if self.wind_direction == WindDirection::Rtl {
-                let subtractable_position = *position as isize;
-                if (subtractable_position - movement as isize) < 0 {
-                    false
-                } else {
+                if (*position - movement) < 0 { false } else {
                     *position -= movement;
 
                     true
                 }
             } else {
-                if *position + movement > CLOUD_POS_MAX {
-                    false
-                } else {
+                if *position + movement > CLOUD_POS_MAX { false } else {
                     *position += movement;
 
                     true
@@ -303,7 +315,8 @@ impl Environment {
             // not deviating much from the current one.
             if hour % 2 == 0 {
                 // Make tropical typhoons that last weeks less likely
-                let lower_modifier = if self.wind_speed >= WINDSPEED_MAX - 30 {
+                let ws_val = self.wind_speed.val();
+                let lower_modifier = if ws_val >= WINDSPEED_MAX - 30 {
                     30
                 } else {
                     0
@@ -311,14 +324,14 @@ impl Environment {
 
                 let randomized = random_inc_dec_clamp_signed(
                     &mut self.rng,
-                    self.wind_speed,
+                    ws_val,
                     lower_modifier + 5,
                     10,
                     0,
                     WINDSPEED_MAX,
                 );
 
-                self.wind_speed = ((randomized as SimFlo * month_data.windspeed_factor) as SimInt).clamp(0, WINDSPEED_MAX);
+                self.wind_speed.set((randomized as SimFlo * month_data.windspeed_factor) as SimInt);
             }
 
             // Every 6th hour there is a 1 in 10 chance
@@ -335,7 +348,7 @@ impl Environment {
             println!("TIMER: {:?}", self.timer.borrow().date);
             println!(
                 "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
-                self.the_sun, self.wind_speed, self.wind_direction
+                self.the_sun, self.wind_speed.val(), self.wind_direction
             );
             println!("CLOUDS: {:?}", self.clouds);
         }

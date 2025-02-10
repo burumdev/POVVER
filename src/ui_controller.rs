@@ -2,9 +2,10 @@ use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
 };
+use std::time::Duration;
 use tokio::sync::Notify;
 
-use slint::{ModelRc, VecModel};
+use slint::{ModelRc, VecModel, Timer, TimerMode};
 use slint::CloseRequestResponse;
 
 use crate::simulation::UIFlag;
@@ -50,8 +51,10 @@ impl UIController {
             let app_weak = app.as_weak();
             slint::spawn_local(async move {
                 let appw = app_weak.clone();
+                let timer = Timer::default();
                 loop {
                     state_notifier.notified().await;
+                    timer.start(TimerMode::SingleShot, Duration::from_millis(3), || {});
 
                     let state_lock = state.lock().unwrap();
                     let clouds_lock = clouds.lock().unwrap();

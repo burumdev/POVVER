@@ -23,11 +23,12 @@ export component Sky inherits Rectangle {
 		}
 	}
 
-	for cloud[index] in Globs.clouds: Image {
+	for cloud in Globs.clouds: Image {
 		source: cloud.size == CloudSize.Small ? Globs.cloud_images.small[cloud.image_index] :
 			cloud.size == CloudSize.Medium ? Globs.cloud_images.medium[cloud.image_index] :
 			Globs.cloud_images.big[cloud.image_index];
 
+		rotation-angle: cloud.image_rotated ? 180deg : 0deg;
 		width: 64px;
 		x: (parent.width / 16) * cloud.position;
 

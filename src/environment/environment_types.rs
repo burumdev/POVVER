@@ -1,5 +1,5 @@
-use super::SUNSHINE_MAX;
-use crate::simulation::SimFlo;
+use super::{SUNSHINE_MAX, WINDSPEED_MAX};
+use crate::simulation::{SimFlo, SimInt};
 use crate::ui_controller::{SunData, SunStage, WindDirection};
 
 #[derive(Debug, Default, Copy, Clone)]
@@ -38,6 +38,45 @@ impl SunBrightness {
     }
     pub fn set(&mut self, val: SimFlo) {
         self.0 = val.clamp(0.0, SUNSHINE_MAX);
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct WindSpeed(SimInt);
+impl WindSpeed {
+    pub fn val(&self) -> SimInt {
+        self.0
+    }
+    pub fn set(&mut self, val: SimInt) {
+        self.0 = val.clamp(0, WINDSPEED_MAX);
+    }
+}
+impl PartialEq<SimInt> for WindSpeed {
+    fn eq(&self, other: &SimInt) -> bool {
+        self.0.eq(other)
+    }
+}
+impl PartialOrd<SimInt> for WindSpeed {
+    fn partial_cmp(&self, other: &SimInt) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+pub enum WindSpeedLevel {
+    Faint,
+    Mild,
+    Strong,
+    Typhoon,
+}
+impl From<&WindSpeed> for WindSpeedLevel {
+    fn from(ws: &WindSpeed) -> Self {
+        match ws.val() {
+            0..10 => WindSpeedLevel::Faint,
+            10..40 => WindSpeedLevel::Mild,
+            40..80 => WindSpeedLevel::Strong,
+            80..=WINDSPEED_MAX => WindSpeedLevel::Typhoon,
+            // Should be unrachable because we properly clamp the windspeed (hopefully)
+            _ => unreachable!(),
+        }
     }
 }
 
