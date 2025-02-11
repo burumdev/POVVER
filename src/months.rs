@@ -29,7 +29,7 @@ pub const MONTHS: [MonthData; 12] = [
         day_end: 17,
         sunshine_factor: 0.5,
         windspeed_factor: 1.0,
-        cloud_forming_factor: 1.1,
+        cloud_forming_factor: 1.3,
     },
     MonthData {
         number: 2,
@@ -38,7 +38,7 @@ pub const MONTHS: [MonthData; 12] = [
         day_end: 18,
         sunshine_factor: 0.5,
         windspeed_factor: 1.1,
-        cloud_forming_factor: 1.1,
+        cloud_forming_factor: 1.2,
     },
     MonthData {
         number: 3,
@@ -65,7 +65,7 @@ pub const MONTHS: [MonthData; 12] = [
         day_end: 18,
         sunshine_factor: 1.2,
         windspeed_factor: 0.75,
-        cloud_forming_factor: 1.0,
+        cloud_forming_factor: 1.1,
     },
     MonthData {
         number: 6,

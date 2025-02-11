@@ -9,6 +9,7 @@ export component Map inherits Rectangle {
     height: 100%;
 
 	property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
+	property <float> sun_brightness: Globs.state.env.the_sun.brightness;
 
     VerticalLayout {
 		Rectangle {
@@ -22,6 +23,16 @@ export component Map inherits Rectangle {
 				duration: 200ms;
 			}
             Sky {}
+
+            // Brightness filter for the whole scene
+            // Depends on sun brightness
+            Rectangle {
+                property<float> opaque: ((100 - sun_brightness) / 100) * 0.5;
+                background: rgba(0, 0, 0, opaque);
+				animate background {
+					duration: 200ms;
+				}
+            }
 		}
     }
 }

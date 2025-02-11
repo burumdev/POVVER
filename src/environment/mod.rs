@@ -108,10 +108,29 @@ impl Environment {
             _ => {
                 let float_hour = hour as SimFlo;
                 let total_day_hours = end - start;
+
+                /*
+                    POSITION OF THE SUN
+                 */
+                // Nudge the sunrise position to the right depending on season.
+                // Sun rises late in winter and early in summer.
+                // And then reposition the sun so it can do it's thing.
+                let sunrise_shift = ((SUN_POS_MAX + 1 - total_day_hours) / 2) as SimFlo;
+                // Find the position of the sun incremental from left to right (west to east)
+                // Not saturated_sub'ing because this should not fail
+                // given the night check at the start of this function works.
+                let position = ((hour - start) as f32 + sunrise_shift.ceil()) as i32;
+                // Now invert the position of the sun so it
+                // rises from the east and sets from the west.
+                let position = SUN_POS_MAX as i32 - position;
+
+                /*
+                    SUN BRIGHTNESS
+                 */
                 let unit = (total_day_hours as SimFlo) / 14.0;
                 let mid_unit = unit * 7.0;
 
-                // Dead middle of the day
+                // Dead middle of the day in units
                 let mid_point = start as SimFlo + mid_unit;
 
                 let mut brightness: SunBrightness;
@@ -131,23 +150,20 @@ impl Environment {
                     brightness = SunBrightness::WEAK;
                     stage = SunStage::Weak;
                 }
-
                 // Different months have varying degrees of sunshine
                 brightness.set(brightness.val() * month.sunshine_factor);
-
                 // If any clouds cover the sun, firstly shame on them
                 // and secondly they should cumulatively reduce the
                 // brightness of sun depending on their sizes.
                 let brightness_reduction = self
                     .clouds
                     .iter()
-                    .filter(|cloud| cloud.position == self.the_sun.position)
+                    .filter(|cloud| cloud.position == position)
                     .fold(0.0, |acc, cloud| match cloud.size {
                         CloudSize::Small => acc + 5.0,
                         CloudSize::Medium => acc + 15.0,
                         CloudSize::Big => acc + 25.0,
                     });
-
                 if brightness_reduction > 0.0 {
                     brightness.set(brightness.val() - brightness_reduction);
                     println!(
@@ -155,18 +171,6 @@ impl Environment {
                         brightness_reduction, brightness
                     );
                 }
-
-                // Nudge the sunrise position to the right depending on season.
-                // Sun rises late in winter and early in summer.
-                // And then reposition the sun so it can do it's thing.
-                let sunrise_shift = ((SUN_POS_MAX + 1 - total_day_hours) / 2) as SimFlo;
-                // Not saturated_sub'ing because this should not fail
-                // given the night check at the start of this function works.
-                let position = ((hour - start) as f32 + sunrise_shift.ceil()) as i32;
-
-                // Now invert the position of the sun so it
-                // rises from the east and sets from the west.
-                let position = SUN_POS_MAX as i32 - position;
 
                 TheSun {
                     position,
@@ -208,12 +212,12 @@ impl Environment {
                 CloudSize::Big => acc + 10.0,
             }) * cloud_forming_factor;
 
-            let wind_speed_rnd_ceiling = match WindSpeedLevel::from(&self.wind_speed) {
+            let wind_speed_rnd_ceiling = (match WindSpeedLevel::from(&self.wind_speed) {
                 WindSpeedLevel::Faint => 120,
                 WindSpeedLevel::Mild => 100,
                 WindSpeedLevel::Strong => 80,
                 WindSpeedLevel::Typhoon => 60,
-            };
+            } as SimFlo * cloud_forming_factor) as SimInt;
 
             if self.rng.gen_range(0..=wind_speed_rnd_ceiling) <= probability as SimInt {
                 Some(Cloud {
@@ -226,12 +230,12 @@ impl Environment {
                 None
             }
         } else {
-            let wind_speed_rnd_how_many = match WindSpeedLevel::from(&self.wind_speed) {
+            let wind_speed_rnd_how_many = (match WindSpeedLevel::from(&self.wind_speed) {
                 WindSpeedLevel::Faint => 60,
                 WindSpeedLevel::Mild => 30,
                 WindSpeedLevel::Strong => 20,
                 WindSpeedLevel::Typhoon => 10,
-            };
+            } as SimFlo * cloud_forming_factor) as u32;
             if one_chance_in_many(&mut self.rng, wind_speed_rnd_how_many) {
                 Some(Cloud {
                     size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
@@ -345,6 +349,7 @@ impl Environment {
 
             self.the_sun = self.get_the_sun(self.timer.borrow().date.hour, month_data);
 
+            println!("---------- HOUR CHANGE ----------");
             println!("TIMER: {:?}", self.timer.borrow().date);
             println!(
                 "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",

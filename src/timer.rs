@@ -32,15 +32,20 @@ pub struct Timer {
 // Constructor
 impl Timer {
     pub fn new(tick_duration: TickDuration, init_date: Date) -> Self {
+        let tick_count = (
+            (
+                (
+                    init_date.hour +
+                    ((init_date.day - 1) * 24) +
+                    ((init_date.month - 1) * 30 * 24) +
+                    (init_date.year * 12 * 30 * 24)
+                ) * 60
+            ) + init_date.minute
+        ) as u128;
+
         Self {
             tick_duration,
-            tick_count:
-                (init_date.minute +
-                    init_date.hour * 60 +
-                    init_date.day * 24 * 60 +
-                    init_date.month * 30 * 24 * 60 +
-                    init_date.year * 12 * 30 * 24 * 60
-                ) as u128,
+            tick_count,
             date: init_date,
         }
     }
