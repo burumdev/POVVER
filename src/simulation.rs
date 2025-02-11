@@ -75,6 +75,7 @@ impl Simulation {
             speed_index: self.speed_index as i32,
             env: EnvData {
                 the_sun: self.env.the_sun.into(),
+                wind_direction: self.env.wind_direction,
             }
         }
     }

@@ -40,6 +40,16 @@ impl SunBrightness {
         self.0 = val.clamp(0.0, SUNSHINE_MAX);
     }
 }
+impl PartialEq<SimFlo> for SunBrightness {
+    fn eq(&self, other: &SimFlo) -> bool {
+        self.0.eq(other)
+    }
+}
+impl PartialOrd<SimFlo> for SunBrightness {
+    fn partial_cmp(&self, other: &SimFlo) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct WindSpeed(SimInt);

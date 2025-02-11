@@ -15,7 +15,7 @@ use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
 use crate::timer::{Timer, TimerEvent, TimerPayload};
 
-use crate::utils::{one_chance_in_many, random_inc_dec_clamp_signed};
+use crate::utils_random::{one_chance_in_many, random_inc_dec_clamp_signed};
 
 pub const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
@@ -30,7 +30,7 @@ pub struct Environment {
     economy: Economy,
     pub clouds: Vec<Cloud>,
     wind_speed: WindSpeed,
-    wind_direction: WindDirection,
+    pub wind_direction: WindDirection,
     pub the_sun: TheSun,
     rng: ThreadRng,
     timer: Rc<RefCell<Timer>>,
@@ -320,17 +320,18 @@ impl Environment {
             if hour % 2 == 0 {
                 // Make tropical typhoons that last weeks less likely
                 let ws_val = self.wind_speed.val();
-                let lower_modifier = if ws_val >= WINDSPEED_MAX - 30 {
-                    30
-                } else {
-                    0
+                let lower_modifier = match ws_val {
+                    ws if ws >= WINDSPEED_MAX - 40 => 40,
+                    ws if ws >= WINDSPEED_MAX - 50 => 30,
+                    ws if ws >= WINDSPEED_MAX - 60 => 20,
+                    _ => 0,
                 };
 
                 let randomized = random_inc_dec_clamp_signed(
                     &mut self.rng,
                     ws_val,
                     lower_modifier + 5,
-                    10,
+                    5,
                     0,
                     WINDSPEED_MAX,
                 );
@@ -341,7 +342,7 @@ impl Environment {
             // Every 6th hour there is a 1 in 10 chance
             // the wind direction will change
             // but only if it's sufficiently weak currently.
-            if hour % 6 == 0 && self.wind_speed < 20 && one_chance_in_many(&mut self.rng, 10) {
+            if hour % 6 == 0 && self.wind_speed < 40 && one_chance_in_many(&mut self.rng, 10) {
                 self.wind_direction.flip();
             }
 

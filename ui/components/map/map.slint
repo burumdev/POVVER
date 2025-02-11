@@ -1,4 +1,4 @@
-import { SunStage } from "../../state.slint";
+import { SunStage, WindDirection } from "../../state.slint";
 import { Globs } from "../../globals.slint";
 import { Palette } from "../../theme.slint";
 
@@ -10,29 +10,41 @@ export component Map inherits Rectangle {
 
 	property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
 	property <float> sun_brightness: Globs.state.env.the_sun.brightness;
+	property <WindDirection> wind_direction: Globs.state.env.wind_direction;
 
-    VerticalLayout {
+	Rectangle {
+		height: 100%;
+		background: sun_stage == SunStage.Set ? Palette.sky_night :
+			sun_stage == SunStage.Weak ? Palette.sky_setting :
+			sun_stage == SunStage.Normal ? Palette.sky_normal :
+			Palette.sky_bright;
+
+		animate background {
+			duration: 200ms;
+		}
+
+		Sky {}
+
+		HorizontalLayout {
+			y: 100px;
+			height: 64px;
+			alignment: wind_direction == WindDirection.Ltr ? start : end;
+
+			Image {
+				source: wind_direction == WindDirection.Ltr ? @image-url("../../images/wind-ltr.svg") : @image-url("../../images/wind-rtl.svg");
+			}
+			Rectangle {
+				background: rgba(100, 100, 100, 0.5);
+			}
+		}
+		// Brightness filter for the whole scene
+		// Depends on sun brightness
 		Rectangle {
-			height: 100%;
-			background: sun_stage == SunStage.Set ? Palette.sky_night :
-				sun_stage == SunStage.Weak ? Palette.sky_setting :
-				sun_stage == SunStage.Normal ? Palette.sky_normal :
-				Palette.sky_bright;
-
+			property<float> opaque: ((100 - sun_brightness) / 100) * 0.5;
+			background: rgba(0, 0, 0, opaque);
 			animate background {
 				duration: 200ms;
 			}
-            Sky {}
-
-            // Brightness filter for the whole scene
-            // Depends on sun brightness
-            Rectangle {
-                property<float> opaque: ((100 - sun_brightness) / 100) * 0.5;
-                background: rgba(0, 0, 0, opaque);
-				animate background {
-					duration: 200ms;
-				}
-            }
 		}
-    }
+	}
 }

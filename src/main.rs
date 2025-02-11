@@ -5,7 +5,7 @@ mod simulation;
 mod speed;
 mod timer;
 mod ui_controller;
-mod utils;
+mod utils_random;
 
 use simulation::Simulation;
 

@@ -2,7 +2,7 @@ use crate::entities::money::Money;
 use crate::simulation::SimFlo;
 use rand::{rngs::ThreadRng, Rng};
 
-use crate::utils::random_inc_dec_clamp_signed;
+use crate::utils_random::random_inc_dec_clamp_signed;
 
 const MAX_INFLATION: SimFlo = 10000.0;
 const MIN_INFLATION: SimFlo = -10.0;
