@@ -1,7 +1,3 @@
-use std::{
-    cell::RefCell,
-    rc::Rc,
-};
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod economy;
@@ -13,7 +9,7 @@ use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection};
 
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
-use crate::timer::{Timer, TimerEvent, TimerPayload};
+use crate::timer::{Timer, TimerEvent};
 
 use crate::utils_random::{one_chance_in_many, random_inc_dec_clamp_signed};
 
@@ -33,12 +29,11 @@ pub struct Environment {
     pub wind_direction: WindDirection,
     pub the_sun: TheSun,
     rng: ThreadRng,
-    timer: Rc<RefCell<Timer>>,
 }
 
 // Constructor
 impl Environment {
-    pub fn new(timer_payload: &TimerPayload, timer: Rc<RefCell<Timer>>) -> Self {
+    pub fn new(timer: &Timer) -> Self {
         let mut rng = thread_rng();
 
         let economy = Economy::new();
@@ -46,7 +41,7 @@ impl Environment {
         let mut clouds = Vec::with_capacity(CLOUDS_MAX as usize);
 
         let cloud_generate_count = rng.gen_range(0..CLOUD_POS_MAX) as SimFlo
-            * timer_payload.month_data.cloud_forming_factor;
+            * timer.month_data.cloud_forming_factor;
 
         for _ in 0..cloud_generate_count as SimInt {
             let size = *CLOUD_SIZES.choose(&mut rng).unwrap();
@@ -62,7 +57,7 @@ impl Environment {
 
         let mut wind_speed = WindSpeed::default();
         wind_speed.set(
-            (rng.gen_range(0..=WINDSPEED_MAX) as SimFlo * timer_payload.month_data.windspeed_factor) as SimInt
+            (rng.gen_range(0..=WINDSPEED_MAX) as SimFlo * timer.month_data.windspeed_factor) as SimInt
         );
 
         let wind_direction = if random() {
@@ -78,10 +73,9 @@ impl Environment {
             wind_direction,
             the_sun: TheSun::default(),
             rng,
-            timer,
         };
 
-        new_self.the_sun = new_self.get_the_sun(new_self.timer.borrow().date.hour, timer_payload.month_data);
+        new_self.the_sun = new_self.get_the_sun(timer.date.hour, timer.month_data);
 
         new_self
     }
@@ -308,12 +302,12 @@ impl Environment {
 
 // Public API
 impl Environment {
-    pub fn update(&mut self, timer_payload: &TimerPayload) {
+    pub fn update(&mut self, timer_event: &TimerEvent, timer: &Timer) {
         // We don't change stuff too often to prevent erratic changes
         // so the changes are done on an hourly basis.
-        if timer_payload.event != TimerEvent::NothingUnusual {
-            let hour = self.timer.borrow().date.hour;
-            let month_data = timer_payload.month_data;
+        if timer_event != &TimerEvent::NothingUnusual {
+            let hour = timer.date.hour;
+            let month_data = timer.month_data;
 
             // Every 2nd hour we update wind speed
             // not deviating much from the current one.
@@ -348,10 +342,10 @@ impl Environment {
 
             self.update_clouds(month_data.cloud_forming_factor);
 
-            self.the_sun = self.get_the_sun(self.timer.borrow().date.hour, month_data);
+            self.the_sun = self.get_the_sun(timer.date.hour, month_data);
 
             println!("---------- HOUR CHANGE ----------");
-            println!("TIMER: {:?}", self.timer.borrow().date);
+            println!("TIMER: {:?}", timer.date);
             println!(
                 "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
                 self.the_sun, self.wind_speed.val(), self.wind_direction
@@ -359,7 +353,7 @@ impl Environment {
             println!("CLOUDS: {:?}", self.clouds);
         }
 
-        if timer_payload.event == TimerEvent::MonthChange {
+        if timer_event == &TimerEvent::MonthChange {
             self.economy.update();
             println!("ECONOMY: {:?}", self.economy);
         }

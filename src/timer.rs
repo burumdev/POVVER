@@ -17,16 +17,11 @@ pub enum TimerEvent {
 }
 
 #[derive(Debug)]
-pub struct TimerPayload {
-    pub event: TimerEvent,
-    pub month_data: &'static MonthData,
-}
-
-#[derive(Debug)]
 pub struct Timer {
     tick_duration: TickDuration,
     tick_count: u128,
     pub date: Date,
+    pub month_data: &'static MonthData,
 }
 
 // Constructor
@@ -43,10 +38,13 @@ impl Timer {
             ) + init_date.minute
         ) as u128;
 
+        let month_data = get_month_data(init_date.month as usize);
+
         Self {
             tick_duration,
             tick_count,
             date: init_date,
+            month_data,
         }
     }
 }
@@ -79,7 +77,7 @@ impl Timer {
 
 // Public API
 impl Timer {
-    pub fn tick(&mut self, is_paused: bool) -> TimerPayload {
+    pub fn tick(&mut self, is_paused: bool) -> TimerEvent {
         thread::sleep(Duration::from_millis(self.tick_duration));
 
         let mut event: TimerEvent;
@@ -92,6 +90,7 @@ impl Timer {
                 event = TimerEvent::YearChange;
             } else if date.month != self.date.month {
                 event = TimerEvent::MonthChange;
+                self.month_data = get_month_data(date.month as usize);
             } else if date.day != self.date.day {
                 event = TimerEvent::DayChange;
             } else if date.hour != self.date.hour {
@@ -103,10 +102,7 @@ impl Timer {
             event = TimerEvent::Paused;
         }
 
-        TimerPayload {
-            month_data: get_month_data(self.date.month as usize),
-            event,
-        }
+        event
     }
 
     pub fn set_tick_duration(&mut self, duration_ms: TickDuration) {

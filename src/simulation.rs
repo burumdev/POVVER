@@ -1,7 +1,5 @@
 use std::{
     sync::{mpsc, Arc, Mutex},
-    rc::Rc,
-    cell::RefCell,
 };
 
 use tokio::sync::Notify;
@@ -9,7 +7,6 @@ use slint::ToSharedString;
 
 use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
 use crate::speed::SPEEDS_ARRAY;
-use crate::timer::TimerPayload;
 use crate::ui_controller::{TimerData, EnvData, UIState, Date};
 
 pub type SimInt = i32;
@@ -25,7 +22,7 @@ pub enum UIFlag {
 }
 
 pub struct Simulation {
-    timer: Rc<RefCell<Timer>>,
+    timer: Timer,
     speed_index: usize,
     env: Environment,
     ui_controller: UIController,
@@ -45,10 +42,10 @@ impl Simulation {
             year: 2025,
         };
         let is_paused = true;
-        let timer = Rc::new(RefCell::new(Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date)));
-        let timer_result = timer.borrow_mut().tick(is_paused);
+        let mut timer = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date);
+        timer.tick(is_paused);
 
-        let env = Environment::new(&timer_result, Rc::clone(&timer));
+        let env = Environment::new(&timer);
 
         let ui_controller = UIController::new();
 
@@ -65,11 +62,11 @@ impl Simulation {
 }
 
 impl Simulation {
-    fn get_ui_state(&self, timer_result: &TimerPayload) -> UIState {
+    fn get_ui_state(&self) -> UIState {
         UIState {
             timer: TimerData {
-                date: self.timer.borrow().date.clone(),
-                month_name: timer_result.month_data.name.to_shared_string(),
+                date: self.timer.date.clone(),
+                month_name: self.timer.month_data.name.to_shared_string(),
             },
             is_paused: self.is_paused,
             speed_index: self.speed_index as i32,
@@ -82,7 +79,7 @@ impl Simulation {
 
     fn change_speed(&mut self, speed_index: SimInt) {
         self.speed_index = speed_index as usize;
-        self.timer.borrow_mut().set_tick_duration(SPEEDS_ARRAY[self.speed_index].get_tick_duration());
+        self.timer.set_tick_duration(SPEEDS_ARRAY[self.speed_index].get_tick_duration());
     }
 }
 
@@ -120,13 +117,13 @@ impl Simulation {
                 break;
             }
 
-            let timer_result = self.timer.borrow_mut().tick(self.is_paused);
+            let timer_event = self.timer.tick(self.is_paused);
             if !self.is_paused {
-                self.env.update(&timer_result);
+                self.env.update(&timer_event, &self.timer);
             }
 
             let mut state_lock = ui_state.lock().unwrap();
-            *state_lock = self.get_ui_state(&timer_result);
+            *state_lock = self.get_ui_state();
             let mut clouds_lock = clouds.lock().unwrap();
             *clouds_lock = self.env.clouds.clone();
 
