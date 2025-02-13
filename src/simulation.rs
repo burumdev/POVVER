@@ -5,7 +5,7 @@ use tokio::sync::Notify;
 
 use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
 use crate::speed::SPEEDS_ARRAY;
-use crate::ui_controller::{TimerData, EnvData, UIState, Date};
+use crate::ui_controller::{TimerData, EnvData, UIState, Date, WindSpeedLevel};
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
@@ -69,7 +69,9 @@ impl Simulation {
             speed_index: self.speed_index as i32,
             env: EnvData {
                 the_sun: self.env.the_sun.into(),
+                wind_speed: self.env.wind_speed.val(),
                 wind_direction: self.env.wind_direction,
+                wind_speed_level: WindSpeedLevel::from(&self.env.wind_speed),
             }
         }
     }

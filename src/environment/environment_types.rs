@@ -1,6 +1,6 @@
 use super::{SUNSHINE_MAX, WINDSPEED_MAX};
 use crate::simulation::{SimFlo, SimInt};
-use crate::ui_controller::{SunData, SunStage, WindDirection};
+use crate::ui_controller::{SunData, SunStage, WindDirection, WindSpeedLevel};
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TheSun {
@@ -70,12 +70,6 @@ impl PartialOrd<SimInt> for WindSpeed {
     fn partial_cmp(&self, other: &SimInt) -> Option<std::cmp::Ordering> {
         self.0.partial_cmp(other)
     }
-}
-pub enum WindSpeedLevel {
-    Faint,
-    Mild,
-    Strong,
-    Typhoon,
 }
 impl From<&WindSpeed> for WindSpeedLevel {
     fn from(ws: &WindSpeed) -> Self {

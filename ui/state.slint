@@ -41,9 +41,18 @@ export enum WindDirection {
 	Rtl
 }
 
+export enum WindSpeedLevel {
+    Faint,
+    Mild,
+    Strong,
+    Typhoon
+}
+
 struct EnvData {
 	the_sun: SunData,
+	wind_speed: int,
 	wind_direction: WindDirection,
+	wind_speed_level: WindSpeedLevel
 }
 
 export struct UIState {

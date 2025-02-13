@@ -1,4 +1,4 @@
-import { SunStage, CloudSize } from "../../state.slint";
+import { SunStage, CloudSize, WindDirection, WindSpeedLevel } from "../../state.slint";
 import { Globs } from "../../globals.slint";
 
 export component Sky inherits Rectangle {
@@ -34,6 +34,28 @@ export component Sky inherits Rectangle {
 
 		animate x {
 			duration: 100ms;
+		}
+	}
+
+	// Wind indicator
+	HorizontalLayout {
+		property <WindDirection> wind_direction: Globs.state.env.wind_direction;
+		property <WindSpeedLevel> wind_level: Globs.state.env.wind_speed_level;
+
+		height: 64px;
+		alignment: wind_direction == WindDirection.Ltr ? start : end;
+
+		Image {
+			source: wind_direction == WindDirection.Ltr ?
+				wind_level == WindSpeedLevel.Faint ? @image-url("../../images/wind-ltr-faint.svg") :
+				wind_level == WindSpeedLevel.Mild ? @image-url("../../images/wind-ltr-mild.svg") :
+				wind_level == WindSpeedLevel.Strong ? @image-url("../../images/wind-ltr-strong.svg") :
+				@image-url("../../images/wind-ltr-typhoon.svg")
+			:
+				wind_level == WindSpeedLevel.Faint ? @image-url("../../images/wind-rtl-faint.svg") :
+				wind_level == WindSpeedLevel.Mild ? @image-url("../../images/wind-rtl-mild.svg") :
+				wind_level == WindSpeedLevel.Strong ? @image-url("../../images/wind-rtl-strong.svg") :
+				@image-url("../../images/wind-rtl-typhoon.svg");
 		}
 	}
 }

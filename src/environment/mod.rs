@@ -4,8 +4,7 @@ mod economy;
 use economy::Economy;
 mod environment_types;
 use environment_types::{SunBrightness, TheSun, WindSpeed};
-use crate::environment::environment_types::WindSpeedLevel;
-use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection};
+use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel};
 
 use crate::months::MonthData;
 use crate::simulation::{SimFlo, SimInt};
@@ -25,7 +24,7 @@ const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSi
 pub struct Environment {
     economy: Economy,
     pub clouds: Vec<Cloud>,
-    wind_speed: WindSpeed,
+    pub wind_speed: WindSpeed,
     pub wind_direction: WindDirection,
     pub the_sun: TheSun,
     rng: ThreadRng,

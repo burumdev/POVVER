@@ -1,4 +1,4 @@
-import { SunStage, WindDirection } from "../../state.slint";
+import { SunStage } from "../../state.slint";
 import { Globs } from "../../globals.slint";
 import { Palette } from "../../theme.slint";
 
@@ -10,7 +10,6 @@ export component Map inherits Rectangle {
 
 	property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
 	property <float> sun_brightness: Globs.state.env.the_sun.brightness;
-	property <WindDirection> wind_direction: Globs.state.env.wind_direction;
 
 	Rectangle {
 		height: 100%;
@@ -25,18 +24,6 @@ export component Map inherits Rectangle {
 
 		Sky {}
 
-		HorizontalLayout {
-			y: 100px;
-			height: 64px;
-			alignment: wind_direction == WindDirection.Ltr ? start : end;
-
-			Image {
-				source: wind_direction == WindDirection.Ltr ? @image-url("../../images/wind-ltr.svg") : @image-url("../../images/wind-rtl.svg");
-			}
-			Rectangle {
-				background: rgba(100, 100, 100, 0.5);
-			}
-		}
 		// Brightness filter for the whole scene
 		// Depends on sun brightness
 		Rectangle {
