@@ -1,9 +1,7 @@
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{mpsc, Arc, RwLock},
 };
-
 use tokio::sync::Notify;
-use slint::ToSharedString;
 
 use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
 use crate::speed::SPEEDS_ARRAY;
@@ -13,7 +11,7 @@ pub type SimInt = i32;
 pub type SimFlo = f32;
 pub type TickDuration = u64;
 
-pub const DEFAULT_TICK_DURATION: TickDuration = 128;
+pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
 pub enum UIFlag {
     Pause,
@@ -66,7 +64,6 @@ impl Simulation {
         UIState {
             timer: TimerData {
                 date: self.timer.date.clone(),
-                month_name: self.timer.month_data.name.to_shared_string(),
             },
             is_paused: self.is_paused,
             speed_index: self.speed_index as i32,
@@ -89,10 +86,10 @@ impl Simulation {
         self.is_paused = false;
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
-        let ui_state = Arc::new(Mutex::new(UIState::default()));
-        let clouds = Arc::new(Mutex::new(self.env.clouds.clone()));
-
+        let ui_state = Arc::new(RwLock::new(self.get_ui_state()));
+        let clouds = Arc::new(RwLock::new(self.env.clouds.clone()));
         let ui_state_notifier = Arc::new(Notify::new());
+
         let ui_join_handle = self
             .ui_controller
             .run(
@@ -122,9 +119,9 @@ impl Simulation {
                 self.env.update(&timer_event, &self.timer);
             }
 
-            let mut state_lock = ui_state.lock().unwrap();
+            let mut state_lock = ui_state.write().unwrap();
             *state_lock = self.get_ui_state();
-            let mut clouds_lock = clouds.lock().unwrap();
+            let mut clouds_lock = clouds.write().unwrap();
             *clouds_lock = self.env.clouds.clone();
 
             ui_state_notifier.notify_one();

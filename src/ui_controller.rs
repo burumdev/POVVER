@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{mpsc, Arc, Mutex, RwLock},
     thread,
 };
 use tokio::sync::Notify;
@@ -23,8 +23,8 @@ impl UIController {
     pub fn run(
         &self,
         flag_sender: mpsc::Sender<UIFlag>,
-        state: Arc<Mutex<UIState>>,
-        clouds: Arc<Mutex<Vec<Cloud>>>,
+        state: Arc<RwLock<UIState>>,
+        clouds: Arc<RwLock<Vec<Cloud>>>,
         state_notifier: Arc<Notify>,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
@@ -53,8 +53,8 @@ impl UIController {
                 loop {
                     state_notifier.notified().await;
 
-                    let state_lock = state.lock().unwrap();
-                    let clouds_lock = clouds.lock().unwrap();
+                    let state_lock = state.read().unwrap();
+                    let clouds_lock = clouds.read().unwrap();
 
                     let slice = (*clouds_lock).as_slice();
                     let clouds_model_rc = ModelRc::from(VecModel::from_slice(slice));

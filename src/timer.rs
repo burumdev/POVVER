@@ -78,10 +78,9 @@ impl Timer {
 // Public API
 impl Timer {
     pub fn tick(&mut self, is_paused: bool) -> TimerEvent {
-        thread::sleep(Duration::from_millis(self.tick_duration));
-
         let mut event: TimerEvent;
         if !is_paused {
+            thread::sleep(Duration::from_millis(self.tick_duration));
             self.tick_count = self.tick_count.wrapping_add(1);
 
             event = TimerEvent::NothingUnusual;
@@ -99,6 +98,7 @@ impl Timer {
 
             self.date = date;
         } else { // Paused
+            thread::sleep(Duration::from_millis(500));
             event = TimerEvent::Paused;
         }
 
