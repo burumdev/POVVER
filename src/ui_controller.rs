@@ -49,36 +49,17 @@ impl UIController {
 
             let app_weak = app.as_weak();
             slint::spawn_local(async move {
-                let appw = app_weak.clone();
+                let appw = app_weak.clone().unwrap();
+                appw.window().set_maximized(true);
 
                 loop {
                     state_notifier.notified().await;
 
-                    {
-                        let state_lock = state.read().unwrap();
-                        appw.unwrap().set_state((*state_lock).clone());
-                    }
-                    {
-                        let clouds_lock = clouds.read().unwrap();
-
-                        let slice = (*clouds_lock).as_slice();
-                        let clouds_model_rc = ModelRc::from(VecModel::from_slice(slice));
-
-                        appw.unwrap().set_clouds(clouds_model_rc);
-                    }
+                    appw.set_state(state.read().unwrap().clone());
+                    let clouds_model_rc = ModelRc::from(clouds.read().unwrap().as_slice());
+                    appw.set_clouds(clouds_model_rc);
                 }
             }).unwrap();
-
-            // Start fullscreen
-            let app_weak = app.as_weak();
-            let fullscreen_handle = thread::spawn(move || {
-                let appw = app_weak.clone();
-
-                slint::invoke_from_event_loop(move || appw.unwrap().window().set_maximized(true))
-                    .unwrap();
-            });
-
-            fullscreen_handle.join().unwrap();
 
             app.run().unwrap();
         })
