@@ -93,7 +93,7 @@ pub const PRODUCTS: &[Product] = &[
     Product {
         id: 6,
         name: "Debt",
-        description: "The most valuable commodity in the universe. Converts free humans to easily controllable subjects.",
+        description: "The most valuable commodity in the universe. Converts humans to easily controllable subjects.",
         unit_production_cost: UnitProductionCost {
             energy: EnergyUnit::new(3),
             labor: Money::new(89.54),
@@ -247,7 +247,7 @@ pub const PRODUCTS: &[Product] = &[
     Product {
         id: 17,
         name: "Chatbot Tokens",
-        description: "Now you can move R&D and development ops to overseas and pretend using chatbots instead.",
+        description: "Now you can move R&D and development ops to overseas and pretend using chatbots instead to boost your stock prices.",
         unit_production_cost: UnitProductionCost {
             energy: EnergyUnit::new(12),
             labor: Money::new(421.60),

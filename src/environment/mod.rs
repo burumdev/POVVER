@@ -3,7 +3,7 @@ use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 mod economy;
 use economy::Economy;
 mod environment_types;
-use environment_types::{SunBrightness, TheSun, WindSpeed};
+use environment_types::{SunBrightness, TheSun, WindSpeed, CLOUD_SIZES};
 use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel};
 
 use crate::months::MonthData;
@@ -17,8 +17,6 @@ const CLOUD_POS_MAX: SimInt = 15;
 const CLOUDS_MAX: SimInt = 32;
 const SUN_POS_MAX: SimInt = 15;
 pub const SUNSHINE_MAX: SimFlo = 100.0;
-
-const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 
 #[derive(Debug)]
 pub struct Environment {
@@ -246,17 +244,6 @@ impl Environment {
     // removes clouds that exit the scene from left or right.
     // Also maybe adds another cloud.
     fn update_clouds(&mut self, cloud_forming_factor: SimFlo) {
-        if self.wind_speed <= 5 {
-            return;
-        }
-
-        let mut tail_pos = 0;
-        let mut sibling_pos = 1;
-        if self.wind_direction == WindDirection::Rtl {
-            tail_pos = CLOUD_POS_MAX;
-            sibling_pos = CLOUD_POS_MAX - 1;
-        }
-
         self.clouds.retain_mut(|cloud| {
             let Cloud { size, position, .. } = cloud;
 
@@ -291,6 +278,11 @@ impl Environment {
         });
 
         if self.clouds.len() < CLOUDS_MAX as usize {
+            let tail_pos =
+                if self.wind_direction == WindDirection::Rtl { CLOUD_POS_MAX} else { 0 };
+            let sibling_pos =
+                if self.wind_direction == WindDirection::Rtl { CLOUD_POS_MAX - 1 } else { 1 };
+
             if let Some(cloud) = self.maybe_new_cloud(tail_pos, sibling_pos, cloud_forming_factor) {
                 println!("PUSHING IN A NEW CLOUD: {:?}", cloud);
                 self.clouds.push(cloud);
@@ -308,9 +300,14 @@ impl Environment {
             let hour = timer.date.hour;
             let month_data = timer.month_data;
 
-            // Every 2nd hour we update wind speed
-            // not deviating much from the current one.
-            if hour % 2 == 0 {
+            // Every 6th hour there is a 1 in 10 chance
+            // the wind direction will change
+            // but only if it's sufficiently weak currently.
+            // Otherwise, set the wind_speed every two hours.
+            if hour % 6 == 0 && self.wind_speed < 40 && one_chance_in_many(&mut self.rng, 10) {
+                self.wind_direction.flip();
+                self.wind_speed.set((10.0 * month_data.windspeed_factor) as SimInt);
+            } else if hour % 2 == 0 {
                 // Make tropical typhoons that last weeks less likely
                 let ws_val = self.wind_speed.val();
                 let lower_modifier = match ws_val {
@@ -323,20 +320,13 @@ impl Environment {
                 let randomized = random_inc_dec_clamp_signed(
                     &mut self.rng,
                     ws_val,
-                    lower_modifier + 5,
+                    lower_modifier + 10,
                     5,
                     0,
                     WINDSPEED_MAX,
                 );
 
                 self.wind_speed.set((randomized as SimFlo * month_data.windspeed_factor) as SimInt);
-            }
-
-            // Every 6th hour there is a 1 in 10 chance
-            // the wind direction will change
-            // but only if it's sufficiently weak currently.
-            if hour % 6 == 0 && self.wind_speed < 40 && one_chance_in_many(&mut self.rng, 10) {
-                self.wind_direction.flip();
             }
 
             self.update_clouds(month_data.cloud_forming_factor);

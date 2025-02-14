@@ -1,6 +1,8 @@
 use super::{SUNSHINE_MAX, WINDSPEED_MAX};
 use crate::simulation::{SimFlo, SimInt};
-use crate::ui_controller::{SunData, SunStage, WindDirection, WindSpeedLevel};
+use crate::ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel};
+
+pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TheSun {
