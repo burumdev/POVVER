@@ -3,9 +3,12 @@ use std::{
 };
 use tokio::sync::Notify;
 
-use crate::{environment::Environment, timer::Timer, ui_controller::UIController};
-use crate::speed::SPEEDS_ARRAY;
-use crate::ui_controller::{TimerData, EnvData, UIState, Date, WindSpeedLevel};
+use crate::{
+    environment::Environment,
+    timer::Timer,
+    ui_controller::{UIController, TimerData, EnvData, UIState, Date, WindSpeedLevel},
+    speed::SPEEDS_ARRAY,
+};
 
 pub type SimInt = i32;
 pub type SimFlo = f32;

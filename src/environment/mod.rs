@@ -1,16 +1,16 @@
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
-mod economy;
-use economy::Economy;
 mod environment_types;
 use environment_types::{SunBrightness, TheSun, WindSpeed, CLOUD_SIZES};
-use crate::ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel};
 
-use crate::months::MonthData;
-use crate::simulation::{SimFlo, SimInt};
-use crate::timer::{Timer, TimerEvent};
-
-use crate::utils_random::{one_chance_in_many, random_inc_dec_clamp_signed};
+use crate::{
+    economy::Economy,
+    ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
+    months::MonthData,
+    simulation::{SimFlo, SimInt},
+    timer::{Timer, TimerEvent},
+    utils_random::{one_chance_in_many, random_inc_dec_clamp_signed}
+};
 
 pub const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;

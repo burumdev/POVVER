@@ -4,8 +4,10 @@ use std::{
 };
 use tokio::sync::Notify;
 
-use slint::{ModelRc, VecModel};
-use slint::CloseRequestResponse;
+use slint::{
+    ModelRc,
+    CloseRequestResponse,
+};
 
 use crate::simulation::UIFlag;
 

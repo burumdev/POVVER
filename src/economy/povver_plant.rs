@@ -1,4 +1,4 @@
-use crate::entities::energy::EnergyUnit;
+use crate::economy::energy::EnergyUnit;
 use crate::simulation::SimInt;
 
 pub struct PovverPlant {

@@ -1,4 +1,4 @@
-mod entities;
+mod economy;
 mod environment;
 mod months;
 mod simulation;

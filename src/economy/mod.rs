@@ -1,12 +1,23 @@
-use crate::entities::money::Money;
-use crate::simulation::SimFlo;
-use rand::{rngs::ThreadRng, Rng};
+use rand::{
+    prelude::ThreadRng,
+    Rng,
+};
 
-use crate::utils_random::random_inc_dec_clamp_signed;
+mod energy;
+mod industries;
+mod povver_plant;
+mod products;
+
+mod money;
+use money::Money;
+
+use crate::{
+    simulation::SimFlo,
+    utils_random::random_inc_dec_clamp_signed,
+};
 
 const MAX_INFLATION: SimFlo = 10000.0;
 const MIN_INFLATION: SimFlo = -10.0;
-
 #[derive(Debug)]
 pub struct Economy {
     inflation_rate: SimFlo,
