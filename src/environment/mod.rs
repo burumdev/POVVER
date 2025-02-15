@@ -1,7 +1,7 @@
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod environment_types;
-use environment_types::{SunBrightness, TheSun, WindSpeed, CLOUD_SIZES};
+pub use environment_types::*;
 
 use crate::{
     economy::Economy,

@@ -68,14 +68,14 @@ impl Simulation {
             timer: TimerData {
                 date: self.timer.date.clone(),
             },
-            is_paused: self.is_paused,
-            speed_index: self.speed_index as i32,
             env: EnvData {
                 the_sun: self.env.the_sun.into(),
                 wind_speed: self.env.wind_speed.val(),
                 wind_direction: self.env.wind_direction,
                 wind_speed_level: WindSpeedLevel::from(&self.env.wind_speed),
-            }
+            },
+            is_paused: self.is_paused,
+            speed_index: self.speed_index as i32,
         }
     }
 

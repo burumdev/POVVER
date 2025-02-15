@@ -4,7 +4,6 @@ use crate::{
     ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel},
     utils_traits::Flippable,
 };
-use crate::utils_traits::Percentage;
 
 pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 

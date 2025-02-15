@@ -41,8 +41,8 @@ impl Economy {
         if one_chance_in_many(&mut self.rng,33) {
             self.inflation_direction.flip();
         }
-        let inflation_low_end = if self.inflation_direction == UpDown::Down { 5.0 } else { 0.2 };
-        let inflation_high_end = if self.inflation_direction == UpDown::Up { 5.0 } else { 0.2 };
+        let inflation_low_end = if self.inflation_direction == UpDown::Down { 1.0 } else { 0.2 };
+        let inflation_high_end = if self.inflation_direction == UpDown::Up { 1.0 } else { 0.2 };
         self.inflation_rate = random_inc_dec_clamp_signed(
             &mut self.rng,
             self.inflation_rate,
@@ -54,9 +54,9 @@ impl Economy {
 
         let fuel_price_low_end = FUEL_PRICE_MODIFIER - (self.inflation_rate.as_factor() * FUEL_PRICE_MODIFIER);
         let fuel_price_high_end = FUEL_PRICE_MODIFIER + (self.inflation_rate.as_factor() * FUEL_PRICE_MODIFIER);
-        self.fuel_price.set_amount(random_inc_dec_clamp_signed(
+        self.fuel_price.set(random_inc_dec_clamp_signed(
             &mut self.rng,
-            self.fuel_price.get(),
+            self.fuel_price.val(),
             fuel_price_low_end,
             fuel_price_high_end,
             FUEL_PRICE_MIN,
