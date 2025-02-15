@@ -3,6 +3,7 @@ import { Globs } from "../../globals.slint";
 import { Palette } from "../../theme.slint";
 
 import { Sky } from "./sky.slint";
+import { Ground } from "./ground.slint";
 
 export component Map inherits Rectangle {
     width: 80%;
@@ -24,9 +25,16 @@ export component Map inherits Rectangle {
 
 		Sky {}
 
+		Image {
+			z: 1;
+			y: 100px;
+			source: @image-url("../../images/mountains.svg");
+		}
+		Ground {}
 		// Brightness filter for the whole scene
 		// Depends on sun brightness
 		Rectangle {
+			z: 3;
 			property<float> opaque: ((100 - sun_brightness) / 100) * 0.5;
 			background: rgba(0, 0, 0, opaque);
 			animate background {

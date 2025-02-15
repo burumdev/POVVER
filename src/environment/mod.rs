@@ -9,7 +9,8 @@ use crate::{
     months::MonthData,
     simulation::{SimFlo, SimInt},
     timer::{Timer, TimerEvent},
-    utils_random::{one_chance_in_many, random_inc_dec_clamp_signed}
+    utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
+    utils_traits::Flippable,
 };
 
 pub const WINDSPEED_MAX: SimInt = 120;
@@ -335,14 +336,14 @@ impl Environment {
 
             println!("---------- HOUR CHANGE ----------");
             println!("TIMER: {:?}", timer.date);
-            println!(
+/*            println!(
                 "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
                 self.the_sun, self.wind_speed.val(), self.wind_direction
             );
             println!("CLOUDS: {:?}", self.clouds);
-        }
+*/        }
 
-        if timer_event == &TimerEvent::MonthChange {
+        if timer_event == &TimerEvent::HourChange {
             self.economy.update();
             println!("ECONOMY: {:?}", self.economy);
         }

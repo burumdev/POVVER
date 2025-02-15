@@ -1,6 +1,9 @@
 use super::{SUNSHINE_MAX, WINDSPEED_MAX};
-use crate::simulation::{SimFlo, SimInt};
-use crate::ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel};
+use crate::{
+    simulation::{SimFlo, SimInt},
+    ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel},
+    utils_traits::Flippable,
+};
 
 pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 
@@ -86,8 +89,8 @@ impl From<&WindSpeed> for WindSpeedLevel {
     }
 }
 
-impl WindDirection {
-    pub fn flip(&mut self) -> Self {
+impl Flippable for WindDirection {
+    fn flip(&mut self) -> Self {
         match self {
             Self::Rtl => {
                 *self = Self::Ltr;

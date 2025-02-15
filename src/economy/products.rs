@@ -1,6 +1,6 @@
-use crate::economy::{
-    money::Money,
-    energy::EnergyUnit,
+use super::economy_types::{
+    Money,
+    EnergyUnit,
 };
 
 use crate::simulation::SimInt;
