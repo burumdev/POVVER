@@ -10,7 +10,7 @@ use economy_types::*;
 use crate::{
     simulation::SimFlo,
     utils_random::{random_inc_dec_clamp_signed, one_chance_in_many},
-    utils_traits::Flippable,
+    utils_traits::{Flippable, Percentage},
 };
 
 #[derive(Debug)]
@@ -52,14 +52,15 @@ impl Economy {
             INFLATION_MAX,
         );
 
-        let fuel_price_low_end =
+        let fuel_price_low_end = FUEL_PRICE_MODIFIER - (self.inflation_rate.as_factor() * FUEL_PRICE_MODIFIER);
+        let fuel_price_high_end = FUEL_PRICE_MODIFIER + (self.inflation_rate.as_factor() * FUEL_PRICE_MODIFIER);
         self.fuel_price.set_amount(random_inc_dec_clamp_signed(
             &mut self.rng,
             self.fuel_price.get(),
-            35.00,
-            35.00,
-            100.0,
-            40000.0,
+            fuel_price_low_end,
+            fuel_price_high_end,
+            FUEL_PRICE_MIN,
+            FUEL_PRICE_MAX,
         ));
     }
 }
