@@ -1,5 +1,6 @@
 import { Palette } from "../../theme.slint";
 import { DateTimeControls } from "date-time.slint";
+import { PanelTabs } from "./tabs.slint";
 
 export component ControlPanel inherits Rectangle {
     width: 20%;
@@ -8,6 +9,7 @@ export component ControlPanel inherits Rectangle {
     VerticalLayout {
 		DateTimeControls {}
 
+		PanelTabs {}
         Rectangle {
             background: Palette.bg_darkgray;
         }

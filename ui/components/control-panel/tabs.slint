@@ -1,0 +1,45 @@
+import { Button } from "std-widgets.slint";
+import { Palette } from "../../theme.slint";
+
+import { TabButton } from "../common/tab-button.slint";
+
+import { EnvironmentTab } from "./tab-contents/environment.slint";
+import { EconomyTab } from "./tab-contents/economy.slint";
+import { IndustriesTab } from "./tab-contents/industries.slint";
+
+export component PanelTabs inherits Rectangle {
+	background: Palette.bg_darkgray;
+    in-out property <int> active-tab;
+    VerticalLayout {
+        tab_bar := HorizontalLayout {
+            spacing: 3px;
+            TabButton {
+                is-active: root.active-tab == 0;
+				button-text: "Environment";
+                clicked => { root.active-tab = 0; }
+            }
+            TabButton {
+                is-active: root.active-tab == 1;
+				button-text: "Economy";
+                clicked => { root.active-tab = 1; }
+            }
+            TabButton {
+                is-active: root.active-tab == 2;
+				button-text: "Industries";
+                clicked => { root.active-tab = 2; }
+            }
+        }
+        Rectangle {
+            clip: true;
+            EnvironmentTab {
+                x: root.active-tab == 0 ? 0 : root.active-tab < 0 ? - self.width - 1px : parent.width + 1px;
+            }
+            EconomyTab {
+                x: root.active-tab == 1 ? 0 : root.active-tab < 1 ? - self.width - 1px : parent.width + 1px;
+            }
+            IndustriesTab {
+                x: root.active-tab == 2 ? 0 : root.active-tab < 2 ? - self.width - 1px : parent.width + 1px;
+            }
+        }
+    }
+}

@@ -1,0 +1,20 @@
+export component TabButton inherits Rectangle {
+	in property<bool> is-active: false;
+	in property<color> bg: gray;
+	in property<string> button-text: "Button";
+
+	callback clicked <=> area.clicked;
+
+	background: is-active ? bg.brighter(0.5) : bg;
+	border-top-left-radius: 8px;
+	border-top-right-radius: 8px;
+
+	Text {
+		text: button-text;
+		font-weight: 700;
+	}
+
+	area := TouchArea {
+		mouse-cursor: pointer;
+	}
+}
