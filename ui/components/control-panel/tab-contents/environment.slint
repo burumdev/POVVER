@@ -1,5 +1,38 @@
+import { EnvData, TimerData, WindDirection } from "../../../state.slint";
+import { Globs } from "../../../globals.slint";
+
 import { TabContent } from "./tab-content.slint";
 
+import { DataTable } from "../../common/datatable.slint";
+import { CellData } from "../../common/datacell.slint";
+
 export component EnvironmentTab inherits TabContent {
-	background: red;
+	in property <EnvData> env: Globs.state.env;
+	in property <TimerData> timer: Globs.state.timer;
+	DataTable {
+		items: [
+			{
+				label: "Sun",
+				is_category: true,
+			},
+			{
+				label: "Brightness",
+				value: env.the_sun.brightness,
+				value_postfix: " LU",
+			},
+			{
+				label: "Wind",
+				is_category: true,
+			},
+			{
+				label: "Direction",
+				value: env.wind_direction == WindDirection.Ltr ? "West => East" : "West <= East",
+			},
+			{
+				label: "Speed",
+				value: env.wind_speed,
+				value_postfix: " kmh",
+			}
+		];
+	}
 }

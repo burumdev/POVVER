@@ -1,0 +1,32 @@
+export struct CellData {
+	label: string,
+	value: string,
+	value_postfix: string,
+	is_category: bool,
+}
+
+export component DataCell inherits HorizontalLayout {
+	in property <CellData> data;
+	in property <color> text-color: white;
+
+	alignment: space-between;
+
+	if data.is_category :
+		Text {
+			color: text-color;
+			text: data.label;
+			horizontal-alignment: center;
+			width: 100%;
+			stroke-width: 1px;
+			stroke: text-color.darker(0.5);
+		}
+	if !data.is_category :
+		Text {
+			color: text-color;
+			text: data.label;
+		}
+		Text {
+			color: text-color;
+			text: data.value + data.value_postfix;
+		}
+}

@@ -2,6 +2,7 @@ use std::{
     sync::{mpsc, Arc, RwLock},
 };
 use tokio::sync::Notify;
+use slint::ToSharedString;
 
 use crate::{
     environment::Environment,
