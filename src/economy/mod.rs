@@ -37,7 +37,7 @@ impl Economy {
 }
 
 impl Economy {
-    pub fn update(&mut self) {
+    pub fn update_macroeconomics(&mut self) {
         if one_chance_in_many(&mut self.rng,33) {
             self.inflation_direction.flip();
         }

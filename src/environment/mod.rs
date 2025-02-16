@@ -21,7 +21,6 @@ pub const SUNSHINE_MAX: SimFlo = 100.0;
 
 #[derive(Debug)]
 pub struct Environment {
-    economy: Economy,
     pub clouds: Vec<Cloud>,
     pub wind_speed: WindSpeed,
     pub wind_direction: WindDirection,
@@ -34,7 +33,6 @@ impl Environment {
     pub fn new(timer: &Timer) -> Self {
         let mut rng = thread_rng();
 
-        let economy = Economy::new();
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX as usize);
 
@@ -65,7 +63,6 @@ impl Environment {
         };
 
         let mut new_self = Self {
-            economy,
             clouds,
             wind_speed,
             wind_direction,
@@ -343,9 +340,5 @@ impl Environment {
             println!("CLOUDS: {:?}", self.clouds);
 */        }
 
-        if timer_event == &TimerEvent::HourChange {
-            self.economy.update();
-            println!("ECONOMY: {:?}", self.economy);
-        }
     }
 }

@@ -5,10 +5,12 @@ use tokio::sync::Notify;
 
 use crate::{
     environment::Environment,
+    economy::Economy,
     timer::Timer,
     ui_controller::{UIController, TimerData, EnvData, UIState, Date, WindSpeedLevel},
     speed::SPEEDS_ARRAY,
 };
+use crate::timer::TimerEvent;
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
@@ -26,6 +28,7 @@ pub struct Simulation {
     timer: Timer,
     speed_index: usize,
     env: Environment,
+    economy: Economy,
     ui_controller: UIController,
     entities: bool,
     is_running: bool,
@@ -47,6 +50,7 @@ impl Simulation {
         timer.tick(is_paused);
 
         let env = Environment::new(&timer);
+        let economy = Economy::new();
 
         let ui_controller = UIController::new();
 
@@ -54,6 +58,7 @@ impl Simulation {
             timer,
             speed_index,
             env,
+            economy,
             ui_controller,
             entities: true,
             is_running: false,
@@ -122,6 +127,11 @@ impl Simulation {
             let timer_event = self.timer.tick(self.is_paused);
             if !self.is_paused {
                 self.env.update(&timer_event, &self.timer);
+            }
+
+            if timer_event == TimerEvent::HourChange {
+                self.economy.update_macroeconomics();
+                println!("ECONOMY: {:?}", self.economy);
             }
 
             let mut state_lock = ui_state.write().unwrap();
