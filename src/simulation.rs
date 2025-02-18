@@ -6,15 +6,13 @@ use tokio::{
 };
 
 use crate::{
-    app_state::{AppState,TimerState},
+    app_state::{AppState, TimerState, EnvState, MiscState},
     environment::Environment,
     economy::Economy,
-    timer::Timer,
+    timer::{Timer, TimerEvent},
     ui_controller::{UIController, Date},
     speed::SPEEDS_ARRAY,
 };
-use crate::app_state::{EnvState, MiscState};
-use crate::timer::TimerEvent;
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
@@ -26,7 +24,7 @@ pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 pub enum UIAction {
     Timer,
     Env,
-    State,
+    Misc(MiscState),
 }
 
 pub enum UIFlag {
@@ -39,7 +37,6 @@ pub enum UIFlag {
 pub struct UIPayload {
     pub timer: Arc<Mutex<TimerState>>,
     pub env: Arc<Mutex<EnvState>>,
-    pub misc: Arc<Mutex<MiscState>>,
 }
 
 pub struct Simulation {
@@ -65,13 +62,11 @@ impl Simulation {
             year: 2025,
         };
 
-
         let is_paused = true;
         let (mut timer, timer_state) = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date);
         timer.tick(is_paused);
 
         let (env, env_state) = Environment::new(Arc::clone(&timer_state));
-
         let economy = Economy::new();
 
         let misc_state = Arc::new(Mutex::new(MiscState {
@@ -100,12 +95,22 @@ impl Simulation {
         UIPayload {
             timer: Arc::clone(&self.app_state.timer),
             env: Arc::clone(&self.app_state.env),
-            misc: Arc::clone(&self.app_state.misc),
+        }
+    }
+
+    fn get_misc_state(&self) -> MiscState {
+        MiscState {
+            is_paused: self.is_paused,
+            speed_index: self.speed_index,
         }
     }
 
     fn change_speed(&mut self, speed_index: SimInt) {
         self.speed_index = speed_index as usize;
+        {
+            let mut misc_lock = self.app_state.misc.lock().unwrap();
+            misc_lock.speed_index = speed_index as usize;
+        }
         self.timer.set_tick_duration(SPEEDS_ARRAY[self.speed_index].get_tick_duration());
     }
 }
@@ -132,7 +137,7 @@ impl Simulation {
                 ui_state,
             );
 
-        ui_wakeup_sender.send(UIAction::State).unwrap();
+        ui_wakeup_sender.send(UIAction::Misc(self.get_misc_state())).unwrap();
         loop {
             let flag_result = ui_flag_receiver.try_recv();
             if let Ok(flag) = flag_result {
@@ -141,7 +146,7 @@ impl Simulation {
                     UIFlag::Quit => self.quit(),
                     UIFlag::SpeedChange(speed_index) => self.change_speed(speed_index),
                 }
-                ui_wakeup_sender.send(UIAction::State).unwrap();
+                ui_wakeup_sender.send(UIAction::Misc(self.get_misc_state())).unwrap();
             }
 
             if !self.is_running {
@@ -158,7 +163,7 @@ impl Simulation {
                 ui_wakeup_sender.send(UIAction::Env).unwrap();
             }
 
-            if timer_event == TimerEvent::HourChange {
+            if timer_event == TimerEvent::MonthChange {
                 self.economy.update_macroeconomics();
                 println!("ECONOMY: {:?}", self.economy);
             }
@@ -171,13 +176,14 @@ impl Simulation {
     }
 
     pub fn toggle_paused(&mut self) {
-        self.is_paused = !self.is_paused;
+        let is_paused = !self.is_paused;
+        self.is_paused = is_paused;
         {
             let mut misc_lock = self.app_state.misc.lock().unwrap();
-            misc_lock.is_paused = self.is_paused;
+            misc_lock.is_paused = is_paused;
         }
 
-        if self.is_paused {
+        if is_paused {
             println!("SIM: paused.");
         } else {
             println!("SIM: resuming stimulation.");

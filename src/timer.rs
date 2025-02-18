@@ -15,8 +15,8 @@ use crate::{
 pub enum TimerEvent {
     Paused,
     NothingUnusual,
-    DayChange,
     HourChange,
+    DayChange,
     MonthChange,
     YearChange,
 }
@@ -31,18 +31,17 @@ pub struct Timer {
 // Constructor
 impl Timer {
     pub fn new(tick_duration: TickDuration, init_date: Date) -> (Self, Arc<Mutex<TimerState>>) {
-        let tick_count = {
+        let tick_count =
+        (
             (
                 (
-                    (
-                        init_date.hour +
-                            ((init_date.day - 1) * 24) +
-                            ((init_date.month - 1) * 30 * 24) +
-                            (init_date.year * 12 * 30 * 24)
-                    ) * 60
-                ) + init_date.minute
-            ) as u128
-        };
+                    init_date.hour +
+                    ((init_date.day - 1) * 24) +
+                    ((init_date.month - 1) * 30 * 24) +
+                    (init_date.year * 12 * 30 * 24)
+                ) * 60
+            ) + init_date.minute
+        ) as u128;
 
         let month_data = get_month_data(init_date.month as usize);
         let timer_state = Arc::new(Mutex::new(TimerState {
@@ -70,7 +69,7 @@ impl Timer {
         let hour = (total_hours % 24) as SimInt;
 
         let total_days = total_hours / 24;
-        let day = ((total_days % 30) + 1) as SimInt;
+        let day = (total_days % 30 + 1) as SimInt + 1;
 
         let total_months = total_days / 30;
         let month = (total_months % 12) as SimInt + 1;
@@ -94,22 +93,22 @@ impl Timer {
         if !is_paused {
             thread::sleep(Duration::from_millis(self.tick_duration));
 
+            self.tick_count = self.tick_count.wrapping_add(1);
+            let date = self.get_updated_date();
+            event = TimerEvent::NothingUnusual;
+
             let mut ts_lock = self.timer_state.lock().unwrap();
             let prev_date = &ts_lock.date;
 
-            self.tick_count = self.tick_count.wrapping_add(1);
-
-            event = TimerEvent::NothingUnusual;
-            let date = self.get_updated_date();
-            if date.year != prev_date.year {
-                event = TimerEvent::YearChange;
-            } else if date.month != prev_date.month {
-                event = TimerEvent::MonthChange;
-                ts_lock.month_data = get_month_data(date.month as usize);
+            if date.hour != prev_date.hour {
+                event = TimerEvent::HourChange;
             } else if date.day != prev_date.day {
                 event = TimerEvent::DayChange;
-            } else if date.hour != prev_date.hour {
-                event = TimerEvent::HourChange;
+            } else if date.month != prev_date.month {
+                ts_lock.month_data = get_month_data(date.month as usize);
+                event = TimerEvent::MonthChange;
+            } else if date.year != prev_date.year {
+                event = TimerEvent::YearChange;
             }
 
             ts_lock.date = date;

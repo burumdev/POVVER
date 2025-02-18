@@ -69,9 +69,8 @@ impl UIController {
                                 )
                             },
                             UIAction::Env => {
-                                appw.set_env({
-                                    let env_lock = state.env.lock().unwrap();
-
+                                let env_lock = state.env.lock().unwrap();
+                                appw.set_env(
                                     EnvData {
                                         the_sun: env_lock.the_sun.into(),
                                         wind_direction: env_lock.wind_direction,
@@ -79,13 +78,12 @@ impl UIController {
                                         wind_speed_level: WindSpeedLevel::from(&env_lock.wind_speed),
                                         clouds: ModelRc::from(env_lock.clouds.as_slice()),
                                     }
-                                });
+                                );
                             },
-                            UIAction::State => {
-                                let misc_lock = state.misc.lock().unwrap();
+                            UIAction::Misc(misc) => {
                                 appw.set_state(UIState {
-                                    is_paused: misc_lock.is_paused,
-                                    speed_index: misc_lock.speed_index as SimInt,
+                                    is_paused: misc.is_paused,
+                                    speed_index: misc.speed_index as SimInt,
                                 });
                             }
                         }
