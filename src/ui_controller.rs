@@ -1,15 +1,17 @@
 use std::{
-    sync::{mpsc, Arc, RwLock},
+    sync::mpsc,
     thread,
 };
-use tokio::sync::Notify;
+use tokio::{
+    sync::mpsc as tokio_mpsc,
+};
 
 use slint::{
     ModelRc,
     CloseRequestResponse,
 };
 
-use crate::simulation::UIFlag;
+use crate::simulation::{SimInt, UIFlag, UIPayload, UIAction};
 
 slint::include_modules!();
 
@@ -25,9 +27,8 @@ impl UIController {
     pub fn run(
         &self,
         flag_sender: mpsc::Sender<UIFlag>,
-        state: Arc<RwLock<UIState>>,
-        clouds: Arc<RwLock<Vec<Cloud>>>,
-        state_notifier: Arc<Notify>,
+        mut wakeup_receiver: tokio_mpsc::UnboundedReceiver<UIAction>,
+        state: UIPayload,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
         let flag_sender_speed = flag_sender.clone();
@@ -55,11 +56,40 @@ impl UIController {
                 appw.window().set_maximized(true);
 
                 loop {
-                    state_notifier.notified().await;
+                    let action = wakeup_receiver.recv().await;
 
-                    appw.set_state(state.read().unwrap().clone());
-                    let clouds_model_rc = ModelRc::from(clouds.read().unwrap().as_slice());
-                    appw.set_clouds(clouds_model_rc);
+                    if let Some(action) = action {
+                        match action {
+                            UIAction::Timer => {
+                                let timer_lock = state.timer.lock().unwrap();
+                                appw.set_timer(
+                                    TimerData {
+                                        date: timer_lock.date.clone(),
+                                    }
+                                )
+                            },
+                            UIAction::Env => {
+                                appw.set_env({
+                                    let env_lock = state.env.lock().unwrap();
+
+                                    EnvData {
+                                        the_sun: env_lock.the_sun.into(),
+                                        wind_direction: env_lock.wind_direction,
+                                        wind_speed: env_lock.wind_speed.val(),
+                                        wind_speed_level: WindSpeedLevel::from(&env_lock.wind_speed),
+                                        clouds: ModelRc::from(env_lock.clouds.as_slice()),
+                                    }
+                                });
+                            },
+                            UIAction::State => {
+                                let misc_lock = state.misc.lock().unwrap();
+                                appw.set_state(UIState {
+                                    is_paused: misc_lock.is_paused,
+                                    speed_index: misc_lock.speed_index as SimInt,
+                                });
+                            }
+                        }
+                    }
                 }
             }).unwrap();
 

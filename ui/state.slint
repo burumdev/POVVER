@@ -52,12 +52,11 @@ export struct EnvData {
 	the_sun: SunData,
 	wind_speed: int,
 	wind_direction: WindDirection,
-	wind_speed_level: WindSpeedLevel
+	wind_speed_level: WindSpeedLevel,
+	clouds: [Cloud],
 }
 
 export struct UIState {
-    timer: TimerData,
-    env: EnvData,
     is_paused: bool,
     speed_index: int,
 }

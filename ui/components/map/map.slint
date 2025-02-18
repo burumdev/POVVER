@@ -9,8 +9,8 @@ export component Map inherits Rectangle {
     width: 80%;
     height: 100%;
 
-	property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
-	property <float> sun_brightness: Globs.state.env.the_sun.brightness;
+	property <SunStage> sun_stage: Globs.env.the_sun.stage;
+	property <float> sun_brightness: Globs.env.the_sun.brightness;
 
 	Rectangle {
 		height: 100%;

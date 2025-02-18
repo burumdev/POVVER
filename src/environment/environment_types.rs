@@ -56,7 +56,7 @@ impl PartialOrd<SimFlo> for SunBrightness {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct WindSpeed(SimInt);
 impl WindSpeed {
     pub fn val(&self) -> SimInt {

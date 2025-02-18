@@ -7,6 +7,7 @@ mod timer;
 mod ui_controller;
 mod utils_random;
 mod utils_traits;
+mod app_state;
 
 use simulation::Simulation;
 

@@ -1,60 +1,63 @@
+use std::sync::{Arc, Mutex};
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod environment_types;
 pub use environment_types::*;
 
 use crate::{
-    economy::Economy,
+    app_state::TimerState,
     ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
     months::MonthData,
     simulation::{SimFlo, SimInt},
-    timer::{Timer, TimerEvent},
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
     utils_traits::Flippable,
 };
+use crate::app_state::EnvState;
 
 pub const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
-const CLOUDS_MAX: SimInt = 32;
+pub const CLOUDS_MAX: SimInt = 32;
 const SUN_POS_MAX: SimInt = 15;
 pub const SUNSHINE_MAX: SimFlo = 100.0;
 
 #[derive(Debug)]
 pub struct Environment {
-    pub clouds: Vec<Cloud>,
-    pub wind_speed: WindSpeed,
-    pub wind_direction: WindDirection,
-    pub the_sun: TheSun,
+    env_state: Arc<Mutex<EnvState>>,
+    timer_state: Arc<Mutex<TimerState>>,
     rng: ThreadRng,
 }
 
 // Constructor
 impl Environment {
-    pub fn new(timer: &Timer) -> Self {
+    pub fn new(timer_state: Arc<Mutex<TimerState>>) -> (Self, Arc<Mutex<EnvState>>) {
         let mut rng = thread_rng();
 
-
         let mut clouds = Vec::with_capacity(CLOUDS_MAX as usize);
+        let mut wind_speed = WindSpeed::default();
 
-        let cloud_generate_count = rng.gen_range(0..CLOUD_POS_MAX) as SimFlo
-            * timer.month_data.cloud_forming_factor;
+        {
+            let ts_lock = timer_state.lock().unwrap();
+            let month_data = ts_lock.month_data;
 
-        for _ in 0..cloud_generate_count as SimInt {
-            let size = *CLOUD_SIZES.choose(&mut rng).unwrap();
-            let position = rng.gen_range(0..CLOUD_POS_MAX);
-            let image_index = rng.gen_range(0..4);
-            clouds.push(Cloud {
+            let cloud_generate_count = rng.gen_range(0..CLOUD_POS_MAX) as SimFlo
+                * month_data.cloud_forming_factor;
+
+            for _ in 0..cloud_generate_count as SimInt {
+                let size = *CLOUD_SIZES.choose(&mut rng).unwrap();
+                let position = rng.gen_range(0..CLOUD_POS_MAX);
+                let image_index = rng.gen_range(0..4);
+                clouds.push(Cloud {
                     size,
                     position,
                     image_index,
                     image_rotated: random(),
                 });
-        }
+            }
 
-        let mut wind_speed = WindSpeed::default();
-        wind_speed.set(
-            (rng.gen_range(0..=WINDSPEED_MAX) as SimFlo * timer.month_data.windspeed_factor) as SimInt
-        );
+            wind_speed.set(
+                (rng.gen_range(0..=WINDSPEED_MAX) as SimFlo * month_data.windspeed_factor) as SimInt
+            );
+        };
 
         let wind_direction = if random() {
             WindDirection::Ltr
@@ -62,23 +65,27 @@ impl Environment {
             WindDirection::Rtl
         };
 
-        let mut new_self = Self {
+        let env_state = Arc::new(Mutex::new(EnvState {
             clouds,
             wind_speed,
             wind_direction,
             the_sun: TheSun::default(),
-            rng,
-        };
+        }));
 
-        new_self.the_sun = new_self.get_the_sun(timer.date.hour, timer.month_data);
-
-        new_self
+        (
+            Self {
+                env_state: Arc::clone(&env_state),
+                timer_state,
+                rng,
+            },
+            env_state
+        )
     }
 }
 
 // Private methods
 impl Environment {
-    fn get_the_sun(&self, hour: SimInt, month: &MonthData) -> TheSun {
+    fn get_the_sun(&self, clouds: &[Cloud], hour: SimInt, month: &MonthData) -> TheSun {
         let (start, end) = month.get_day_start_end();
 
         match hour {
@@ -144,8 +151,7 @@ impl Environment {
                 // If any clouds cover the sun, firstly shame on them
                 // and secondly they should cumulatively reduce the
                 // brightness of sun depending on their sizes.
-                let brightness_reduction = self
-                    .clouds
+                let brightness_reduction = clouds
                     .iter()
                     .filter(|cloud| cloud.position == position)
                     .fold(0.0, |acc, cloud| match cloud.size {
@@ -178,20 +184,22 @@ impl Environment {
     // natural-like cloud migrations that follow each other
     // and form clusters of clouds.
     fn maybe_new_cloud(
-        &mut self,
+        &self,
+        clouds: &[Cloud],
+        wind_speed: &WindSpeed,
         tail_pos: SimInt,
         sibling_pos: SimInt,
         cloud_forming_factor: SimFlo,
     ) -> Option<Cloud> {
-        let tail_clouds_count = self
-            .clouds
+        let mut rng = thread_rng();
+
+        let tail_clouds_count = clouds
             .iter()
             .filter(|cloud| cloud.position == tail_pos)
             .count();
 
         if tail_clouds_count > 1 {
-            let siblings = self
-                .clouds
+            let siblings = clouds
                 .iter()
                 .filter(|cloud| cloud.position == sibling_pos);
 
@@ -201,35 +209,35 @@ impl Environment {
                 CloudSize::Big => acc + 10.0,
             }) * cloud_forming_factor;
 
-            let wind_speed_rnd_ceiling = (match WindSpeedLevel::from(&self.wind_speed) {
+            let wind_speed_rnd_ceiling = (match WindSpeedLevel::from(wind_speed) {
                 WindSpeedLevel::Faint => 120,
                 WindSpeedLevel::Mild => 100,
                 WindSpeedLevel::Strong => 80,
                 WindSpeedLevel::Typhoon => 60,
             } as SimFlo * cloud_forming_factor) as SimInt;
 
-            if self.rng.gen_range(0..=wind_speed_rnd_ceiling) <= probability as SimInt {
+            if rng.gen_range(0..=wind_speed_rnd_ceiling) <= probability as SimInt {
                 Some(Cloud {
-                    size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
+                    size: *CLOUD_SIZES.choose(&mut rng).unwrap(),
                     position: tail_pos,
-                    image_index: self.rng.gen_range(0..4),
+                    image_index: rng.gen_range(0..4),
                     image_rotated: random(),
                 })
             } else {
                 None
             }
         } else {
-            let wind_speed_rnd_how_many = (match WindSpeedLevel::from(&self.wind_speed) {
+            let wind_speed_rnd_how_many = (match WindSpeedLevel::from(wind_speed) {
                 WindSpeedLevel::Faint => 60,
                 WindSpeedLevel::Mild => 30,
                 WindSpeedLevel::Strong => 20,
                 WindSpeedLevel::Typhoon => 10,
             } as SimFlo * cloud_forming_factor) as u32;
-            if one_chance_in_many(&mut self.rng, wind_speed_rnd_how_many) {
+            if one_chance_in_many(&mut rng, wind_speed_rnd_how_many) {
                 Some(Cloud {
-                    size: *CLOUD_SIZES.choose(&mut self.rng).unwrap(),
+                    size: *CLOUD_SIZES.choose(&mut rng).unwrap(),
                     position: tail_pos,
-                    image_index: self.rng.gen_range(0..4),
+                    image_index: rng.gen_range(0..4),
                     image_rotated: random(),
                 })
             } else {
@@ -242,7 +250,17 @@ impl Environment {
     // removes clouds that exit the scene from left or right.
     // Also maybe adds another cloud.
     fn update_clouds(&mut self, cloud_forming_factor: SimFlo) {
-        self.clouds.retain_mut(|cloud| {
+        let (mut clouds, wind_speed, wind_direction) = {
+            let es_lock = self.env_state.lock().unwrap();
+
+            (
+                es_lock.clouds.clone(),
+                es_lock.wind_speed.clone(),
+                es_lock.wind_direction,
+            )
+        };
+
+        clouds.retain_mut(|cloud| {
             let Cloud { size, position, .. } = cloud;
 
             let mut movement: SimFlo = match size {
@@ -251,7 +269,7 @@ impl Environment {
                 CloudSize::Big => 1.5,
             };
 
-            movement = match WindSpeedLevel::from(&self.wind_speed) {
+            movement = match WindSpeedLevel::from(&wind_speed) {
                 WindSpeedLevel::Faint => movement / 5.0,
                 WindSpeedLevel::Mild => movement / 3.0,
                 WindSpeedLevel::Strong => movement / 2.0,
@@ -260,7 +278,7 @@ impl Environment {
 
             let movement = movement.round() as SimInt;
 
-            if self.wind_direction == WindDirection::Rtl {
+            if wind_direction == WindDirection::Rtl {
                 if (*position - movement) < 0 { false } else {
                     *position -= movement;
 
@@ -275,39 +293,49 @@ impl Environment {
             }
         });
 
-        if self.clouds.len() < CLOUDS_MAX as usize {
+        if clouds.len() < CLOUDS_MAX as usize {
             let tail_pos =
-                if self.wind_direction == WindDirection::Rtl { CLOUD_POS_MAX} else { 0 };
+                if wind_direction == WindDirection::Rtl { CLOUD_POS_MAX} else { 0 };
             let sibling_pos =
-                if self.wind_direction == WindDirection::Rtl { CLOUD_POS_MAX - 1 } else { 1 };
+                if wind_direction == WindDirection::Rtl { CLOUD_POS_MAX - 1 } else { 1 };
 
-            if let Some(cloud) = self.maybe_new_cloud(tail_pos, sibling_pos, cloud_forming_factor) {
+            if let Some(cloud) = self.maybe_new_cloud(clouds.as_slice(), &wind_speed, tail_pos, sibling_pos, cloud_forming_factor) {
                 println!("PUSHING IN A NEW CLOUD: {:?}", cloud);
-                self.clouds.push(cloud);
+                clouds.push(cloud);
             }
+        }
+
+        {
+            let mut es_lock = self.env_state.lock().unwrap();
+            es_lock.clouds = clouds;
         }
     }
 }
 
 // Public API
 impl Environment {
-    pub fn update(&mut self, timer_event: &TimerEvent, timer: &Timer) {
+    pub fn update(&mut self) {
         // We don't change stuff too often to prevent erratic changes
         // so the changes are done on an hourly basis.
-        if timer_event != &TimerEvent::NothingUnusual {
-            let hour = timer.date.hour;
-            let month_data = timer.month_data;
+        let (hour, month_data) = {
+            let ts_lock = self.timer_state.lock().unwrap();
+
+            (ts_lock.date.hour, ts_lock.month_data)
+        };
+
+        {
+            let mut es_lock = self.env_state.lock().unwrap();
 
             // Every 6th hour there is a 1 in 10 chance
             // the wind direction will change
             // but only if it's sufficiently weak currently.
             // Otherwise, set the wind_speed every two hours.
-            if hour % 6 == 0 && self.wind_speed < 40 && one_chance_in_many(&mut self.rng, 10) {
-                self.wind_direction.flip();
-                self.wind_speed.set((10.0 * month_data.windspeed_factor) as SimInt);
+            if hour % 6 == 0 && es_lock.wind_speed < 40 && one_chance_in_many(&mut self.rng, 10) {
+                es_lock.wind_direction.flip();
+                es_lock.wind_speed.set((10.0 * month_data.windspeed_factor) as SimInt);
             } else if hour % 2 == 0 {
                 // Make tropical typhoons that last weeks less likely
-                let ws_val = self.wind_speed.val();
+                let ws_val = es_lock.wind_speed.val();
                 let lower_modifier = match ws_val {
                     ws if ws >= WINDSPEED_MAX - 40 => 40,
                     ws if ws >= WINDSPEED_MAX - 50 => 30,
@@ -324,21 +352,18 @@ impl Environment {
                     WINDSPEED_MAX,
                 );
 
-                self.wind_speed.set((randomized as SimFlo * month_data.windspeed_factor) as SimInt);
+                es_lock.wind_speed.set((randomized as SimFlo * month_data.windspeed_factor) as SimInt);
             }
+        }
 
-            self.update_clouds(month_data.cloud_forming_factor);
+        self.update_clouds(month_data.cloud_forming_factor);
 
-            self.the_sun = self.get_the_sun(timer.date.hour, month_data);
+        {
+            let mut es_lock = self.env_state.lock().unwrap();
+            es_lock.the_sun = self.get_the_sun(es_lock.clouds.as_slice(), hour, month_data);
 
             println!("---------- HOUR CHANGE ----------");
-            println!("TIMER: {:?}", timer.date);
-/*            println!(
-                "ENV: sun: {:?}, windspeed: {}, wind direction: {:?}",
-                self.the_sun, self.wind_speed.val(), self.wind_direction
-            );
-            println!("CLOUDS: {:?}", self.clouds);
-*/        }
-
+            println!("CLOUDS: {:?}", es_lock.clouds);
+        }
     }
 }

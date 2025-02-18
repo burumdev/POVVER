@@ -7,8 +7,8 @@ export component Sky inherits Rectangle {
 	y: 0;
 
 	Image {
-		property <int> pos: Globs.state.env.the_sun.position;
-		property <SunStage> sun_stage: Globs.state.env.the_sun.stage;
+		property <int> pos: Globs.env.the_sun.position;
+		property <SunStage> sun_stage: Globs.env.the_sun.stage;
 
 		opacity: pos > -1 && pos < 17 ? 1 : 0;
 
@@ -23,7 +23,7 @@ export component Sky inherits Rectangle {
 		}
 	}
 
-	for cloud in Globs.clouds: Image {
+	for cloud in Globs.env.clouds: Image {
 		source: cloud.size == CloudSize.Small ? Globs.cloud_images.small[cloud.image_index] :
 			cloud.size == CloudSize.Medium ? Globs.cloud_images.medium[cloud.image_index] :
 			Globs.cloud_images.big[cloud.image_index];
@@ -39,8 +39,8 @@ export component Sky inherits Rectangle {
 
 	// Wind indicator
 	HorizontalLayout {
-		property <WindDirection> wind_direction: Globs.state.env.wind_direction;
-		property <WindSpeedLevel> wind_level: Globs.state.env.wind_speed_level;
+		property <WindDirection> wind_direction: Globs.env.wind_direction;
+		property <WindSpeedLevel> wind_level: Globs.env.wind_speed_level;
 
 		height: 64px;
 		alignment: wind_direction == WindDirection.Ltr ? start : end;

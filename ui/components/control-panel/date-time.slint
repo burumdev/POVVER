@@ -1,6 +1,7 @@
+import { TimerData } from "../../state.slint";
+import { Globs, GlobCallbacks } from "../../globals.slint";
 import { Slider } from "std-widgets.slint";
 import { Utils, DigitPlace } from "../../utils.slint";
-import { Globs, GlobCallbacks } from "../../globals.slint";
 import { Palette } from "../../theme.slint";
 
 import { DigitCell } from "../common/digitcell.slint";
@@ -20,6 +21,7 @@ component CPDigitSeparator inherits CPDigitCell {
 }
 
 export component DateTimeControls inherits Rectangle {
+	in property <TimerData> timer: Globs.timer;
 	background: Palette.bg_lcd;
 
 	VerticalLayout {
@@ -52,48 +54,48 @@ export component DateTimeControls inherits Rectangle {
 					alignment: space-between;
 
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.month, DigitPlace.Ten);
+						text: Utils.date_int_to_char(timer.date.month, DigitPlace.Ten);
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.month, DigitPlace.One);
-					}
-					CPDigitSeparator {}
-					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.day, DigitPlace.Ten);
-					}
-					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.day, DigitPlace.One);
+						text: Utils.date_int_to_char(timer.date.month, DigitPlace.One);
 					}
 					CPDigitSeparator {}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.Thousand);
+						text: Utils.date_int_to_char(timer.date.day, DigitPlace.Ten);
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.Hundred);
+						text: Utils.date_int_to_char(timer.date.day, DigitPlace.One);
+					}
+					CPDigitSeparator {}
+					CPDigitCell {
+						text: Utils.date_int_to_char(timer.date.year, DigitPlace.Thousand);
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.Ten);
+						text: Utils.date_int_to_char(timer.date.year, DigitPlace.Hundred);
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.year, DigitPlace.One);
+						text: Utils.date_int_to_char(timer.date.year, DigitPlace.Ten);
+					}
+					CPDigitCell {
+						text: Utils.date_int_to_char(timer.date.year, DigitPlace.One);
 					}
 					Rectangle {
 						width: 20px;
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.hour, DigitPlace.Ten);
+						text: Utils.date_int_to_char(timer.date.hour, DigitPlace.Ten);
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.hour, DigitPlace.One);
+						text: Utils.date_int_to_char(timer.date.hour, DigitPlace.One);
 					}
 					CPDigitCell {
 						text: ":";
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.minute, DigitPlace.Ten);
+						text: Utils.date_int_to_char(timer.date.minute, DigitPlace.Ten);
 					}
 					CPDigitCell {
-						text: Utils.date_int_to_char(Globs.state.timer.date.minute, DigitPlace.One);
+						text: Utils.date_int_to_char(timer.date.minute, DigitPlace.One);
 					}
 				}
 				TouchArea {

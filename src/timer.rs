@@ -1,10 +1,15 @@
-use std::thread;
-use std::time::Duration;
+use std::{
+    thread,
+    time::Duration,
+    sync::{Arc, Mutex},
+};
 
-use crate::ui_controller::Date;
-
-use crate::months::{get_month_data, MonthData};
-use crate::simulation::{SimInt, TickDuration};
+use crate::{
+    app_state::TimerState,
+    ui_controller::Date,
+    months::get_month_data,
+    simulation::{SimInt, TickDuration}
+};
 
 #[derive(Debug, PartialEq)]
 pub enum TimerEvent {
@@ -20,32 +25,39 @@ pub enum TimerEvent {
 pub struct Timer {
     tick_duration: TickDuration,
     tick_count: u128,
-    pub date: Date,
-    pub month_data: &'static MonthData,
+    timer_state: Arc<Mutex<TimerState>>,
 }
 
 // Constructor
 impl Timer {
-    pub fn new(tick_duration: TickDuration, init_date: Date) -> Self {
-        let tick_count = (
+    pub fn new(tick_duration: TickDuration, init_date: Date) -> (Self, Arc<Mutex<TimerState>>) {
+        let tick_count = {
             (
                 (
-                    init_date.hour +
-                    ((init_date.day - 1) * 24) +
-                    ((init_date.month - 1) * 30 * 24) +
-                    (init_date.year * 12 * 30 * 24)
-                ) * 60
-            ) + init_date.minute
-        ) as u128;
+                    (
+                        init_date.hour +
+                            ((init_date.day - 1) * 24) +
+                            ((init_date.month - 1) * 30 * 24) +
+                            (init_date.year * 12 * 30 * 24)
+                    ) * 60
+                ) + init_date.minute
+            ) as u128
+        };
 
         let month_data = get_month_data(init_date.month as usize);
-
-        Self {
-            tick_duration,
-            tick_count,
+        let timer_state = Arc::new(Mutex::new(TimerState {
             date: init_date,
             month_data,
-        }
+        }));
+
+        (
+            Self {
+                tick_duration,
+                tick_count,
+                timer_state: Arc::clone(&timer_state),
+            },
+            timer_state,
+        )
     }
 }
 
@@ -81,22 +93,26 @@ impl Timer {
         let mut event: TimerEvent;
         if !is_paused {
             thread::sleep(Duration::from_millis(self.tick_duration));
+
+            let mut ts_lock = self.timer_state.lock().unwrap();
+            let prev_date = &ts_lock.date;
+
             self.tick_count = self.tick_count.wrapping_add(1);
 
             event = TimerEvent::NothingUnusual;
             let date = self.get_updated_date();
-            if date.year != self.date.year {
+            if date.year != prev_date.year {
                 event = TimerEvent::YearChange;
-            } else if date.month != self.date.month {
+            } else if date.month != prev_date.month {
                 event = TimerEvent::MonthChange;
-                self.month_data = get_month_data(date.month as usize);
-            } else if date.day != self.date.day {
+                ts_lock.month_data = get_month_data(date.month as usize);
+            } else if date.day != prev_date.day {
                 event = TimerEvent::DayChange;
-            } else if date.hour != self.date.hour {
+            } else if date.hour != prev_date.hour {
                 event = TimerEvent::HourChange;
             }
 
-            self.date = date;
+            ts_lock.date = date;
         } else { // Paused
             thread::sleep(Duration::from_millis(500));
             event = TimerEvent::Paused;

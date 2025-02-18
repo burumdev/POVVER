@@ -7,7 +7,7 @@ edition = "2021"
 num-traits = "0.2.19"
 rand = "0.8.5"
 slint = { version = "1.9.2", features = [ "backend-winit", "renderer-winit-skia" ] }
-tokio = { version = "1.43.0", features = ["sync"] }
+tokio = { version = "1.43.0", features = ["full"] }
 
 [build-dependencies]
 slint-build = "1.9.2"

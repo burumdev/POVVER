@@ -7,8 +7,8 @@ import { DataTable } from "../../common/datatable.slint";
 import { CellData } from "../../common/datacell.slint";
 
 export component EnvironmentTab inherits TabContent {
-	in property <EnvData> env: Globs.state.env;
-	in property <TimerData> timer: Globs.state.timer;
+	in property <EnvData> env: Globs.env;
+	in property <TimerData> timer: Globs.timer;
 	DataTable {
 		items: [
 			{
