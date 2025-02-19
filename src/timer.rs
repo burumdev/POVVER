@@ -1,9 +1,8 @@
 use std::{
     thread,
     time::Duration,
-    sync::{Arc, Mutex},
+    sync::{Arc, RwLock},
 };
-
 use crate::{
     app_state::TimerState,
     ui_controller::Date,
@@ -25,12 +24,12 @@ pub enum TimerEvent {
 pub struct Timer {
     tick_duration: TickDuration,
     tick_count: u128,
-    timer_state: Arc<Mutex<TimerState>>,
+    timer_state: Arc<RwLock<TimerState>>,
 }
 
 // Constructor
 impl Timer {
-    pub fn new(tick_duration: TickDuration, init_date: Date) -> (Self, Arc<Mutex<TimerState>>) {
+    pub fn new(tick_duration: TickDuration, init_date: Date) -> (Self, Arc<RwLock<TimerState>>) {
         let tick_count =
         (
             (
@@ -44,7 +43,7 @@ impl Timer {
         ) as u128;
 
         let month_data = get_month_data(init_date.month as usize);
-        let timer_state = Arc::new(Mutex::new(TimerState {
+        let timer_state = Arc::new(RwLock::new(TimerState {
             date: init_date,
             month_data,
         }));
@@ -97,18 +96,18 @@ impl Timer {
             let date = self.get_updated_date();
             event = TimerEvent::NothingUnusual;
 
-            let mut ts_lock = self.timer_state.lock().unwrap();
+            let mut ts_lock = self.timer_state.write().unwrap();
             let prev_date = &ts_lock.date;
 
-            if date.hour != prev_date.hour {
-                event = TimerEvent::HourChange;
-            } else if date.day != prev_date.day {
-                event = TimerEvent::DayChange;
+            if date.year != prev_date.year {
+                event = TimerEvent::YearChange;
             } else if date.month != prev_date.month {
                 ts_lock.month_data = get_month_data(date.month as usize);
                 event = TimerEvent::MonthChange;
-            } else if date.year != prev_date.year {
-                event = TimerEvent::YearChange;
+            } else if date.day != prev_date.day {
+                event = TimerEvent::DayChange;
+            } else if date.hour != prev_date.hour {
+                event = TimerEvent::HourChange;
             }
 
             ts_lock.date = date;

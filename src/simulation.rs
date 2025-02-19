@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, Mutex}
+    sync::{mpsc, Arc, Mutex, RwLock}
 };
 use tokio::{
     sync::mpsc as tokio_mpsc,
@@ -35,8 +35,8 @@ pub enum UIFlag {
 
 #[derive(Debug)]
 pub struct UIPayload {
-    pub timer: Arc<Mutex<TimerState>>,
-    pub env: Arc<Mutex<EnvState>>,
+    pub timer: Arc<RwLock<TimerState>>,
+    pub env: Arc<RwLock<EnvState>>,
 }
 
 pub struct Simulation {

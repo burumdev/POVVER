@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod environment_types;
@@ -22,21 +22,21 @@ pub const SUNSHINE_MAX: SimFlo = 100.0;
 
 #[derive(Debug)]
 pub struct Environment {
-    env_state: Arc<Mutex<EnvState>>,
-    timer_state: Arc<Mutex<TimerState>>,
+    env_state: Arc<RwLock<EnvState>>,
+    timer_state: Arc<RwLock<TimerState>>,
     rng: ThreadRng,
 }
 
 // Constructor
 impl Environment {
-    pub fn new(timer_state: Arc<Mutex<TimerState>>) -> (Self, Arc<Mutex<EnvState>>) {
+    pub fn new(timer_state: Arc<RwLock<TimerState>>) -> (Self, Arc<RwLock<EnvState>>) {
         let mut rng = thread_rng();
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX as usize);
         let mut wind_speed = WindSpeed::default();
 
         {
-            let ts_lock = timer_state.lock().unwrap();
+            let ts_lock = timer_state.read().unwrap();
             let month_data = ts_lock.month_data;
 
             let cloud_generate_count = rng.gen_range(0..CLOUD_POS_MAX) as SimFlo
@@ -65,7 +65,7 @@ impl Environment {
             WindDirection::Rtl
         };
 
-        let env_state = Arc::new(Mutex::new(EnvState {
+        let env_state = Arc::new(RwLock::new(EnvState {
             clouds,
             wind_speed,
             wind_direction,
@@ -251,7 +251,7 @@ impl Environment {
     // Also maybe adds another cloud.
     fn update_clouds(&mut self, cloud_forming_factor: SimFlo) {
         let (mut clouds, wind_speed, wind_direction) = {
-            let es_lock = self.env_state.lock().unwrap();
+            let es_lock = self.env_state.read().unwrap();
 
             (
                 es_lock.clouds.clone(),
@@ -306,7 +306,7 @@ impl Environment {
         }
 
         {
-            let mut es_lock = self.env_state.lock().unwrap();
+            let mut es_lock = self.env_state.write().unwrap();
             es_lock.clouds = clouds;
         }
     }
@@ -318,13 +318,13 @@ impl Environment {
         // We don't change stuff too often to prevent erratic changes
         // so the changes are done on an hourly basis.
         let (hour, month_data) = {
-            let ts_lock = self.timer_state.lock().unwrap();
+            let ts_lock = self.timer_state.read().unwrap();
 
             (ts_lock.date.hour, ts_lock.month_data)
         };
 
         {
-            let mut es_lock = self.env_state.lock().unwrap();
+            let mut es_lock = self.env_state.write().unwrap();
 
             // Every 6th hour there is a 1 in 10 chance
             // the wind direction will change
@@ -359,7 +359,7 @@ impl Environment {
         self.update_clouds(month_data.cloud_forming_factor);
 
         {
-            let mut es_lock = self.env_state.lock().unwrap();
+            let mut es_lock = self.env_state.write().unwrap();
             es_lock.the_sun = self.get_the_sun(es_lock.clouds.as_slice(), hour, month_data);
 
             println!("---------- HOUR CHANGE ----------");

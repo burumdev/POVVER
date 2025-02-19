@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use crate::{
     ui_controller::{Date, Cloud},
@@ -28,15 +28,15 @@ pub struct MiscState {
 }
 
 pub struct AppState {
-    pub timer: Arc<Mutex<TimerState>>,
-    pub env: Arc<Mutex<EnvState>>,
+    pub timer: Arc<RwLock<TimerState>>,
+    pub env: Arc<RwLock<EnvState>>,
     pub misc: Arc<Mutex<MiscState>>,
 }
 
 impl AppState {
     pub fn new(
-        timer: Arc<Mutex<TimerState>>,
-        env: Arc<Mutex<EnvState>>,
+        timer: Arc<RwLock<TimerState>>,
+        env: Arc<RwLock<EnvState>>,
         misc: Arc<Mutex<MiscState>>,
     ) -> Self {
         Self {

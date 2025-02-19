@@ -61,7 +61,7 @@ impl UIController {
                     if let Some(action) = action {
                         match action {
                             UIAction::Timer => {
-                                let timer_lock = state.timer.lock().unwrap();
+                                let timer_lock = state.timer.read().unwrap();
                                 appw.set_timer(
                                     TimerData {
                                         date: timer_lock.date.clone(),
@@ -69,7 +69,7 @@ impl UIController {
                                 )
                             },
                             UIAction::Env => {
-                                let env_lock = state.env.lock().unwrap();
+                                let env_lock = state.env.read().unwrap();
                                 appw.set_env(
                                     EnvData {
                                         the_sun: env_lock.the_sun.into(),
