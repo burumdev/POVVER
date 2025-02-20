@@ -11,7 +11,16 @@ use slint::{
     CloseRequestResponse,
 };
 
-use crate::simulation::{SimInt, UIFlag, UIPayload, UIAction};
+use crate::{
+    app_state::UIPayload,
+    simulation::{SimInt, UIAction}
+};
+
+pub enum UIFlag {
+    Pause,
+    Quit,
+    SpeedChange(SimInt),
+}
 
 slint::include_modules!();
 
