@@ -35,7 +35,7 @@ pub const INDUSTRIES: &[Industry] = &[
     Industry {
         id: 6,
         name: "Arms",
-        description: "Produces metal shooting tools that sell exceptionally well with high crime rates.",
+        description: "Produces metal shooting tools that sell exceptionally well when crime rates are high not when people themselves are high.",
     },
     Industry {
         id: 7,
@@ -55,6 +55,6 @@ pub const INDUSTRIES: &[Industry] = &[
     Industry {
         id: 10,
         name: "University",
-        description: "A conglomeration of academia elites that sell several years of fun time and treats to students, indebting them in the process."
+        description: "A conglomeration that sells several years of fun time and treats to students indebting them in the process."
     }
 ];

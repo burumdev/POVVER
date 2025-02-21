@@ -59,6 +59,7 @@ impl UIController {
                 CloseRequestResponse::HideWindow
             });
 
+            // UI state updates
             let app_weak = app.as_weak();
             slint::spawn_local(async move {
                 let appw = app_weak.clone().unwrap();
@@ -101,6 +102,7 @@ impl UIController {
                 }
             }).unwrap();
 
+            // Run the UI
             app.run().unwrap();
         })
     }

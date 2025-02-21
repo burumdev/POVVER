@@ -250,17 +250,18 @@ impl Environment {
     // removes clouds that exit the scene from left or right.
     // Also maybe adds another cloud.
     fn update_clouds(&mut self, cloud_forming_factor: SimFlo) {
-        let (mut clouds, wind_speed, wind_direction) = {
+        let (wind_speed, wind_direction) = {
             let es_lock = self.env_state.read().unwrap();
 
             (
-                es_lock.clouds.clone(),
                 es_lock.wind_speed.clone(),
                 es_lock.wind_direction,
             )
         };
 
-        clouds.retain_mut(|cloud| {
+        let mut env = self.env_state.write().unwrap();
+
+        env.clouds.retain_mut(|cloud| {
             let Cloud { size, position, .. } = cloud;
 
             let mut movement: SimFlo = match size {
@@ -279,13 +280,17 @@ impl Environment {
             let movement = movement.round() as SimInt;
 
             if wind_direction == WindDirection::Rtl {
-                if (*position - movement) < 0 { false } else {
+                if (*position - movement) < 0 {
+                    false
+                } else {
                     *position -= movement;
 
                     true
                 }
             } else {
-                if *position + movement > CLOUD_POS_MAX { false } else {
+                if *position + movement > CLOUD_POS_MAX {
+                    false
+                } else {
                     *position += movement;
 
                     true
@@ -293,21 +298,16 @@ impl Environment {
             }
         });
 
-        if clouds.len() < CLOUDS_MAX as usize {
+        if env.clouds.len() < CLOUDS_MAX as usize {
             let tail_pos =
-                if wind_direction == WindDirection::Rtl { CLOUD_POS_MAX} else { 0 };
+                if wind_direction == WindDirection::Rtl { CLOUD_POS_MAX } else { 0 };
             let sibling_pos =
                 if wind_direction == WindDirection::Rtl { CLOUD_POS_MAX - 1 } else { 1 };
 
-            if let Some(cloud) = self.maybe_new_cloud(clouds.as_slice(), &wind_speed, tail_pos, sibling_pos, cloud_forming_factor) {
+            if let Some(cloud) = self.maybe_new_cloud(env.clouds.as_slice(), &wind_speed, tail_pos, sibling_pos, cloud_forming_factor) {
                 println!("PUSHING IN A NEW CLOUD: {:?}", cloud);
-                clouds.push(cloud);
+                env.clouds.push(cloud);
             }
-        }
-
-        {
-            let mut es_lock = self.env_state.write().unwrap();
-            es_lock.clouds = clouds;
         }
     }
 }

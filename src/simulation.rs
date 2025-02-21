@@ -119,7 +119,7 @@ impl Simulation {
             let flag_result = ui_flag_receiver.try_recv();
             if let Ok(flag) = flag_result {
                 match flag {
-                    UIFlag::Pause => self.toggle_paused(misc.is_paused),
+                    UIFlag::Pause => self.toggle_paused(),
                     UIFlag::Quit => self.quit(),
                     UIFlag::SpeedChange(speed_index) => self.change_speed(speed_index),
                 }
@@ -151,8 +151,8 @@ impl Simulation {
         println!("SIM: This simulation ended. Now yours continue.");
     }
 
-    pub fn toggle_paused(&mut self, old_paused: bool) {
-        let is_paused = !old_paused;
+    pub fn toggle_paused(&mut self) {
+        let is_paused = !self.app_state.misc.lock().unwrap().is_paused;
         self.app_state.set_misc(Misc::IsPaused(is_paused));
 
         if is_paused {
