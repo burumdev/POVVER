@@ -1,9 +1,10 @@
-use super::economy_types::{
-    Money,
-    EnergyUnit,
+use super::{
+    industries::Industry,
+    economy_types::{
+        Money,
+        EnergyUnit,
+    }
 };
-
-use crate::simulation::SimInt;
 
 pub struct UnitProductionCost {
     energy: EnergyUnit,
@@ -14,17 +15,15 @@ pub struct UnitProductionCost {
 }
 
 pub struct Product {
-    id: SimInt,
     name: &'static str,
     description: &'static str,
     unit_production_cost: UnitProductionCost,
     rnd_cost: Money,
-    industry_id: SimInt,
+    industry: Industry,
 }
 
-pub const PRODUCTS: &[Product] = &[
-    Product {
-        id: 1,
+impl Product {
+    pub const INTEGRATED_CIRCUIT: Self = Self {
         name: "Integrated Circuit",
         description: "A keep it simple and stupid (KISS) type of chip with a single purpose and sleigh-of-hand capabilities.",
         unit_production_cost: UnitProductionCost {
@@ -35,10 +34,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(0.8),
         },
         rnd_cost: Money::new(16743.56),
-        industry_id: 1,
-    },
-    Product {
-        id: 2,
+        industry: Industry::SEMICONDUCTORS,
+    };
+    pub const MICROCHIP: Self = Self {
         name: "Microchip",
         description: "A complex electrical organism that knows only two numbers but is so fast that you ignore it's illiteracy in math.",
         unit_production_cost: UnitProductionCost {
@@ -49,10 +47,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(9.23),
         },
         rnd_cost: Money::new(69376.12),
-        industry_id: 1,
-    },
-    Product {
-        id: 3,
+        industry: Industry::SEMICONDUCTORS,
+    };
+    pub const SAAS: Self = Self {
         name: "SaaS",
         description: "Software as a Sauce can deliver what you need or don't need but think you need right to your door or to your face, eyes and ears.",
         unit_production_cost: UnitProductionCost {
@@ -63,10 +60,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(0.2),
         },
         rnd_cost: Money::new(3670.45),
-        industry_id: 2,
-    },
-    Product {
-        id: 4,
+        industry: Industry::SOFTWARE,
+    };
+    pub const COMPUTER_VIRUS: Self = Self {
         name: "Computer Virus",
         description: "Used for industrial espionage and some shady government operations that don't benefit you as a normie at all but who cares.",
         unit_production_cost: UnitProductionCost {
@@ -77,10 +73,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(0.1),
         },
         rnd_cost: Money::new(87450.23),
-        industry_id: 2,
-    },
-    Product {
-        id: 5,
+        industry: Industry::SOFTWARE,
+    };
+    pub const PAPER: Self = Self {
         name: "Paper",
         description: "People use our paper to buy things, not your paper or somebody else's paper because it's a sin.",
         unit_production_cost: UnitProductionCost {
@@ -91,10 +86,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(4.5),
         },
         rnd_cost: Money::new(42760.49),
-        industry_id: 3,
-    },
-    Product {
-        id: 6,
+        industry: Industry::BANK,
+    };
+    pub const DEBT: Self = Self {
         name: "Debt",
         description: "The most valuable commodity in the universe. Converts humans to easily controllable subjects.",
         unit_production_cost: UnitProductionCost {
@@ -105,10 +99,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(1.2),
         },
         rnd_cost: Money::new(105234.80),
-        industry_id: 3,
-    },
-    Product {
-        id: 7,
+        industry: Industry::BANK,
+    };
+    pub const SKIN_CLEANER: Self = Self {
         name: "Skin Cleaner",
         description: "Chemicals clean the skin because they are toxic and kill both beneficial or harmful bacteria. So look, it's clean.",
         unit_production_cost: UnitProductionCost {
@@ -119,10 +112,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(42.32),
         },
         rnd_cost: Money::new(5873.76),
-        industry_id: 4,
-    },
-    Product {
-        id: 8,
+        industry: Industry::COSMETICS,
+    };
+    pub const ELIXIR_OF_YOUTH: Self = Self {
         name: "Elixir of Youth",
         description: "Even if you die today, don't you want to look gorgeous in your coffin?",
         unit_production_cost: UnitProductionCost {
@@ -133,10 +125,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(248.54),
         },
         rnd_cost: Money::new(83456.71),
-        industry_id: 4,
-    },
-    Product {
-        id: 9,
+        industry: Industry::COSMETICS,
+    };
+    pub const UNGUIDED_ROCKET: Self = Self {
         name: "Unguided Rocket",
         description: "You can spray and pray with this and tell your superiors you did something for the country.",
         unit_production_cost: UnitProductionCost {
@@ -147,10 +138,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(120.40),
         },
         rnd_cost: Money::new(56984.34),
-        industry_id: 5,
-    },
-    Product {
-        id: 10,
+        industry: Industry::MISSILES,
+    };
+    pub const GUIDED_MISSILE: Self = Self {
         name: "Guided Missile",
         description: "You can spray and pray all right but sometimes there are high value targets to hit. Don't hit all high value targets at once though. Leave some for hitting later so there's always something to hit at any given time.",
         unit_production_cost: UnitProductionCost {
@@ -161,10 +151,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(642.39),
         },
         rnd_cost: Money::new(253875.50),
-        industry_id: 5,
-    },
-    Product {
-        id: 11,
+        industry: Industry::MISSILES,
+    };
+    pub const AMMO: Self = Self {
         name: "Ammo",
         description: "These brass cylinders with lead and nitrocellulose in them get spent so quickly that we can't keep-up with the demand. Too bad the consumers themselves may also get spent spending them.",
         unit_production_cost: UnitProductionCost {
@@ -175,10 +164,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(0.3),
         },
         rnd_cost: Money::new(1874.32),
-        industry_id: 6,
-    },
-    Product {
-        id: 12,
+        industry: Industry::ARMS,
+    };
+    pub const SEMI_AUTO: Self = Self {
         name: "Semi-Auto",
         description: "All armies around the world, government, private or the mafia love our guns. They sleep with them. They oil their inner tubes for the smooth operation of.. ammo.",
         unit_production_cost: UnitProductionCost {
@@ -189,10 +177,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(92.12),
         },
         rnd_cost: Money::new(7849.28),
-        industry_id: 6,
-    },
-    Product {
-        id: 13,
+        industry: Industry::ARMS,
+    };
+    pub const SUGAR_DRINK: Self = Self {
         name: "Sugar Drink",
         description: "Though carcinogenic and causes obesity and heart disease, noone imposes high taxes on these. We're so lucky. Hahahah :)",
         unit_production_cost: UnitProductionCost {
@@ -203,10 +190,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(42.78),
         },
         rnd_cost: Money::new(538.29),
-        industry_id: 7,
-    },
-    Product {
-        id: 14,
+        industry: Industry::PROCESSED_FOODS,
+    };
+    pub const SYNTHETIC_MEAT: Self = Self {
         name: "Synthetic Meat",
         description: "It's eighty five percent vegan. But that's not the only selling point.",
         unit_production_cost: UnitProductionCost {
@@ -217,10 +203,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(82.55),
         },
         rnd_cost: Money::new(136592.00),
-        industry_id: 7,
-    },
-    Product {
-        id: 15,
+        industry: Industry::PROCESSED_FOODS,
+    };
+    pub const PREGNANCY_TEST: Self = Self {
         name: "Pregnancy Test",
         description: "Getting pregnant is expensive, pregnancy tests are cheap. Do the math.",
         unit_production_cost: UnitProductionCost {
@@ -231,10 +216,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(163.58),
         },
         rnd_cost: Money::new(67356.39),
-        industry_id: 8,
-    },
-    Product {
-        id: 16,
+        industry: Industry::PHARMACEUTICALS,
+    };
+    pub const BIRTH_CONTROL_PILL: Self = Self {
         name: "Birth Control Pill",
         description: "Some religions don't like this product, but we bought the majority of them long ago.",
         unit_production_cost: UnitProductionCost {
@@ -245,10 +229,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(56.34),
         },
         rnd_cost: Money::new(826658.30),
-        industry_id: 8,
-    },
-    Product {
-        id: 17,
+        industry: Industry::PHARMACEUTICALS,
+    };
+    pub const CHATBOT_TOKENS: Self = Self {
         name: "Chatbot Tokens",
         description: "Now you can move R&D and development ops to overseas and pretend using chatbots instead to boost your stock prices.",
         unit_production_cost: UnitProductionCost {
@@ -259,10 +242,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(0.7),
         },
         rnd_cost: Money::new(62859.20),
-        industry_id: 9,
-    },
-    Product {
-        id: 18,
+        industry: Industry::E_YAY,
+    };
+    pub const ASSISTANT_INTRUDER: Self = Self {
         name: "Assistant Intruder",
         description: "An E-YAY assistant that can be used defensively and offensively. We profit either way.",
         unit_production_cost: UnitProductionCost {
@@ -273,10 +255,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(894.31),
         },
         rnd_cost: Money::new(748293.22),
-        industry_id: 9,
-    },
-    Product {
-        id: 19,
+        industry: Industry::E_YAY,
+    };
+    pub const GRADUATE: Self = Self {
         name: "Graduate",
         description: "Students have a good time in our university and realize it wasn't free after they graduate. Better than credit cards.",
         unit_production_cost: UnitProductionCost {
@@ -287,10 +268,9 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(3.6),
         },
         rnd_cost: Money::new(102.30),
-        industry_id: 10,
-    },
-    Product {
-        id: 19,
+        industry: Industry::UNIVERSITY,
+    };
+    pub const STUDENT_DEBT: Self = Self {
         name: "Student Debt",
         description: "Thinking, innovating, job creating human-machines with shitloads of debt. What better tool to advance our evolving revolving economy!",
         unit_production_cost: UnitProductionCost {
@@ -301,6 +281,29 @@ pub const PRODUCTS: &[Product] = &[
             packaging: Money::new(0.0),
         },
         rnd_cost: Money::new(1984054.75),
-        industry_id: 10,
-    }
+        industry: Industry::UNIVERSITY,
+    };
+}
+
+pub const PRODUCTS: &[Product] = &[
+    Product::INTEGRATED_CIRCUIT,
+    Product::MICROCHIP,
+    Product::SAAS,
+    Product::COMPUTER_VIRUS,
+    Product::PAPER,
+    Product::DEBT,
+    Product::SKIN_CLEANER,
+    Product::ELIXIR_OF_YOUTH,
+    Product::UNGUIDED_ROCKET,
+    Product::GUIDED_MISSILE,
+    Product::AMMO,
+    Product::SEMI_AUTO,
+    Product::SUGAR_DRINK,
+    Product::SYNTHETIC_MEAT,
+    Product::PREGNANCY_TEST,
+    Product::BIRTH_CONTROL_PILL,
+    Product::CHATBOT_TOKENS,
+    Product::ASSISTANT_INTRUDER,
+    Product::GRADUATE,
+    Product::STUDENT_DEBT,
 ];

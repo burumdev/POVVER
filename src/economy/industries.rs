@@ -1,60 +1,60 @@
-use crate::simulation::SimInt;
-
 pub struct Industry {
-    id: SimInt,
     name: &'static str,
     description: &'static str,
 }
 
-pub const INDUSTRIES: &[Industry] = &[
-    Industry {
-        id: 1,
+impl Industry {
+    pub const SEMICONDUCTORS: Self = Self {
         name: "Semiconductors",
         description: "Processes sand and wires to construct calculating glass gadgets.",
-    },
-    Industry {
-        id: 2,
+    };
+    pub const SOFTWARE: Self = Self {
         name: "Software",
         description: "Uses variables and pointers to produce magical binary blobs.",
-    },
-    Industry {
-        id: 3,
+    };
+    pub const BANK: Self = Self {
         name: "Bank",
         description: "Produces means of exchange and debt.",
-    },
-    Industry {
-        id: 4,
+    };
+    pub const COSMETICS: Self = Self {
         name: "Cosmetics",
         description: "Converts toxic chemicals to mildly toxic beautifiers.",
-    },
-    Industry {
-        id: 5,
+    };
+    pub const MISSILES: Self = Self {
         name: "Missiles",
         description: "Produces self-propelling bombs with a high kill rate.",
-    },
-    Industry {
-        id: 6,
+    };
+    pub const ARMS: Self = Self {
         name: "Arms",
         description: "Produces metal shooting tools that sell exceptionally well when crime rates are high not when people themselves are high.",
-    },
-    Industry {
-        id: 7,
+    };
+    pub const PROCESSED_FOODS: Self = Self {
         name: "Processed Foods",
         description: "Manufactures foodstuffs with low nutrition value and very high shelf lives.",
-    },
-    Industry {
-        id: 8,
+    };
+    pub const PHARMACEUTICALS: Self = Self {
         name: "Pharmaceuticals",
         description: "Insulin, sulfonylureas: large doses of salicylates have a hypoglycemic action and may enhance the effect of oral hypoglycemic agents.",
-    },
-    Industry {
-        id: 9,
+    };
+    pub const E_YAY: Self = Self {
         name: "E-YAY!",
         description: "Electronic YAY! produces chat bots with unlimited access to copyrighted data and compute repetition."
-    },
-    Industry {
-        id: 10,
+    };
+    pub const UNIVERSITY: Self = Self {
         name: "University",
         description: "A conglomeration that sells several years of fun time and treats to students indebting them in the process."
-    }
+    };
+}
+
+pub const INDUSTRIES: &[Industry] = &[
+    Industry::SEMICONDUCTORS,
+    Industry::SOFTWARE,
+    Industry::BANK,
+    Industry::COSMETICS,
+    Industry::MISSILES,
+    Industry::ARMS,
+    Industry::PROCESSED_FOODS,
+    Industry::PHARMACEUTICALS,
+    Industry::E_YAY,
+    Industry::UNIVERSITY,
 ];
