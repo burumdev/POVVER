@@ -89,10 +89,11 @@ impl UIController {
                                     }
                                 );
                             },
-                            UIAction::Misc(misc) => {
+                            UIAction::Misc => {
+                                let misc_lock = state.misc.lock().unwrap();
                                 appw.set_state(UIState {
-                                    is_paused: misc.is_paused,
-                                    speed_index: misc.speed_index as SimInt,
+                                    is_paused: misc_lock.is_paused,
+                                    speed_index: misc_lock.speed_index as SimInt,
                                 });
                             }
                         }
