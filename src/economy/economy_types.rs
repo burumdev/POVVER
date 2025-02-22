@@ -1,14 +1,14 @@
 use crate::simulation::{SimFlo, SimInt};
 use crate::utils_traits::Flippable;
 
-#[derive(Debug)]
-pub struct Money(SimFlo);
-
 pub const INFLATION_MAX: SimFlo = 10.0;
 pub const INFLATION_MIN: SimFlo = -10.0;
 pub const FUEL_PRICE_MIN: SimFlo = 100.0;
 pub const FUEL_PRICE_MAX: SimFlo = 1000.0;
 pub const FUEL_PRICE_MODIFIER: SimFlo = 16.00;
+
+#[derive(Debug, Copy, Clone)]
+pub struct Money(SimFlo);
 
 impl Money {
     pub const fn new(amount: SimFlo) -> Self {

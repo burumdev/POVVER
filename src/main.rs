@@ -8,6 +8,7 @@ mod ui_controller;
 mod utils_random;
 mod utils_traits;
 mod app_state;
+mod utils_data;
 
 use simulation::Simulation;
 
