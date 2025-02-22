@@ -6,7 +6,7 @@ use tokio::{
 };
 
 use crate::{
-    app_state::{AppState, Misc, MiscState, UIPayload},
+    app_state::{AppState, Misc, MiscState},
     environment::Environment,
     economy::{Economy, the_hub::TheHub},
     timer::{Timer, TimerEvent},
@@ -20,11 +20,13 @@ pub type TickDuration = u64;
 
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
-#[derive(Debug)]
-pub enum UIAction {
+#[derive(Debug, Clone)]
+pub enum StateAction {
     Timer,
+    Month,
     Env,
     Misc,
+    Quit
 }
 
 pub struct Simulation {
@@ -62,27 +64,21 @@ impl Simulation {
         let app_state = AppState::new(timer_state, env_state, misc_state);
         let ui_controller = UIController::new();
 
+        let the_hub = TheHub::new();
+
         Self {
             app_state,
             timer,
             env,
             economy,
             ui_controller,
-            the_hub: TheHub::new(),
+            the_hub,
             is_running: false,
         }
     }
 }
 
 impl Simulation {
-    fn get_ui_payload(&self) -> UIPayload {
-        UIPayload {
-            timer: Arc::clone(&self.app_state.timer),
-            env: Arc::clone(&self.app_state.env),
-            misc: Arc::clone(&self.app_state.misc),
-        }
-    }
-
     fn change_speed(&mut self, speed_index: SimInt) {
         self.app_state.set_misc(Misc::SpeedIndex(speed_index as usize));
         self.timer.set_tick_duration(SPEEDS_ARRAY[speed_index as usize].get_tick_duration());
@@ -96,24 +92,34 @@ impl Simulation {
         self.app_state.set_misc(Misc::IsPaused(false));
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
+        let (wakeup_sender, wakeup_receiver) = mpsc::channel();
         let (ui_wakeup_sender, ui_wakeup_receiver) = tokio_mpsc::unbounded_channel();
-        let ui_payload = self.get_ui_payload();
+        let state_payload = self.app_state.get_state_payload();
 
-        let ui_join_handle = self
+        let mut handles = Vec::new();
+        handles.push(self
             .ui_controller
             .run(
                 ui_flag_sender,
                 ui_wakeup_receiver,
-                ui_payload,
-            );
+                Arc::clone(&state_payload),
+            ));
+
+        handles.push(self.the_hub.start(wakeup_receiver, Arc::clone(&state_payload)));
+
+        let send_action = |action: StateAction| {
+            ui_wakeup_sender.send(action.clone()).unwrap();
+            wakeup_sender.send(action).unwrap();
+        };
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
-        ui_wakeup_sender.send(UIAction::Misc).unwrap();
+        send_action(StateAction::Misc);
+        send_action(StateAction::Month);
 
         loop {
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {
                 misc = new_misc;
-                ui_wakeup_sender.send(UIAction::Misc).unwrap();
+                ui_wakeup_sender.send(StateAction::Misc).unwrap();
             }
 
             let flag_result = ui_flag_receiver.try_recv();
@@ -126,17 +132,23 @@ impl Simulation {
             }
 
             if !self.is_running {
-                ui_join_handle.join().unwrap();
+                wakeup_sender.send(StateAction::Quit).unwrap();
+                for handle in handles {
+                    handle.join().unwrap();
+                }
                 break;
             }
 
             let timer_event = self.timer.tick(misc.is_paused);
-            ui_wakeup_sender.send(UIAction::Timer).unwrap();
+            send_action(StateAction::Timer);
+            if timer_event == TimerEvent::MonthChange {
+                send_action(StateAction::Month);
+            }
 
             if !misc.is_paused && timer_event != TimerEvent::NothingUnusual {
                 self.env.update();
                 println!("ENV updated: {:?}", self.env);
-                ui_wakeup_sender.send(UIAction::Env).unwrap();
+                send_action(StateAction::Env);
             }
 
             if timer_event == TimerEvent::MonthChange {

@@ -1,3 +1,8 @@
+use std::{
+    thread,
+    time::Duration,
+};
+
 use super::{
     economy_types::Money,
     EnergyUnit,
@@ -34,4 +39,12 @@ impl PovverPlant {
 }
 
 impl PovverPlant {
+    pub fn start(&self) -> thread::JoinHandle<()> {
+        thread::spawn(move || {
+            loop {
+                println!("POVVER PLANT LOOP");
+                thread::sleep(Duration::from_secs(3));
+            }
+        })
+    }
 }

@@ -1,5 +1,7 @@
-use crate::simulation::{SimFlo, SimInt};
-use crate::utils_traits::Flippable;
+use crate::{
+    simulation::{SimFlo, SimInt},
+    utils_traits::Flippable,
+};
 
 pub const INFLATION_MAX: SimFlo = 10.0;
 pub const INFLATION_MIN: SimFlo = -10.0;

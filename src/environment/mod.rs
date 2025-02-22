@@ -5,14 +5,13 @@ mod environment_types;
 pub use environment_types::*;
 
 use crate::{
-    app_state::TimerState,
+    app_state::{TimerState, EnvState},
     ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
-    months::MonthData,
+    months::Month,
     simulation::{SimFlo, SimInt},
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
     utils_traits::Flippable,
 };
-use crate::app_state::EnvState;
 
 pub const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
@@ -70,6 +69,7 @@ impl Environment {
             wind_speed,
             wind_direction,
             the_sun: TheSun::default(),
+            sunshine_reduction: 0.0,
         }));
 
         (
@@ -85,7 +85,7 @@ impl Environment {
 
 // Private methods
 impl Environment {
-    fn get_the_sun(&self, clouds: &[Cloud], hour: SimInt, month: &MonthData) -> TheSun {
+    fn get_the_sun(&self, clouds: &[Cloud], hour: SimInt, month: &Month) -> TheSun {
         let (start, end) = month.get_day_start_end();
 
         match hour {
@@ -94,11 +94,13 @@ impl Environment {
                 position: 17,
                 brightness: SunBrightness::NONE,
                 stage: SunStage::Set,
+                brightness_reduction: 0.0,
             },
             h if h > end => TheSun {
                 position: -1,
                 brightness: SunBrightness::NONE,
                 stage: SunStage::Set,
+                brightness_reduction: 0.0,
             },
             // Sun is rising!
             _ => {
@@ -170,6 +172,7 @@ impl Environment {
                 TheSun {
                     position,
                     brightness,
+                    brightness_reduction,
                     stage,
                 }
             }

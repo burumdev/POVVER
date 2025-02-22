@@ -9,8 +9,9 @@ pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, Clo
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct TheSun {
-    pub position: i32,
+    pub position: SimInt,
     pub brightness: SunBrightness,
+    pub brightness_reduction: SimFlo,
     pub stage: SunStage,
 }
 
@@ -19,6 +20,7 @@ impl Into<SunData> for TheSun {
         SunData {
             position: self.position,
             brightness: self.brightness.val(),
+            brightness_reduction: self.brightness_reduction,
             stage: self.stage,
         }
     }

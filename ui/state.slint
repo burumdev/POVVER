@@ -6,6 +6,15 @@ export struct Date {
    year: int,
 }
 
+export struct MonthData {
+    day_start: int,
+    day_end: int,
+    name: string,
+    sunshine_factor: float,
+    windspeed_factor: float,
+    cloud_forming_factor: float,
+}
+
 export struct TimerData {
     date: Date,
 }
@@ -20,6 +29,7 @@ export enum SunStage {
 struct SunData {
 	position: int,
 	brightness: float,
+	brightness_reduction: float,
 	stage: SunStage,
 }
 

@@ -1,7 +1,9 @@
-use crate::simulation::{SimFlo, SimInt};
+use crate::{
+    simulation::{SimFlo, SimInt},
+};
 
 #[derive(Debug, PartialEq)]
-pub struct MonthData {
+pub struct Month {
     pub number: SimInt,
     pub day_start: SimInt,
     pub day_end: SimInt,
@@ -11,18 +13,18 @@ pub struct MonthData {
     pub cloud_forming_factor: SimFlo,
 }
 
-impl MonthData {
+impl Month {
     pub fn get_day_start_end(&self) -> (SimInt, SimInt) {
         (self.day_start, self.day_end)
     }
 }
 
-pub fn get_month_data(number: usize) -> &'static MonthData {
+pub fn get_month_data(number: usize) -> &'static Month {
     &MONTHS[number - 1]
 }
 
-pub const MONTHS: [MonthData; 12] = [
-    MonthData {
+pub const MONTHS: [Month; 12] = [
+    Month {
         number: 1,
         name: "January",
         day_start: 8,
@@ -31,7 +33,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.0,
         cloud_forming_factor: 1.3,
     },
-    MonthData {
+    Month {
         number: 2,
         name: "February",
         day_start: 8,
@@ -40,7 +42,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.1,
         cloud_forming_factor: 1.2,
     },
-    MonthData {
+    Month {
         number: 3,
         name: "March",
         day_start: 7,
@@ -49,7 +51,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.0,
         cloud_forming_factor: 1.2,
     },
-    MonthData {
+    Month {
         number: 4,
         name: "April",
         day_start: 6,
@@ -58,7 +60,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 0.8,
         cloud_forming_factor: 1.4,
     },
-    MonthData {
+    Month {
         number: 5,
         name: "May",
         day_start: 6,
@@ -67,7 +69,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 0.75,
         cloud_forming_factor: 1.1,
     },
-    MonthData {
+    Month {
         number: 6,
         name: "June",
         day_start: 6,
@@ -76,7 +78,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 0.75,
         cloud_forming_factor: 0.8,
     },
-    MonthData {
+    Month {
         number: 7,
         name: "July",
         day_start: 5,
@@ -85,7 +87,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 0.9,
         cloud_forming_factor: 0.7,
     },
-    MonthData {
+    Month {
         number: 8,
         name: "August",
         day_start: 6,
@@ -94,7 +96,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.2,
         cloud_forming_factor: 0.7,
     },
-    MonthData {
+    Month {
         number: 9,
         name: "September",
         day_start: 7,
@@ -103,7 +105,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.2,
         cloud_forming_factor: 1.3,
     },
-    MonthData {
+    Month {
         number: 10,
         name: "October",
         day_start: 7,
@@ -112,7 +114,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.5,
         cloud_forming_factor: 1.5,
     },
-    MonthData {
+    Month {
         number: 11,
         name: "November",
         day_start: 7,
@@ -121,7 +123,7 @@ pub const MONTHS: [MonthData; 12] = [
         windspeed_factor: 1.2,
         cloud_forming_factor: 1.4,
     },
-    MonthData {
+    Month {
         number: 12,
         name: "December",
         day_start: 8,

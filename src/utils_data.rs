@@ -24,11 +24,11 @@ impl<T> SlidingWindow<T> {
         self.data.iter()
     }
 
-    pub fn last_n(&self, n: usize) -> Result<impl Iterator<Item = &T>, String> {
-        if n <= self.capacity {
-            Ok(self.data.range(self.capacity - n..=self.capacity))
+    pub fn last_n(&self, item_count: usize) -> Result<impl Iterator<Item = &T>, String> {
+        if item_count <= self.capacity {
+            Ok(self.data.range(self.capacity - item_count..=self.capacity))
         } else {
-            Err(format!("Utils SlidingWindow: Index {n} is out of bounds."))
+            Err(format!("Utils SlidingWindow: Index {item_count} is out of bounds."))
         }
     }
 }

@@ -1,4 +1,4 @@
-import { TimerData, EnvData, UIState } from "./state.slint";
+import { TimerData, MonthData, EnvData, UIState } from "./state.slint";
 
 export global GlobCallbacks {
     pure callback toggle_pause;
@@ -7,6 +7,7 @@ export global GlobCallbacks {
 
 export global Globs {
 	in property <TimerData> timer;
+	in property <MonthData> month;
 	in property <EnvData> env;
     in property <UIState> state;
 

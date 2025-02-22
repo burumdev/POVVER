@@ -1,4 +1,4 @@
-import { EnvData, TimerData, WindDirection } from "../../../state.slint";
+import { MonthData, EnvData, TimerData, WindDirection } from "../../../state.slint";
 import { Globs } from "../../../globals.slint";
 
 import { TabContent } from "./tab-content.slint";
@@ -8,7 +8,9 @@ import { CellData } from "../../common/datacell.slint";
 
 export component EnvironmentTab inherits TabContent {
 	in property <EnvData> env: Globs.env;
+	in property <MonthData> month: Globs.month;
 	in property <TimerData> timer: Globs.timer;
+
 	DataTable {
 		items: [
 			{
@@ -18,6 +20,11 @@ export component EnvironmentTab inherits TabContent {
 			{
 				label: "Brightness",
 				value: env.the_sun.brightness,
+				value_postfix: " LU",
+			},
+			{
+				label: "Brightness reduction by clouds",
+				value: env.the_sun.brightness_reduction,
 				value_postfix: " LU",
 			},
 			{
@@ -32,7 +39,37 @@ export component EnvironmentTab inherits TabContent {
 				label: "Speed",
 				value: env.wind_speed,
 				value_postfix: " kmh",
-			}
+			},
+			{
+				label: "Month",
+				is_category: true,
+			},
+			{
+				label: "Name",
+				value: month.name,
+			},
+			{
+				label: "Day starts at",
+				value: month.day_start,
+				value_postfix: ":00 hours",
+			},
+			{
+				label: "Day ends at",
+				value: month.day_end,
+				value_postfix: ":00 hours",
+			},
+			{
+				label: "Sunshine factor",
+				value: month.sunshine_factor,
+			},
+			{
+				label: "Windspeed factor",
+				value: month.windspeed_factor,
+			},
+			{
+				label: "Cloud forming factor",
+				value: month.cloud_forming_factor,
+			},
 		];
 	}
 }

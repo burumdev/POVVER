@@ -1,5 +1,5 @@
 import { GlobCallbacks, Globs } from "./globals.slint";
-import { UIState, TimerData, EnvData, Date, Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel } from "./state.slint";
+import { UIState, TimerData, MonthData, EnvData, Date, Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel } from "./state.slint";
 
 import { Utils } from "./utils.slint";
 
@@ -13,6 +13,7 @@ import "./fonts/MonaspiceArNerdFont-Bold.otf";
 export {
     UIState,
     Date,
+    MonthData,
     Cloud,
     CloudSize,
     SunStage,
@@ -25,6 +26,7 @@ export component PovverMain inherits Window {
     title: "POVVER";
 
     in property <TimerData> timer <=> Globs.timer;
+    in property <MonthData> month <=> Globs.month;
     in property <EnvData> env <=> Globs.env;
     in property <UIState> state <=> Globs.state;
 

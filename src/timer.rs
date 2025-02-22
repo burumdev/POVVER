@@ -3,6 +3,7 @@ use std::{
     time::Duration,
     sync::{Arc, RwLock},
 };
+
 use crate::{
     app_state::TimerState,
     ui_controller::Date,
@@ -68,7 +69,7 @@ impl Timer {
         let hour = (total_hours % 24) as SimInt;
 
         let total_days = total_hours / 24;
-        let day = (total_days % 30 + 1) as SimInt + 1;
+        let day = (total_days % 30) as SimInt + 1;
 
         let total_months = total_days / 30;
         let month = (total_months % 12) as SimInt + 1;

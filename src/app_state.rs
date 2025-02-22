@@ -2,16 +2,16 @@ use std::{
     sync::{Arc, Mutex, RwLock},
 };
 use crate::{
-    ui_controller::{Date, Cloud},
-    months::MonthData
+    ui_controller::{Date, Cloud, WindDirection},
+    months::Month,
+    environment::{TheSun, WindSpeed},
+    simulation::SimFlo,
 };
-use crate::environment::{TheSun, WindSpeed};
-use crate::ui_controller::WindDirection;
 
 #[derive(Debug)]
 pub struct TimerState {
     pub date: Date,
-    pub month_data: &'static MonthData,
+    pub month_data: &'static Month,
 }
 
 #[derive(Debug)]
@@ -20,6 +20,7 @@ pub struct EnvState {
     pub wind_speed: WindSpeed,
     pub wind_direction: WindDirection,
     pub the_sun: TheSun,
+    pub sunshine_reduction: SimFlo,
 }
 
 #[derive(Debug, Clone)]
@@ -42,7 +43,7 @@ pub struct AppState {
 }
 
 #[derive(Debug)]
-pub struct UIPayload {
+pub struct StatePayload {
     pub timer: Arc<RwLock<TimerState>>,
     pub env: Arc<RwLock<EnvState>>,
     pub misc: Arc<Mutex<MiscState>>,
@@ -65,6 +66,14 @@ impl AppState {
 }
 
 impl AppState {
+    pub fn get_state_payload(&self) -> Arc<StatePayload> {
+        Arc::new(StatePayload {
+            timer: Arc::clone(&self.timer),
+            env: Arc::clone(&self.env),
+            misc: Arc::clone(&self.misc),
+        })
+    }
+
     pub fn set_misc(&mut self, misc: Misc) {
         match misc {
             Misc::IsPaused(val) => {
