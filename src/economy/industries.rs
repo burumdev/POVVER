@@ -26,7 +26,7 @@ impl Industry {
     };
     pub const ARMS: Self = Self {
         name: "Arms",
-        description: "Produces metal shooting tools that sell exceptionally well when crime rates are high not when people themselves are high.",
+        description: "Produces metal shooting tools that sell exceptionally well when crime rates are high.",
     };
     pub const PROCESSED_FOODS: Self = Self {
         name: "Processed Foods",

@@ -34,7 +34,4 @@ impl PovverPlant {
 }
 
 impl PovverPlant {
-    pub fn start(&mut self) {
-
-    }
 }

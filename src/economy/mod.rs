@@ -5,6 +5,9 @@ mod povver_plant;
 mod products;
 
 mod economy_types;
+pub mod the_hub;
+mod factory;
+
 use economy_types::*;
 
 use crate::{

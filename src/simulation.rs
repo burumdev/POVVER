@@ -8,7 +8,7 @@ use tokio::{
 use crate::{
     app_state::{AppState, Misc, MiscState, UIPayload},
     environment::Environment,
-    economy::Economy,
+    economy::{Economy, the_hub::TheHub},
     timer::{Timer, TimerEvent},
     ui_controller::{UIController, Date, UIFlag},
     speed::SPEEDS_ARRAY,
@@ -33,7 +33,7 @@ pub struct Simulation {
     env: Environment,
     economy: Economy,
     ui_controller: UIController,
-    entities: bool,
+    the_hub: TheHub,
     is_running: bool,
 }
 
@@ -68,7 +68,7 @@ impl Simulation {
             env,
             economy,
             ui_controller,
-            entities: true,
+            the_hub: TheHub::new(),
             is_running: false,
         }
     }
