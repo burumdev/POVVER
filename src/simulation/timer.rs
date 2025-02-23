@@ -1,15 +1,15 @@
 use std::{
+    sync::{Arc, RwLock},
     thread,
     time::Duration,
-    sync::{Arc, RwLock},
 };
 
 use crate::{
     app_state::TimerState,
-    ui_controller::Date,
-    months::get_month_data,
-    simulation::{SimInt, TickDuration}
+    simulation::{SimInt, TickDuration},
+    ui_controller::Date
 };
+use crate::environment::months::get_month_data;
 
 #[derive(Debug, PartialEq)]
 pub enum TimerEvent {

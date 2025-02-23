@@ -1,15 +1,12 @@
+mod app_state;
 mod economy;
 mod environment;
-mod months;
-mod simulation;
-mod speed;
-mod timer;
 mod ui_controller;
 mod utils_random;
 mod utils_traits;
-mod app_state;
 mod utils_data;
 
+mod simulation;
 use simulation::Simulation;
 
 fn main() {

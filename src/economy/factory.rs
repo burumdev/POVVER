@@ -1,7 +1,9 @@
 use crate::{
-    economy::economy_types::Money,
-    economy::industries::Industry,
-    economy::products::Product,
+    economy::{
+        economy_types::Money,
+        industries::Industry,
+        products::Product,
+    },
 };
 
 pub const FACTORY_INIT_MONEY: Money = Money::new(10000.0);

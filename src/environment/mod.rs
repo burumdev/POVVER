@@ -2,13 +2,14 @@ use std::sync::{Arc, RwLock};
 use rand::{random, rngs::ThreadRng, seq::SliceRandom, thread_rng, Rng};
 
 mod environment_types;
-pub use environment_types::*;
+pub mod months;
 
+pub use environment_types::*;
+use months::Month;
 use crate::{
-    app_state::{TimerState, EnvState},
-    ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
-    months::Month,
+    app_state::{EnvState, TimerState},
     simulation::{SimFlo, SimInt},
+    ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
     utils_traits::Flippable,
 };

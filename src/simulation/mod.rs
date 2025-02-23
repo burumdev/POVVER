@@ -1,17 +1,20 @@
-use std::{
-    sync::{mpsc, Arc, Mutex}
-};
-use tokio::{
-    sync::mpsc as tokio_mpsc,
-};
+use std::sync::{mpsc, Arc, Mutex};
+use tokio::sync::mpsc as tokio_mpsc;
+
+mod speed;
+use speed::SPEEDS_ARRAY;
+use the_hub::TheHub;
+
+mod timer;
+pub mod the_hub;
+
+use timer::{Timer, TimerEvent};
 
 use crate::{
     app_state::{AppState, Misc, MiscState},
+    economy::Economy,
     environment::Environment,
-    economy::{Economy, the_hub::TheHub},
-    timer::{Timer, TimerEvent},
-    ui_controller::{UIController, Date, UIFlag},
-    speed::SPEEDS_ARRAY,
+    ui_controller::{Date, UIController, UIFlag},
 };
 
 pub type SimInt = i32;

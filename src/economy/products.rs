@@ -1,8 +1,7 @@
-use super::{
-    industries::Industry,
-    economy_types::{
-        Money,
-        EnergyUnit,
+use crate::{
+    economy::{
+        industries::Industry,
+        economy_types::{Money, EnergyUnit},
     }
 };
 

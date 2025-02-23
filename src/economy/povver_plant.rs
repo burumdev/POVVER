@@ -3,12 +3,8 @@ use std::{
     time::Duration,
 };
 
-use super::{
-    economy_types::Money,
-    EnergyUnit,
-};
-
 use crate::{
+    economy::economy_types::{Money, EnergyUnit},
     simulation::SimInt,
     utils_data::SlidingWindow,
 };

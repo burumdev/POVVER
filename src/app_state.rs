@@ -1,12 +1,10 @@
-use std::{
-    sync::{Arc, Mutex, RwLock},
-};
+use std::sync::{Arc, Mutex, RwLock};
 use crate::{
-    ui_controller::{Date, Cloud, WindDirection},
-    months::Month,
     environment::{TheSun, WindSpeed},
     simulation::SimFlo,
+    ui_controller::{Cloud, Date, WindDirection},
 };
+use crate::environment::months::Month;
 
 #[derive(Debug)]
 pub struct TimerState {

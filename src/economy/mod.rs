@@ -1,18 +1,16 @@
 use rand::{prelude::ThreadRng, random, Rng};
 
 mod industries;
-mod povver_plant;
 mod products;
 
 mod economy_types;
-pub mod the_hub;
-mod factory;
-
 use economy_types::*;
+pub mod factory;
+pub mod povver_plant;
 
 use crate::{
     simulation::SimFlo,
-    utils_random::{random_inc_dec_clamp_signed, one_chance_in_many},
+    utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
     utils_traits::{Flippable, Percentage},
 };
 
