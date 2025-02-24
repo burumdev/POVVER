@@ -1,9 +1,9 @@
 use std::{
     thread,
-    time::Duration,
+    sync::{Arc, RwLock},
 };
-
 use crate::{
+    app_state::PovverPlantStateData,
     economy::economy_types::{Money, EnergyUnit},
     simulation::SimInt,
     utils_data::SlidingWindow,
@@ -15,31 +15,21 @@ pub const PRODUCTION_CAPACITY_INCREASE_COST: Money = Money::new(50000.0);
 pub const PRODUCTION_CAPACITY_INCREASE: EnergyUnit = EnergyUnit::new(200);
 
 pub struct PovverPlant {
-    fuel: SimInt,
-    fuel_capacity: SimInt,
-    production_capacity: EnergyUnit,
-    balance: Money,
     last_ten_sales: SlidingWindow<Money>,
 }
 
 impl PovverPlant {
     pub fn new() -> Self {
         Self {
-            fuel: 0,
-            fuel_capacity: 200,
-            production_capacity: EnergyUnit::new(400),
-            balance: Money::new(10000.0),
             last_ten_sales: SlidingWindow::new(10),
         }
     }
 }
 
 impl PovverPlant {
-    pub fn start(&self) -> thread::JoinHandle<()> {
+    pub fn start(&self, state: Arc<RwLock<PovverPlantStateData>>) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             loop {
-                println!("POVVER PLANT LOOP");
-                thread::sleep(Duration::from_secs(3));
             }
         })
     }

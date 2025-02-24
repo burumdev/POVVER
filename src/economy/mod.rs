@@ -3,7 +3,7 @@ use rand::{prelude::ThreadRng, random, Rng};
 mod industries;
 mod products;
 
-mod economy_types;
+pub mod economy_types;
 use economy_types::*;
 pub mod factory;
 pub mod povver_plant;

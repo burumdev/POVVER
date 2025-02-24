@@ -1,19 +1,19 @@
 use std::sync::{Arc, Mutex, RwLock};
 use crate::{
-    environment::{TheSun, WindSpeed},
-    simulation::SimFlo,
+    environment::{TheSun, WindSpeed, months::Month},
+    simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, Date, WindDirection},
+    economy::economy_types::{Money, EnergyUnit},
 };
-use crate::environment::months::Month;
 
 #[derive(Debug)]
-pub struct TimerState {
+pub struct TimerStateData {
     pub date: Date,
     pub month_data: &'static Month,
 }
 
 #[derive(Debug)]
-pub struct EnvState {
+pub struct EnvStateData {
     pub clouds: Vec<Cloud>,
     pub wind_speed: WindSpeed,
     pub wind_direction: WindDirection,
@@ -28,30 +28,46 @@ pub enum Misc {
 }
 
 #[derive(Debug, Clone)]
-pub struct MiscState {
+pub struct MiscStateData {
     pub is_paused: bool,
     pub speed_index: usize,
 }
 
+pub struct PovverPlantStateData {
+    pub fuel: SimInt,
+    pub fuel_capacity: SimInt,
+    pub production_capacity: EnergyUnit,
+    pub balance: Money,
+}
+
+pub struct FactoryStateData {
+    balance: Money,
+}
+
+pub struct EconomyState {
+    pub povver_plant: Arc<RwLock<PovverPlantStateData>>,
+    pub factories: Arc<Vec<RwLock<FactoryStateData>>>,
+}
+
 pub struct AppState {
-    pub timer: Arc<RwLock<TimerState>>,
-    pub env: Arc<RwLock<EnvState>>,
-    pub misc: Arc<Mutex<MiscState>>,
+    pub timer: Arc<RwLock<TimerStateData>>,
+    pub env: Arc<RwLock<EnvStateData>>,
+    pub misc: Arc<Mutex<MiscStateData>>,
     pub is_misc_updated: bool,
 }
 
 #[derive(Debug)]
 pub struct StatePayload {
-    pub timer: Arc<RwLock<TimerState>>,
-    pub env: Arc<RwLock<EnvState>>,
-    pub misc: Arc<Mutex<MiscState>>,
+    pub timer: Arc<RwLock<TimerStateData>>,
+    pub env: Arc<RwLock<EnvStateData>>,
+    pub misc: Arc<Mutex<MiscStateData>>,
 }
 
 impl AppState {
     pub fn new(
-        timer: Arc<RwLock<TimerState>>,
-        env: Arc<RwLock<EnvState>>,
-        misc: Arc<Mutex<MiscState>>
+        timer: Arc<RwLock<TimerStateData>>,
+        env: Arc<RwLock<EnvStateData>>,
+        misc: Arc<Mutex<MiscStateData>>
     ) -> Self {
 
         Self {
@@ -85,7 +101,7 @@ impl AppState {
         self.is_misc_updated = true;
     }
 
-    pub fn get_misc_state_updates(&mut self) -> Option<MiscState> {
+    pub fn get_misc_state_updates(&mut self) -> Option<MiscStateData> {
         if self.is_misc_updated {
             self.is_misc_updated = false;
             Some(self.misc.lock().unwrap().clone())

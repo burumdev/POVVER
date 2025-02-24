@@ -13,6 +13,10 @@ impl<T> SlidingWindow<T> {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
     pub fn add(&mut self, value: T) {
         if self.data.len() >= self.capacity {
             self.data.pop_front();

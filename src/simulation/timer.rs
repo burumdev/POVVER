@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    app_state::TimerState,
+    app_state::TimerStateData,
     simulation::{SimInt, TickDuration},
     ui_controller::Date
 };
@@ -25,12 +25,12 @@ pub enum TimerEvent {
 pub struct Timer {
     tick_duration: TickDuration,
     tick_count: u128,
-    timer_state: Arc<RwLock<TimerState>>,
+    timer_state: Arc<RwLock<TimerStateData>>,
 }
 
 // Constructor
 impl Timer {
-    pub fn new(tick_duration: TickDuration, init_date: Date) -> (Self, Arc<RwLock<TimerState>>) {
+    pub fn new(tick_duration: TickDuration, init_date: Date) -> (Self, Arc<RwLock<TimerStateData>>) {
         let tick_count =
         (
             (
@@ -44,7 +44,7 @@ impl Timer {
         ) as u128;
 
         let month_data = get_month_data(init_date.month as usize);
-        let timer_state = Arc::new(RwLock::new(TimerState {
+        let timer_state = Arc::new(RwLock::new(TimerStateData {
             date: init_date,
             month_data,
         }));

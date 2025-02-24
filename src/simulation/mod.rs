@@ -11,7 +11,7 @@ pub mod the_hub;
 use timer::{Timer, TimerEvent};
 
 use crate::{
-    app_state::{AppState, Misc, MiscState},
+    app_state::{AppState, Misc, MiscStateData},
     economy::Economy,
     environment::Environment,
     ui_controller::{Date, UIController, UIFlag},
@@ -60,14 +60,14 @@ impl Simulation {
         let (env, env_state) = Environment::new(Arc::clone(&timer_state));
         let economy = Economy::new();
 
-        let misc_state = Arc::new(Mutex::new(MiscState {
+        let misc_state = Arc::new(Mutex::new(MiscStateData {
             is_paused,
             speed_index,
         }));
         let app_state = AppState::new(timer_state, env_state, misc_state);
         let ui_controller = UIController::new();
 
-        let the_hub = TheHub::new();
+        let (the_hub, povver_plant_state) = TheHub::new();
 
         Self {
             app_state,
@@ -100,19 +100,23 @@ impl Simulation {
         let state_payload = self.app_state.get_state_payload();
 
         let mut handles = Vec::new();
-        handles.push(self
-            .ui_controller
-            .run(
-                ui_flag_sender,
-                ui_wakeup_receiver,
-                Arc::clone(&state_payload),
-            ));
+        handles.push(
+            self.ui_controller
+                .run(
+                    ui_flag_sender,
+                    ui_wakeup_receiver,
+                    Arc::clone(&state_payload),
+                )
+        );
 
-        handles.push(self.the_hub.start(wakeup_receiver, Arc::clone(&state_payload)));
+        handles.push(
+            self.the_hub
+                .start(wakeup_receiver, Arc::clone(&state_payload))
+        );
 
         let send_action = |action: StateAction| {
-            ui_wakeup_sender.send(action.clone()).unwrap();
-            wakeup_sender.send(action).unwrap();
+            wakeup_sender.send(action.clone()).unwrap();
+            ui_wakeup_sender.send(action).unwrap();
         };
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
@@ -122,7 +126,7 @@ impl Simulation {
         loop {
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {
                 misc = new_misc;
-                ui_wakeup_sender.send(StateAction::Misc).unwrap();
+                send_action(StateAction::Misc);
             }
 
             let flag_result = ui_flag_receiver.try_recv();
@@ -135,7 +139,7 @@ impl Simulation {
             }
 
             if !self.is_running {
-                wakeup_sender.send(StateAction::Quit).unwrap();
+                send_action(StateAction::Quit);
                 for handle in handles {
                     handle.join().unwrap();
                 }

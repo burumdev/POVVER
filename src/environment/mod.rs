@@ -7,7 +7,7 @@ pub mod months;
 pub use environment_types::*;
 use months::Month;
 use crate::{
-    app_state::{EnvState, TimerState},
+    app_state::{EnvStateData, TimerStateData},
     simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
@@ -22,14 +22,14 @@ pub const SUNSHINE_MAX: SimFlo = 100.0;
 
 #[derive(Debug)]
 pub struct Environment {
-    env_state: Arc<RwLock<EnvState>>,
-    timer_state: Arc<RwLock<TimerState>>,
+    env_state: Arc<RwLock<EnvStateData>>,
+    timer_state: Arc<RwLock<TimerStateData>>,
     rng: ThreadRng,
 }
 
 // Constructor
 impl Environment {
-    pub fn new(timer_state: Arc<RwLock<TimerState>>) -> (Self, Arc<RwLock<EnvState>>) {
+    pub fn new(timer_state: Arc<RwLock<TimerStateData>>) -> (Self, Arc<RwLock<EnvStateData>>) {
         let mut rng = thread_rng();
 
         let mut clouds = Vec::with_capacity(CLOUDS_MAX as usize);
@@ -65,7 +65,7 @@ impl Environment {
             WindDirection::Rtl
         };
 
-        let env_state = Arc::new(RwLock::new(EnvState {
+        let env_state = Arc::new(RwLock::new(EnvStateData {
             clouds,
             wind_speed,
             wind_direction,

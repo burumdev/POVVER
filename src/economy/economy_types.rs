@@ -24,7 +24,7 @@ impl Money {
     }
 
     pub fn set(&mut self, amount: SimFlo) {
-        self.0 = amount;
+        self.0 = amount.clamp(0.0, SimFlo::MAX);
     }
 }
 
