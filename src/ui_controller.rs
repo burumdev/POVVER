@@ -109,6 +109,7 @@ impl UIController {
                                 });
                             },
                             StateAction::Quit => break,
+                            _ => ()
                         }
                     }
                 }

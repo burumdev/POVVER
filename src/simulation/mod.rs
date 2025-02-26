@@ -29,6 +29,7 @@ pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 pub enum StateAction {
     Timer,
     Month,
+    Hour,
     Env,
     Misc,
     Quit
@@ -71,7 +72,6 @@ impl Simulation {
 
         let app_state = AppState::new(timer_state, env_state, economy_state, hub_state, misc_state);
 
-
         Self {
             app_state,
             timer,
@@ -102,20 +102,16 @@ impl Simulation {
         let (ui_wakeup_sender, ui_wakeup_receiver) = tokio_mpsc::unbounded_channel();
         let state_payload = self.app_state.get_state_payload();
 
-        let mut handles = Vec::new();
-        handles.push(
+        let handles = vec![
             self.ui_controller
                 .run(
                     ui_flag_sender,
                     ui_wakeup_receiver,
                     Arc::clone(&state_payload),
-                )
-        );
-
-        handles.push(
+                ),
             self.the_hub
                 .start(wakeup_receiver, Arc::clone(&state_payload))
-        );
+        ];
 
         let send_action = |action: StateAction| {
             wakeup_sender.send(action.clone()).unwrap();
@@ -151,19 +147,21 @@ impl Simulation {
 
             let timer_event = self.timer.tick(misc.is_paused);
             send_action(StateAction::Timer);
-            if timer_event == TimerEvent::MonthChange {
-                send_action(StateAction::Month);
-            }
-
-            if !misc.is_paused && timer_event != TimerEvent::NothingUnusual {
-                self.env.update();
-                println!("ENV updated: {:?}", self.env);
-                send_action(StateAction::Env);
-            }
-
-            if timer_event == TimerEvent::MonthChange {
-                self.economy.update_macroeconomics();
-                println!("ECONOMY: {:?}", self.economy);
+            match timer_event {
+                te if te != TimerEvent::NothingUnusual && te != TimerEvent::Paused => {
+                    self.env.update();
+                    println!("ENV updated: {:?}", self.env);
+                    send_action(StateAction::Env);
+                },
+                TimerEvent::HourChange => {
+                    send_action(StateAction::Hour);
+                },
+                TimerEvent::MonthChange => {
+                    send_action(StateAction::Month);
+                    self.economy.update_macroeconomics();
+                    println!("ECONOMY: {:?}", self.economy);
+                },
+                _ => ()
             }
         }
     }

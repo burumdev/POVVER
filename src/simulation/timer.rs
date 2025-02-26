@@ -11,7 +11,7 @@ use crate::{
 };
 use crate::environment::months::get_month_data;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TimerEvent {
     Paused,
     NothingUnusual,

@@ -1,12 +1,13 @@
 use std::{
     thread,
-    sync::{Arc, Mutex },
+    sync::{mpsc, Arc, Mutex },
 };
 use crate::{
     app_state::PovverPlantStateData,
     economy::economy_types::Money,
     utils_data::SlidingWindow,
 };
+use crate::simulation::StateAction;
 use crate::utils_data::ReadOnlyRwLock;
 
 pub struct PovverPlant {
@@ -24,15 +25,24 @@ impl PovverPlant {
 }
 
 impl PovverPlant {
-    pub fn start(&mut self) -> thread::JoinHandle<()> {
+    pub fn start(&mut self, wakeup_receiver: mpsc::Receiver<StateAction>) -> thread::JoinHandle<()> {
         let state = ReadOnlyRwLock::clone(&self.state);
         let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
-/*            loop {
-                if state.read().unwrap().fuel == 0 {
-                    //println!("Povver Plant: Fuel is low");
+            loop {
+                let action = wakeup_receiver.recv();
+
+                if let Ok(action) = action {
+                    match action {
+                        StateAction::Hour => {
+                            if state.read().unwrap().fuel == 0 {
+                                println!("Povver Plant: Fuel is low");
+                            }
+                        },
+                        _ => ()
+                    }
                 }
             }
-*/        })
+        })
     }
 }

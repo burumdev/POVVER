@@ -5,7 +5,6 @@ use std::{
 use crate::{
     app_state::{StatePayload, PovverPlantStateData},
     economy::{
-        factory::Factory,
         povver_plant::PovverPlant,
         economy_types::{EnergyUnit, Money}
     },
@@ -50,17 +49,18 @@ impl TheHub {
         wakeup_receiver: mpsc::Receiver<StateAction>,
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
-
-        self.povver_plant.start();
+        let (pp_wakeup_sender, pp_wakeup_receiver) = mpsc::channel();
+        self.povver_plant.start(pp_wakeup_receiver);
 
         thread::spawn(move || {
             loop {
-
-                let action = wakeup_receiver.try_recv();
+                let action = wakeup_receiver.recv();
 
                 if let Ok(action) = action {
+                    pp_wakeup_sender.send(action.clone()).unwrap();
                     match action {
                         StateAction::Timer => {},
+                        StateAction::Hour => {},
                         StateAction::Month => {},
                         StateAction::Env => {},
                         StateAction::Misc => {},
