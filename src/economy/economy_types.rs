@@ -28,7 +28,7 @@ impl Money {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum UpDown {
     Up,
     Down,

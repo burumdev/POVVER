@@ -46,6 +46,8 @@ pub struct Simulation {
 
 impl Simulation {
     pub fn new() -> Self {
+        let ui_controller = UIController::new();
+
         let speed_index = 3;
         let init_date = Date {
             minute: 0,
@@ -54,22 +56,21 @@ impl Simulation {
             month: 9,
             year: 2025,
         };
-
         let is_paused = true;
+
         let (mut timer, timer_state) = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date);
         timer.tick(is_paused);
-
         let (env, env_state) = Environment::new(Arc::clone(&timer_state));
-        let economy = Economy::new();
+        let (economy, economy_state) = Economy::new();
+        let (the_hub, hub_state) = TheHub::new();
 
         let misc_state = Arc::new(Mutex::new(MiscStateData {
             is_paused,
             speed_index,
         }));
-        let app_state = AppState::new(timer_state, env_state, misc_state);
-        let ui_controller = UIController::new();
 
-        let (the_hub, povver_plant_state) = TheHub::new();
+        let app_state = AppState::new(timer_state, env_state, economy_state, hub_state, misc_state);
+
 
         Self {
             app_state,

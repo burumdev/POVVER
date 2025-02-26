@@ -12,6 +12,7 @@ use crate::{
     simulation::StateAction,
     utils_data::ReadOnlyRwLock,
 };
+use crate::app_state::HubState;
 
 pub struct TheHub {
     povver_plant: PovverPlant,
@@ -20,7 +21,7 @@ pub struct TheHub {
 }
 
 impl TheHub {
-    pub fn new() -> (Self, Arc<RwLock<PovverPlantStateData>>) {
+    pub fn new() -> (Self, HubState) {
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: 0,
             fuel_capacity: 200,
@@ -34,7 +35,10 @@ impl TheHub {
                 povver_plant_state: Arc::clone(&povver_plant_state),
                 factories: Vec::new(),
             },
-            povver_plant_state,
+            HubState {
+                povver_plant: povver_plant_state,
+                factories: Arc::new(Vec::new()),
+            },
         )
     }
 }

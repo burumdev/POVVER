@@ -3,9 +3,9 @@ use crate::{
     environment::{TheSun, WindSpeed, months::Month},
     simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, Date, WindDirection},
-    economy::economy_types::{Money, EnergyUnit},
+    economy::economy_types::{Money, EnergyUnit, UpDown},
+    utils_data::ReadOnlyRwLock,
 };
-use crate::utils_data::ReadOnlyRwLock;
 
 #[derive(Debug)]
 pub struct TimerStateData {
@@ -45,7 +45,14 @@ pub struct FactoryStateData {
     balance: Money,
 }
 
-pub struct EconomyState {
+#[derive(Debug)]
+pub struct EconomyStateData {
+    pub inflation_rate: SimFlo,
+    pub inflation_direction: UpDown,
+    pub fuel_price: Money,
+}
+
+pub struct HubState {
     pub povver_plant: Arc<RwLock<PovverPlantStateData>>,
     pub factories: Arc<Vec<RwLock<FactoryStateData>>>,
 }
@@ -53,6 +60,8 @@ pub struct EconomyState {
 pub struct AppState {
     pub timer: Arc<RwLock<TimerStateData>>,
     pub env: Arc<RwLock<EnvStateData>>,
+    pub economy: Arc<RwLock<EconomyStateData>>,
+    pub hub: HubState,
     pub misc: Arc<Mutex<MiscStateData>>,
     pub is_misc_updated: bool,
 }
@@ -61,6 +70,7 @@ pub struct AppState {
 pub struct StatePayload {
     pub timer: ReadOnlyRwLock<TimerStateData>,
     pub env: ReadOnlyRwLock<EnvStateData>,
+    pub economy: ReadOnlyRwLock<EconomyStateData>,
     pub misc: Arc<Mutex<MiscStateData>>,
 }
 
@@ -68,12 +78,16 @@ impl AppState {
     pub fn new(
         timer: Arc<RwLock<TimerStateData>>,
         env: Arc<RwLock<EnvStateData>>,
+        economy: Arc<RwLock<EconomyStateData>>,
+        hub: HubState,
         misc: Arc<Mutex<MiscStateData>>
     ) -> Self {
 
         Self {
             timer,
             env,
+            economy,
+            hub,
             misc,
             is_misc_updated: true,
         }
@@ -85,6 +99,7 @@ impl AppState {
         Arc::new(StatePayload {
             timer: ReadOnlyRwLock::from(Arc::clone(&self.timer)),
             env: ReadOnlyRwLock::from(Arc::clone(&self.env)),
+            economy: ReadOnlyRwLock::from(Arc::clone(&self.economy)),
             misc: Arc::clone(&self.misc),
         })
     }
