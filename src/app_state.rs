@@ -5,6 +5,7 @@ use crate::{
     ui_controller::{Cloud, Date, WindDirection},
     economy::economy_types::{Money, EnergyUnit},
 };
+use crate::utils_data::ReadOnlyRwLock;
 
 #[derive(Debug)]
 pub struct TimerStateData {
@@ -58,8 +59,8 @@ pub struct AppState {
 
 #[derive(Debug)]
 pub struct StatePayload {
-    pub timer: Arc<RwLock<TimerStateData>>,
-    pub env: Arc<RwLock<EnvStateData>>,
+    pub timer: ReadOnlyRwLock<TimerStateData>,
+    pub env: ReadOnlyRwLock<EnvStateData>,
     pub misc: Arc<Mutex<MiscStateData>>,
 }
 
@@ -82,8 +83,8 @@ impl AppState {
 impl AppState {
     pub fn get_state_payload(&self) -> Arc<StatePayload> {
         Arc::new(StatePayload {
-            timer: Arc::clone(&self.timer),
-            env: Arc::clone(&self.env),
+            timer: ReadOnlyRwLock::from(Arc::clone(&self.timer)),
+            env: ReadOnlyRwLock::from(Arc::clone(&self.env)),
             misc: Arc::clone(&self.misc),
         })
     }

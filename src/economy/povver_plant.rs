@@ -30,6 +30,9 @@ impl PovverPlant {
     pub fn start(&self, state: Arc<RwLock<PovverPlantStateData>>) -> thread::JoinHandle<()> {
         thread::spawn(move || {
             loop {
+                if state.read().unwrap().fuel == 0 {
+                    println!("Povver Plant: Fuel is low");
+                }
             }
         })
     }

@@ -1,4 +1,7 @@
-use std::collections::VecDeque;
+use std::{
+    collections::VecDeque,
+    sync::{Arc, RwLock, RwLockReadGuard},
+};
 
 pub struct SlidingWindow<T> {
     data: VecDeque<T>,
@@ -34,5 +37,18 @@ impl<T> SlidingWindow<T> {
         } else {
             Err(format!("Utils SlidingWindow: Index {item_count} is out of bounds."))
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct ReadOnlyRwLock<T>(Arc<RwLock<T>>);
+
+impl<T> ReadOnlyRwLock<T> {
+    pub fn from(init_arc: Arc<RwLock<T>>) -> Self {
+        Self(init_arc)
+    }
+
+    pub fn read(&self) -> std::sync::LockResult<RwLockReadGuard<T>> {
+        self.0.read()
     }
 }
