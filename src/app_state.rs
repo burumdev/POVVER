@@ -34,6 +34,7 @@ pub struct MiscStateData {
     pub speed_index: usize,
 }
 
+#[derive(Debug)]
 pub struct PovverPlantStateData {
     pub fuel: SimInt,
     pub fuel_capacity: SimInt,
@@ -41,6 +42,7 @@ pub struct PovverPlantStateData {
     pub balance: Money,
 }
 
+#[derive(Debug)]
 pub struct FactoryStateData {
     balance: Money,
 }
@@ -54,7 +56,7 @@ pub struct EconomyStateData {
 
 pub struct HubState {
     pub povver_plant: Arc<RwLock<PovverPlantStateData>>,
-    pub factories: Arc<Vec<RwLock<FactoryStateData>>>,
+    pub factories: Arc<RwLock<Vec<FactoryStateData>>>,
 }
 
 pub struct AppState {
@@ -71,6 +73,8 @@ pub struct StatePayload {
     pub timer: ReadOnlyRwLock<TimerStateData>,
     pub env: ReadOnlyRwLock<EnvStateData>,
     pub economy: ReadOnlyRwLock<EconomyStateData>,
+    pub povver_plant: ReadOnlyRwLock<PovverPlantStateData>,
+    pub factories: ReadOnlyRwLock<Vec<FactoryStateData>>,
     pub misc: Arc<Mutex<MiscStateData>>,
 }
 
@@ -100,6 +104,8 @@ impl AppState {
             timer: ReadOnlyRwLock::from(Arc::clone(&self.timer)),
             env: ReadOnlyRwLock::from(Arc::clone(&self.env)),
             economy: ReadOnlyRwLock::from(Arc::clone(&self.economy)),
+            povver_plant: ReadOnlyRwLock::from(Arc::clone(&self.hub.povver_plant)),
+            factories: ReadOnlyRwLock::from(Arc::clone(&self.hub.factories)),
             misc: Arc::clone(&self.misc),
         })
     }

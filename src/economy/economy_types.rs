@@ -50,6 +50,7 @@ impl Flippable for UpDown {
     }
 }
 
+#[derive(Debug)]
 pub struct EnergyUnit(SimInt);
 
 impl EnergyUnit {

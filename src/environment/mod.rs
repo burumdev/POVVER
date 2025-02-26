@@ -97,7 +97,7 @@ impl Environment {
                 stage: SunStage::Set,
                 brightness_reduction: 0.0,
             },
-            h if h > end => TheSun {
+            h if h > end - 1 => TheSun {
                 position: -1,
                 brightness: SunBrightness::NONE,
                 stage: SunStage::Set,
@@ -106,7 +106,7 @@ impl Environment {
             // Sun is rising!
             _ => {
                 let float_hour = hour as SimFlo;
-                let total_day_hours = end - start;
+                let total_day_hours = (end - 1) - start;
 
                 /*
                     POSITION OF THE SUN

@@ -28,11 +28,11 @@ impl PovverPlant {
         let state = ReadOnlyRwLock::clone(&self.state);
         let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
-            loop {
+/*            loop {
                 if state.read().unwrap().fuel == 0 {
-                    println!("Povver Plant: Fuel is low");
+                    //println!("Povver Plant: Fuel is low");
                 }
             }
-        })
+*/        })
     }
 }

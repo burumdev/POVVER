@@ -53,7 +53,7 @@ impl Simulation {
             minute: 0,
             hour: 12,
             day: 1,
-            month: 9,
+            month: 1,
             year: 2025,
         };
         let is_paused = true;
