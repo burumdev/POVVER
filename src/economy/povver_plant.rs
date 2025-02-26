@@ -1,33 +1,32 @@
 use std::{
     thread,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex },
 };
 use crate::{
     app_state::PovverPlantStateData,
-    economy::economy_types::{Money, EnergyUnit},
-    simulation::SimInt,
+    economy::economy_types::Money,
     utils_data::SlidingWindow,
 };
-
-pub const FUEL_CAPACITY_INCREASE_COST: Money = Money::new(10000.0);
-pub const FUEL_CAPACITY_INCREASE: SimInt = 100;
-pub const PRODUCTION_CAPACITY_INCREASE_COST: Money = Money::new(50000.0);
-pub const PRODUCTION_CAPACITY_INCREASE: EnergyUnit = EnergyUnit::new(200);
+use crate::utils_data::ReadOnlyRwLock;
 
 pub struct PovverPlant {
-    last_ten_sales: SlidingWindow<Money>,
+    last_ten_sales: Arc<Mutex<SlidingWindow<Money>>>,
+    state: ReadOnlyRwLock<PovverPlantStateData>,
 }
 
 impl PovverPlant {
-    pub fn new() -> Self {
+    pub fn new(state: ReadOnlyRwLock<PovverPlantStateData>) -> Self {
         Self {
-            last_ten_sales: SlidingWindow::new(10),
+            last_ten_sales: Arc::new(Mutex::new(SlidingWindow::new(10))),
+            state
         }
     }
 }
 
 impl PovverPlant {
-    pub fn start(&self, state: Arc<RwLock<PovverPlantStateData>>) -> thread::JoinHandle<()> {
+    pub fn start(&mut self) -> thread::JoinHandle<()> {
+        let state = ReadOnlyRwLock::clone(&self.state);
+        let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
             loop {
                 if state.read().unwrap().fuel == 0 {

@@ -3,10 +3,12 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 mod speed;
 use speed::SPEEDS_ARRAY;
-use the_hub::TheHub;
+use hub::TheHub;
 
 mod timer;
-pub mod the_hub;
+pub mod hub;
+mod hub_signals;
+mod hub_constants;
 
 use timer::{Timer, TimerEvent};
 

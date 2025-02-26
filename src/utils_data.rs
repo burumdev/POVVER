@@ -48,6 +48,10 @@ impl<T> ReadOnlyRwLock<T> {
         Self(init_arc)
     }
 
+    pub fn clone(from: &ReadOnlyRwLock<T>) -> Self {
+        Self(from.0.clone())
+    }
+
     pub fn read(&self) -> std::sync::LockResult<RwLockReadGuard<T>> {
         self.0.read()
     }

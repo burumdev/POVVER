@@ -1,8 +1,7 @@
 use std::{
-    sync::{Arc, mpsc},
+    sync::{mpsc, Arc, RwLock},
     thread,
 };
-use std::sync::RwLock;
 use crate::{
     app_state::{StatePayload, PovverPlantStateData},
     economy::{
@@ -11,6 +10,7 @@ use crate::{
         economy_types::{EnergyUnit, Money}
     },
     simulation::StateAction,
+    utils_data::ReadOnlyRwLock,
 };
 
 pub struct TheHub {
@@ -27,10 +27,10 @@ impl TheHub {
             production_capacity: EnergyUnit::new(400),
             balance: Money::new(10000.0),
         }));
-
+        
         (
             Self {
-                povver_plant: PovverPlant::new(),
+                povver_plant: PovverPlant::new(ReadOnlyRwLock::from(Arc::clone(&povver_plant_state))),
                 povver_plant_state: Arc::clone(&povver_plant_state),
                 factories: Vec::new(),
             },
@@ -46,17 +46,16 @@ impl TheHub {
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
 
-        self.povver_plant.start(Arc::clone(&self.povver_plant_state));
+        self.povver_plant.start();
 
         thread::spawn(move || {
             loop {
+
                 let action = wakeup_receiver.try_recv();
 
                 if let Ok(action) = action {
                     match action {
-                        StateAction::Timer => {
-                            let timer_lock = state.timer.read().unwrap();
-                        },
+                        StateAction::Timer => {},
                         StateAction::Month => {},
                         StateAction::Env => {},
                         StateAction::Misc => {},
