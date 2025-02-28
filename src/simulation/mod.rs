@@ -111,8 +111,7 @@ impl Simulation {
                 ),
         ];
 
-        self.the_hub
-            .start(wakeup_receiver, Arc::clone(&state_payload));
+        self.the_hub.start(wakeup_receiver, Arc::clone(&state_payload));
 
         let send_action = |action: StateAction| {
             wakeup_sender.send(action.clone()).unwrap();
@@ -122,6 +121,7 @@ impl Simulation {
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
         send_action(StateAction::Misc);
         send_action(StateAction::Month);
+        send_action(StateAction::Env);
 
         while let Ok(_) = self.timer.ticker.recv() {
             let timer_event = self.timer.tick(misc.is_paused);

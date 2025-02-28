@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, RwLock},
+    sync::{Arc, RwLock},
     thread,
 };
 use crate::{
@@ -53,9 +53,7 @@ impl TheHub {
 
         thread::spawn(move || {
             loop {
-                let action = wakeup_receiver.recv();
-
-                if let Ok(action) = action {
+                while let Ok(action) = wakeup_receiver.recv() {
                     match action {
                         StateAction::Timer => {},
                         StateAction::Hour => {},

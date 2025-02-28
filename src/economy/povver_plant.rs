@@ -1,6 +1,6 @@
 use std::{
     thread,
-    sync::{mpsc, Arc, Mutex },
+    sync::{Arc, Mutex},
 };
 use crate::{
     app_state::PovverPlantStateData,
@@ -30,9 +30,7 @@ impl PovverPlant {
         let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
             loop {
-                let action = wakeup_receiver.recv();
-
-                if let Ok(action) = action {
+                while let Ok(action) = wakeup_receiver.recv() {
                     match action {
                         StateAction::Hour => {
                             if state.read().unwrap().fuel == 0 {
