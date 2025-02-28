@@ -26,6 +26,20 @@ impl Money {
     pub fn set(&mut self, amount: SimFlo) {
         self.0 = amount.clamp(0.0, SimFlo::MAX);
     }
+
+    pub fn dec(&mut self, amount: SimFlo) -> bool {
+        if self.0 - amount < 0.0 {
+            return false;
+        }
+
+        self.0 -= amount;
+
+        true
+    }
+
+    pub fn inc(&mut self, amount: SimFlo) {
+        self.0 += amount.clamp(0.0, SimFlo::MAX);
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

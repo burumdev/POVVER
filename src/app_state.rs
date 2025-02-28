@@ -40,6 +40,7 @@ pub struct PovverPlantStateData {
     pub fuel_capacity: SimInt,
     pub production_capacity: EnergyUnit,
     pub balance: Money,
+    pub is_bankrupt: bool,
 }
 
 #[derive(Debug)]
@@ -57,6 +58,7 @@ pub struct EconomyStateData {
 pub struct HubState {
     pub povver_plant: Arc<RwLock<PovverPlantStateData>>,
     pub factories: Arc<RwLock<Vec<FactoryStateData>>>,
+
 }
 
 pub struct AppState {

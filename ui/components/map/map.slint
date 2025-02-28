@@ -35,7 +35,8 @@ export component Map inherits Rectangle {
 		// Depends on sun brightness
 		Rectangle {
 			z: 3;
-			property<float> opaque: ((100 - sun_brightness) / 100) * 0.5;
+			property <float> sb: sun_brightness / 100;
+			property <float> opaque: sb == 0 ? 0.95 : 1 - sb;
 			background: rgba(0, 0, 0, opaque);
 			animate background {
 				duration: 200ms;

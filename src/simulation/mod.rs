@@ -6,7 +6,7 @@ use speed::SPEEDS_ARRAY;
 use hub::TheHub;
 
 pub mod hub;
-mod hub_signals;
+pub mod hub_signals;
 mod hub_constants;
 
 pub mod timer;
@@ -18,6 +18,7 @@ use crate::{
     environment::Environment,
     ui_controller::{Date, UIController, UIFlag},
 };
+use crate::utils_data::ReadOnlyRwLock;
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
@@ -110,7 +111,11 @@ impl Simulation {
                 ),
         ];
 
-        self.the_hub.start(wakeup_receiver, Arc::clone(&state_payload));
+        self.the_hub.start(
+            wakeup_receiver,
+            ReadOnlyRwLock::clone(&state_payload.economy),
+            Arc::clone(&self.app_state.hub.povver_plant),
+        );
 
         let send_action = |action: StateAction| {
             wakeup_sender.send(action.clone()).unwrap();
