@@ -13,6 +13,7 @@ use crate::{
     app_state::StatePayload,
     simulation::{SimInt, StateAction}
 };
+use crate::simulation::timer::TimerEvent;
 
 pub enum UIFlag {
     Pause,
@@ -65,26 +66,29 @@ impl UIController {
 
                 while let Some(action) = wakeup_receiver.recv().await {
                     match action {
-                        StateAction::Timer => {
+                        StateAction::Timer(event) => {
                             let timer_lock = state.timer.read().unwrap();
                             appw.set_timer(
                                 TimerData {
                                     date: timer_lock.date.clone(),
                                 }
                             );
-                        },
-                        StateAction::Month => {
-                            let timer_lock = state.timer.read().unwrap();
-                            appw.set_month(
-                                MonthData {
-                                    day_start: timer_lock.month_data.day_start,
-                                    day_end: timer_lock.month_data.day_end,
-                                    name: SharedString::from(timer_lock.month_data.name),
-                                    sunshine_factor: timer_lock.month_data.sunshine_factor,
-                                    windspeed_factor: timer_lock.month_data.cloud_forming_factor,
-                                    cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
-                                }
-                            );
+
+                            match event {
+                                TimerEvent::MonthChange => {
+                                    appw.set_month(
+                                        MonthData {
+                                            day_start: timer_lock.month_data.day_start,
+                                            day_end: timer_lock.month_data.day_end,
+                                            name: SharedString::from(timer_lock.month_data.name),
+                                            sunshine_factor: timer_lock.month_data.sunshine_factor,
+                                            windspeed_factor: timer_lock.month_data.cloud_forming_factor,
+                                            cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
+                                        }
+                                    );
+                                },
+                                _ => ()
+                            }
                         },
                         StateAction::Env => {
                             let env_lock = state.env.read().unwrap();

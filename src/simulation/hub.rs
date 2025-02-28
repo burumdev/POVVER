@@ -3,7 +3,7 @@ use std::{
     thread,
 };
 use crate::{
-    app_state::{StatePayload, PovverPlantStateData},
+    app_state::{StatePayload, PovverPlantStateData, FactoryStateData, HubState},
     economy::{
         povver_plant::PovverPlant,
         economy_types::{EnergyUnit, Money}
@@ -11,7 +11,6 @@ use crate::{
     simulation::StateAction,
     utils_data::ReadOnlyRwLock,
 };
-use crate::app_state::{FactoryStateData, HubState};
 
 pub struct TheHub {
     povver_plant: PovverPlant,
@@ -55,9 +54,7 @@ impl TheHub {
             loop {
                 while let Ok(action) = wakeup_receiver.recv() {
                     match action {
-                        StateAction::Timer => {},
-                        StateAction::Hour => {},
-                        StateAction::Month => {},
+                        StateAction::Timer(_) => {},
                         StateAction::Env => {},
                         StateAction::Misc => {},
                         StateAction::Quit => {

@@ -5,11 +5,11 @@ mod speed;
 use speed::SPEEDS_ARRAY;
 use hub::TheHub;
 
-mod timer;
 pub mod hub;
 mod hub_signals;
 mod hub_constants;
 
+pub mod timer;
 use timer::{Timer, TimerEvent};
 
 use crate::{
@@ -27,9 +27,7 @@ pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
 #[derive(Debug, Clone)]
 pub enum StateAction {
-    Timer,
-    Month,
-    Hour,
+    Timer(TimerEvent),
     Env,
     Misc,
     Quit
@@ -54,14 +52,15 @@ impl Simulation {
             minute: 0,
             hour: 12,
             day: 1,
-            month: 1,
+            month: 7,
             year: 2025,
         };
         let is_paused = true;
 
         let (mut timer, timer_state) = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date);
         timer.tick(is_paused);
-        let (env, env_state) = Environment::new(Arc::clone(&timer_state));
+        let (mut env, env_state) = Environment::new(Arc::clone(&timer_state));
+        env.update();
         let (economy, economy_state) = Economy::new();
         let (the_hub, hub_state) = TheHub::new();
 
@@ -120,28 +119,29 @@ impl Simulation {
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
         send_action(StateAction::Misc);
-        send_action(StateAction::Month);
+        send_action(StateAction::Timer(TimerEvent::MonthChange));
         send_action(StateAction::Env);
 
         while let Ok(_) = self.timer.ticker.recv() {
             let timer_event = self.timer.tick(misc.is_paused);
-            send_action(StateAction::Timer);
-            match timer_event {
-                te if te != TimerEvent::NothingUnusual && te != TimerEvent::Paused => {
+            match &timer_event {
+                te if *te != TimerEvent::NothingUnusual && *te != TimerEvent::Paused => {
                     self.env.update();
                     println!("ENV updated: {:?}", self.env);
                     send_action(StateAction::Env);
-                },
-                TimerEvent::HourChange => {
-                    send_action(StateAction::Hour);
-                },
-                TimerEvent::MonthChange => {
-                    send_action(StateAction::Month);
-                    self.economy.update_macroeconomics();
-                    println!("ECONOMY: {:?}", self.economy);
+
+                    match te {
+                        TimerEvent::MonthChange => {
+                            self.economy.update_macroeconomics();
+                            println!("ECONOMY: {:?}", self.economy);
+                        },
+                        _ => ()
+                    }
                 },
                 _ => ()
             }
+
+            send_action(StateAction::Timer(timer_event));
 
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {
                 misc = new_misc;

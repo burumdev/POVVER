@@ -6,9 +6,12 @@ use crate::{
     app_state::PovverPlantStateData,
     economy::economy_types::Money,
     utils_data::SlidingWindow,
+    simulation::{
+        StateAction,
+        timer::TimerEvent
+    },
+    utils_data::ReadOnlyRwLock,
 };
-use crate::simulation::StateAction;
-use crate::utils_data::ReadOnlyRwLock;
 
 pub struct PovverPlant {
     last_ten_sales: Arc<Mutex<SlidingWindow<Money>>>,
@@ -32,9 +35,14 @@ impl PovverPlant {
             loop {
                 while let Ok(action) = wakeup_receiver.recv() {
                     match action {
-                        StateAction::Hour => {
-                            if state.read().unwrap().fuel == 0 {
-                                println!("Povver Plant: Fuel is low");
+                        StateAction::Timer(event) => {
+                            match event {
+                                TimerEvent::HourChange => {
+                                    if state.read().unwrap().fuel == 0 {
+                                        println!("Povver Plant: Fuel is low");
+                                    }
+                                },
+                                _ => ()
                             }
                         },
                         StateAction::Quit => {
