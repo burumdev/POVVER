@@ -46,18 +46,16 @@ impl TheHub {
 impl TheHub {
     pub fn start(
         &mut self,
-        wakeup_receiver: mpsc::Receiver<StateAction>,
+        wakeup_receiver: crossbeam_channel::Receiver<StateAction>,
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
-        let (pp_wakeup_sender, pp_wakeup_receiver) = mpsc::channel();
-        self.povver_plant.start(pp_wakeup_receiver);
+        self.povver_plant.start(wakeup_receiver.clone());
 
         thread::spawn(move || {
             loop {
                 let action = wakeup_receiver.recv();
 
                 if let Ok(action) = action {
-                    pp_wakeup_sender.send(action.clone()).unwrap();
                     match action {
                         StateAction::Timer => {},
                         StateAction::Hour => {},

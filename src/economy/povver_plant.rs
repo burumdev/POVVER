@@ -25,7 +25,7 @@ impl PovverPlant {
 }
 
 impl PovverPlant {
-    pub fn start(&mut self, wakeup_receiver: mpsc::Receiver<StateAction>) -> thread::JoinHandle<()> {
+    pub fn start(&mut self, wakeup_receiver: crossbeam_channel::Receiver<StateAction>) -> thread::JoinHandle<()> {
         let state = ReadOnlyRwLock::clone(&self.state);
         let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
@@ -38,6 +38,9 @@ impl PovverPlant {
                             if state.read().unwrap().fuel == 0 {
                                 println!("Povver Plant: Fuel is low");
                             }
+                        },
+                        StateAction::Quit => {
+                            break;
                         },
                         _ => ()
                     }

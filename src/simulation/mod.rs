@@ -98,24 +98,25 @@ impl Simulation {
         self.app_state.set_misc(Misc::IsPaused(false));
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
-        let (wakeup_sender, wakeup_receiver) = mpsc::channel();
-        let (ui_wakeup_sender, ui_wakeup_receiver) = tokio_mpsc::unbounded_channel();
+        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded(1);
+        let (ui_async_sender, ui_async_receiver) = tokio_mpsc::unbounded_channel();
         let state_payload = self.app_state.get_state_payload();
 
-        let handles = vec![
+        let join_handles = vec![
             self.ui_controller
                 .run(
                     ui_flag_sender,
-                    ui_wakeup_receiver,
+                    ui_async_receiver,
                     Arc::clone(&state_payload),
                 ),
-            self.the_hub
-                .start(wakeup_receiver, Arc::clone(&state_payload))
         ];
+
+        self.the_hub
+            .start(wakeup_receiver, Arc::clone(&state_payload));
 
         let send_action = |action: StateAction| {
             wakeup_sender.send(action.clone()).unwrap();
-            ui_wakeup_sender.send(action).unwrap();
+            ui_async_sender.send(action).unwrap();
         };
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
@@ -139,7 +140,7 @@ impl Simulation {
 
             if !self.is_running {
                 send_action(StateAction::Quit);
-                for handle in handles {
+                for handle in join_handles {
                     handle.join().unwrap();
                 }
                 break;

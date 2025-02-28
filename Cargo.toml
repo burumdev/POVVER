@@ -4,10 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+crossbeam-channel = "0.5.14"
 num-traits = "0.2.19"
 rand = "0.8.5"
 slint = { version = "1.9.2", features = [ "backend-winit", "renderer-winit-skia" ] }
-tokio = { version = "1.43.0", features = ["full"] }
+tokio = { version = "1.43.0", features = ["sync"] }
 
 [build-dependencies]
 slint-build = "1.9.2"
