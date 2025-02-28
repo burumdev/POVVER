@@ -1,8 +1,9 @@
 use std::{
     sync::{Arc, RwLock},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
+use crossbeam_channel::{tick, Receiver};
 
 use crate::{
     app_state::TimerStateData,
@@ -21,11 +22,12 @@ pub enum TimerEvent {
     YearChange,
 }
 
-#[derive(Debug)]
-pub struct Timer {
+pub struct Timer
+{
     tick_duration: TickDuration,
     tick_count: u128,
     timer_state: Arc<RwLock<TimerStateData>>,
+    pub ticker: Receiver<Instant>,
 }
 
 // Constructor
@@ -54,6 +56,7 @@ impl Timer {
                 tick_duration,
                 tick_count,
                 timer_state: Arc::clone(&timer_state),
+                ticker: tick(Duration::from_millis(tick_duration)),
             },
             timer_state,
         )
@@ -91,8 +94,6 @@ impl Timer {
     pub fn tick(&mut self, is_paused: bool) -> TimerEvent {
         let mut event: TimerEvent;
         if !is_paused {
-            thread::sleep(Duration::from_millis(self.tick_duration));
-
             self.tick_count = self.tick_count.wrapping_add(1);
             let date = self.get_updated_date();
             event = TimerEvent::NothingUnusual;
@@ -122,9 +123,10 @@ impl Timer {
 
     pub fn set_tick_duration(&mut self, duration_ms: TickDuration) {
         self.tick_duration = duration_ms;
+        self.ticker = tick(Duration::from_millis(duration_ms));
     }
 
-    pub fn get_tick_duration(&self) -> TickDuration{
+    pub fn get_tick_duration(&self) -> TickDuration {
         self.tick_duration
     }
 }

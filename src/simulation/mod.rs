@@ -123,7 +123,26 @@ impl Simulation {
         send_action(StateAction::Misc);
         send_action(StateAction::Month);
 
-        loop {
+        while let Ok(_) = self.timer.ticker.recv() {
+            let timer_event = self.timer.tick(misc.is_paused);
+            send_action(StateAction::Timer);
+            match timer_event {
+                te if te != TimerEvent::NothingUnusual && te != TimerEvent::Paused => {
+                    self.env.update();
+                    println!("ENV updated: {:?}", self.env);
+                    send_action(StateAction::Env);
+                },
+                TimerEvent::HourChange => {
+                    send_action(StateAction::Hour);
+                },
+                TimerEvent::MonthChange => {
+                    send_action(StateAction::Month);
+                    self.economy.update_macroeconomics();
+                    println!("ECONOMY: {:?}", self.economy);
+                },
+                _ => ()
+            }
+
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {
                 misc = new_misc;
                 send_action(StateAction::Misc);
@@ -144,25 +163,6 @@ impl Simulation {
                     handle.join().unwrap();
                 }
                 break;
-            }
-
-            let timer_event = self.timer.tick(misc.is_paused);
-            send_action(StateAction::Timer);
-            match timer_event {
-                te if te != TimerEvent::NothingUnusual && te != TimerEvent::Paused => {
-                    self.env.update();
-                    println!("ENV updated: {:?}", self.env);
-                    send_action(StateAction::Env);
-                },
-                TimerEvent::HourChange => {
-                    send_action(StateAction::Hour);
-                },
-                TimerEvent::MonthChange => {
-                    send_action(StateAction::Month);
-                    self.economy.update_macroeconomics();
-                    println!("ECONOMY: {:?}", self.economy);
-                },
-                _ => ()
             }
         }
     }
