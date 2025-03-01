@@ -43,23 +43,18 @@ impl PovverPlant {
             loop {
                 while let Ok(action) = wakeup_receiver.recv() {
                     match action {
-                        StateAction::Timer(event) => {
-                            match event {
-                                TimerEvent::HourChange => {
-                                    if state.read().unwrap().fuel == 0 {
-                                        println!("Povver Plant: Fuel is low");
-                                        let balance = state.read().unwrap().balance.val();
-                                        let fuel_price = econ_state.read().unwrap().fuel_price.val();
-                                        let max_amount = balance / fuel_price;
+                        StateAction::Timer(TimerEvent::HourChange) => {
+                            if state.read().unwrap().fuel == 0 {
+                                println!("Povver Plant: Fuel is low");
+                                let balance = state.read().unwrap().balance.val();
+                                let fuel_price = econ_state.read().unwrap().fuel_price.val();
+                                let max_amount = balance / fuel_price;
 
-                                        if max_amount >= 1.0 {
-                                            let amount = ((max_amount / 10.0) + 1.0) as SimInt;
-                                            println!("Povver Plant: Buying fuel for amount {amount}");
-                                            signal_sender.send(PovverPlantSignals::BuyFuel(amount)).unwrap();
-                                        }
-                                    }
-                                },
-                                _ => ()
+                                if max_amount >= 1.0 {
+                                    let amount = ((max_amount / 10.0) + 1.0) as SimInt;
+                                    println!("Povver Plant: Buying fuel for amount {amount}");
+                                    signal_sender.send(PovverPlantSignals::BuyFuel(amount)).unwrap();
+                                }
                             }
                         },
                         StateAction::Quit => {

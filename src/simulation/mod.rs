@@ -127,7 +127,7 @@ impl Simulation {
         send_action(StateAction::Timer(TimerEvent::MonthChange));
         send_action(StateAction::Env);
 
-        while let Ok(_) = self.timer.ticker.recv() {
+        while self.timer.ticker.recv().is_ok() {
             let timer_event = self.timer.tick(misc.is_paused);
             match &timer_event {
                 te if *te != TimerEvent::NothingUnusual && *te != TimerEvent::Paused => {
@@ -135,12 +135,9 @@ impl Simulation {
                     println!("ENV updated: {:?}", self.env);
                     send_action(StateAction::Env);
 
-                    match te {
-                        TimerEvent::MonthChange => {
-                            self.economy.update_macroeconomics();
-                            println!("ECONOMY: {:?}", self.economy);
-                        },
-                        _ => ()
+                    if *te == TimerEvent::MonthChange {
+                        self.economy.update_macroeconomics();
+                        println!("ECONOMY: {:?}", self.economy);
                     }
                 },
                 _ => ()

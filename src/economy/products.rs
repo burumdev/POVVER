@@ -97,7 +97,7 @@ impl Product {
             equipment_maintenance: Money::new(8.23),
             packaging: Money::new(1.2),
         },
-        rnd_cost: Money::new(105234.80),
+        rnd_cost: Money::new(105234.8),
         industry: Industry::BANK,
     };
     pub const SKIN_CLEANER: Self = Self {
@@ -149,7 +149,7 @@ impl Product {
             equipment_maintenance: Money::new(174.34),
             packaging: Money::new(642.39),
         },
-        rnd_cost: Money::new(253875.50),
+        rnd_cost: Money::new(253875.5),
         industry: Industry::MISSILES,
     };
     pub const AMMO: Self = Self {
@@ -201,7 +201,7 @@ impl Product {
             equipment_maintenance: Money::new(1845.34),
             packaging: Money::new(82.55),
         },
-        rnd_cost: Money::new(136592.00),
+        rnd_cost: Money::new(136592.0),
         industry: Industry::PROCESSED_FOODS,
     };
     pub const PREGNANCY_TEST: Self = Self {
@@ -211,7 +211,7 @@ impl Product {
             energy: EnergyUnit::new(6),
             labor: Money::new(138.41),
             raw_materials: Money::new(256.68),
-            equipment_maintenance: Money::new(3659.10),
+            equipment_maintenance: Money::new(3659.1),
             packaging: Money::new(163.58),
         },
         rnd_cost: Money::new(67356.39),
@@ -227,7 +227,7 @@ impl Product {
             equipment_maintenance: Money::new(6984.11),
             packaging: Money::new(56.34),
         },
-        rnd_cost: Money::new(826658.30),
+        rnd_cost: Money::new(826658.3),
         industry: Industry::PHARMACEUTICALS,
     };
     pub const CHATBOT_TOKENS: Self = Self {
@@ -240,7 +240,7 @@ impl Product {
             equipment_maintenance: Money::new(3184.32),
             packaging: Money::new(0.7),
         },
-        rnd_cost: Money::new(62859.20),
+        rnd_cost: Money::new(62859.2),
         industry: Industry::E_YAY,
     };
     pub const ASSISTANT_INTRUDER: Self = Self {
@@ -250,7 +250,7 @@ impl Product {
             energy: EnergyUnit::new(88),
             labor: Money::new(1920.54),
             raw_materials: Money::new(4110.32),
-            equipment_maintenance: Money::new(52456.40),
+            equipment_maintenance: Money::new(52456.4),
             packaging: Money::new(894.31),
         },
         rnd_cost: Money::new(748293.22),
@@ -279,7 +279,7 @@ impl Product {
             equipment_maintenance: Money::new(10.23),
             packaging: Money::new(0.0),
         },
-        rnd_cost: Money::new(1984054.75),
+        rnd_cost: Money::new(1_984_054.7),
         industry: Industry::UNIVERSITY,
     };
 }

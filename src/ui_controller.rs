@@ -74,20 +74,17 @@ impl UIController {
                                 }
                             );
 
-                            match event {
-                                TimerEvent::MonthChange => {
-                                    appw.set_month(
-                                        MonthData {
-                                            day_start: timer_lock.month_data.day_start,
-                                            day_end: timer_lock.month_data.day_end,
-                                            name: SharedString::from(timer_lock.month_data.name),
-                                            sunshine_factor: timer_lock.month_data.sunshine_factor,
-                                            windspeed_factor: timer_lock.month_data.cloud_forming_factor,
-                                            cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
-                                        }
-                                    );
-                                },
-                                _ => ()
+                            if event == TimerEvent::MonthChange {
+                                appw.set_month(
+                                    MonthData {
+                                        day_start: timer_lock.month_data.day_start,
+                                        day_end: timer_lock.month_data.day_end,
+                                        name: SharedString::from(timer_lock.month_data.name),
+                                        sunshine_factor: timer_lock.month_data.sunshine_factor,
+                                        windspeed_factor: timer_lock.month_data.cloud_forming_factor,
+                                        cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
+                                    }
+                                );
                             }
                         },
                         StateAction::Env => {
@@ -110,7 +107,6 @@ impl UIController {
                             });
                         },
                         StateAction::Quit => break,
-                        _ => ()
                     }
                 }
             }).unwrap();

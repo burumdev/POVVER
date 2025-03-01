@@ -121,7 +121,7 @@ impl Environment {
                 let position = ((hour - start) as f32 + sunrise_shift.ceil()) as i32;
                 // Now invert the position of the sun so it
                 // rises from the east and sets from the west.
-                let position = SUN_POS_MAX as i32 - position;
+                let position = SUN_POS_MAX - position;
 
                 /*
                     SUN BRIGHTNESS
@@ -284,21 +284,19 @@ impl Environment {
             let movement = movement.round() as SimInt;
 
             if wind_direction == WindDirection::Rtl {
-                if (*position - movement) < 0 {
+                if *position - movement < 0 {
                     false
                 } else {
                     *position -= movement;
 
                     true
                 }
-            } else {
-                if *position + movement > CLOUD_POS_MAX {
+            } else if *position + movement > CLOUD_POS_MAX {
                     false
-                } else {
-                    *position += movement;
+            } else {
+                *position += movement;
 
-                    true
-                }
+                true
             }
         });
 

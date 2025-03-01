@@ -15,13 +15,13 @@ pub struct TheSun {
     pub stage: SunStage,
 }
 
-impl Into<SunData> for TheSun {
-    fn into(self) -> SunData {
+impl From<TheSun> for SunData {
+    fn from(the_sun: TheSun) -> Self {
         SunData {
-            position: self.position,
-            brightness: self.brightness.val(),
-            brightness_reduction: self.brightness_reduction,
-            stage: self.stage,
+            position: the_sun.position,
+            brightness: the_sun.brightness.val(),
+            brightness_reduction: the_sun.brightness_reduction,
+            stage: the_sun.stage,
         }
     }
 }
