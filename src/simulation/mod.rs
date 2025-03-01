@@ -1,4 +1,5 @@
 use std::sync::{mpsc, Arc, Mutex};
+use crossbeam_channel::internal::SelectHandle;
 use tokio::sync::mpsc as tokio_mpsc;
 
 mod speed;
@@ -25,6 +26,8 @@ pub type SimFlo = f32;
 pub type TickDuration = u64;
 
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
+
+const WAKEUP_RECEIVERS: usize = 3;
 
 #[derive(Debug, Clone)]
 pub enum StateAction {
@@ -63,7 +66,7 @@ impl Simulation {
         let (mut env, env_state) = Environment::new(Arc::clone(&timer_state));
         env.update();
         let (economy, economy_state) = Economy::new();
-        let (the_hub, hub_state) = TheHub::new();
+        let (the_hub, hub_state) = TheHub::new(ReadOnlyRwLock::from(economy_state.clone()));
 
         let misc_state = Arc::new(Mutex::new(MiscStateData {
             is_paused,
@@ -98,24 +101,21 @@ impl Simulation {
         self.app_state.set_misc(Misc::IsPaused(false));
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
-        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded(1);
+        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded(WAKEUP_RECEIVERS);
         let (ui_async_sender, ui_async_receiver) = tokio_mpsc::unbounded_channel();
         let state_payload = self.app_state.get_state_payload();
 
         let join_handles = vec![
-            self.ui_controller
-                .run(
-                    ui_flag_sender,
-                    ui_async_receiver,
-                    Arc::clone(&state_payload),
-                ),
+            self.ui_controller.run(
+                ui_flag_sender,
+                ui_async_receiver,
+                Arc::clone(&state_payload),
+            ),
+            self.the_hub.start(
+                wakeup_receiver,
+            ),
         ];
 
-        self.the_hub.start(
-            wakeup_receiver,
-            ReadOnlyRwLock::clone(&state_payload.economy),
-            Arc::clone(&self.app_state.hub.povver_plant),
-        );
 
         let send_action = |action: StateAction| {
             wakeup_sender.send(action.clone()).unwrap();
@@ -161,17 +161,15 @@ impl Simulation {
 
             if !self.is_running {
                 send_action(StateAction::Quit);
-                for handle in join_handles {
-                    handle.join().unwrap();
-                }
                 break;
             }
         }
+
+        println!("SIM: This simulation ended. Now yours continue.");
     }
 
     pub fn quit(&mut self) {
         self.is_running = false;
-        println!("SIM: This simulation ended. Now yours continue.");
     }
 
     pub fn toggle_paused(&mut self) {

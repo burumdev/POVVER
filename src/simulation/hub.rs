@@ -21,10 +21,11 @@ pub struct TheHub {
     povver_plant: PovverPlant,
     povver_plant_state: Arc<RwLock<PovverPlantStateData>>,
     factories_state: Arc<RwLock<Vec<FactoryStateData>>>,
+    econ_state: ReadOnlyRwLock<EconomyStateData>,
 }
 
 impl TheHub {
-    pub fn new() -> (Self, HubState) {
+    pub fn new(econ_state: ReadOnlyRwLock<EconomyStateData>) -> (Self, HubState) {
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: 0,
             fuel_capacity: 50,
@@ -34,11 +35,17 @@ impl TheHub {
         }));
         let factories_state = Arc::new(RwLock::new(Vec::new()));
 
+        let povver_plant = PovverPlant::new(
+            ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
+            ReadOnlyRwLock::clone(&econ_state),
+        );
+
         (
             Self {
-                povver_plant: PovverPlant::new(ReadOnlyRwLock::from(Arc::clone(&povver_plant_state))),
+                povver_plant,
                 povver_plant_state: Arc::clone(&povver_plant_state),
                 factories_state: Arc::clone(&factories_state),
+                econ_state,
             },
             HubState {
                 povver_plant: povver_plant_state,
@@ -52,15 +59,18 @@ impl TheHub {
     pub fn start(
         &mut self,
         wakeup_receiver: crossbeam_channel::Receiver<StateAction>,
-        econ_state: ReadOnlyRwLock<EconomyStateData>,
-        pp_state_mut: Arc<RwLock<PovverPlantStateData>>,
     ) -> thread::JoinHandle<()> {
         let (pp_signal_sender, pp_signal_receiver) = crossbeam_channel::bounded(1);
-        self.povver_plant.start(wakeup_receiver.clone(), ReadOnlyRwLock::clone(&econ_state), pp_signal_sender);
 
+        let join_handles = vec![
+            self.povver_plant.start(wakeup_receiver.clone(), pp_signal_sender)
+        ];
+
+        let econ_state = ReadOnlyRwLock::clone(&self.econ_state);
+        let pp_state_mut = Arc::clone(&self.povver_plant_state);
         thread::spawn(move || {
             loop {
-                while let Ok(signal) = pp_signal_receiver.recv() {
+                if let Ok(signal) = pp_signal_receiver.try_recv() {
                     match signal {
                         PovverPlantSignals::BuyFuel(amount) => {
                             println!("PP BUYS FUEL");
@@ -76,6 +86,7 @@ impl TheHub {
                         }
                     }
                 }
+
                 while let Ok(action) = wakeup_receiver.recv() {
                     match action {
                         StateAction::Timer(_) => {},
@@ -87,6 +98,12 @@ impl TheHub {
                         }
                     }
                 }
+
+                break;
+            }
+
+            for handle in join_handles {
+                handle.join().unwrap();
             }
         })
     }

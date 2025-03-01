@@ -15,8 +15,8 @@ pub struct TheSun {
     pub stage: SunStage,
 }
 
-impl From<TheSun> for SunData {
-    fn from(the_sun: TheSun) -> Self {
+impl From<&TheSun> for SunData {
+    fn from(the_sun: &TheSun) -> Self {
         SunData {
             position: the_sun.position,
             brightness: the_sun.brightness.val(),

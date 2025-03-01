@@ -19,13 +19,15 @@ use crate::simulation::SimInt;
 pub struct PovverPlant {
     last_ten_sales: Arc<Mutex<SlidingWindow<Money>>>,
     state: ReadOnlyRwLock<PovverPlantStateData>,
+    econ_state: ReadOnlyRwLock<EconomyStateData>,
 }
 
 impl PovverPlant {
-    pub fn new(state: ReadOnlyRwLock<PovverPlantStateData>) -> Self {
+    pub fn new(state: ReadOnlyRwLock<PovverPlantStateData>, econ_state: ReadOnlyRwLock<EconomyStateData>) -> Self {
         Self {
             last_ten_sales: Arc::new(Mutex::new(SlidingWindow::new(10))),
-            state
+            state,
+            econ_state,
         }
     }
 }
@@ -34,10 +36,11 @@ impl PovverPlant {
     pub fn start(
         &mut self,
         wakeup_receiver: crossbeam_channel::Receiver<StateAction>,
-        econ_state: ReadOnlyRwLock<EconomyStateData>,
         signal_sender: crossbeam_channel::Sender<PovverPlantSignals>,
     ) -> thread::JoinHandle<()> {
         let state = ReadOnlyRwLock::clone(&self.state);
+        let econ_state = ReadOnlyRwLock::clone(&self.econ_state);
+
         let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
             loop {
@@ -58,6 +61,7 @@ impl PovverPlant {
                             }
                         },
                         StateAction::Quit => {
+                            println!("Povver Plant: Quit signal received.");
                             break;
                         },
                         _ => ()

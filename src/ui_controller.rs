@@ -91,7 +91,7 @@ impl UIController {
                             let env_lock = state.env.read().unwrap();
                             appw.set_env(
                                 EnvData {
-                                    the_sun: env_lock.the_sun.into(),
+                                    the_sun: (&env_lock.the_sun).into(),
                                     wind_direction: env_lock.wind_direction,
                                     wind_speed: env_lock.wind_speed.val(),
                                     wind_speed_level: WindSpeedLevel::from(&env_lock.wind_speed),
@@ -106,7 +106,9 @@ impl UIController {
                                 speed_index: misc_lock.speed_index as SimInt,
                             });
                         },
-                        StateAction::Quit => break,
+                        StateAction::Quit => {
+                            break;
+                        },
                     }
                 }
             }).unwrap();
