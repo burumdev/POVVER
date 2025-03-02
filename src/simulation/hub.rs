@@ -1,5 +1,5 @@
 use std::{
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock},
     thread,
 };
 use crate::{
@@ -16,6 +16,7 @@ use crate::{
 };
 use crate::app_state::EconomyStateData;
 use crate::simulation::SimFlo;
+use crate::simulation::timer::TimerEvent;
 
 pub struct TheHub {
     povver_plant: PovverPlant,
@@ -56,18 +57,42 @@ impl TheHub {
 }
 
 impl TheHub {
+    fn do_hourly_jobs(&mut self) {
+        println!("Hey there doing hourly jobs!");
+    }
+}
+
+impl TheHub {
     pub fn start(
-        &mut self,
+        me: Arc<Mutex<Self>>,
         wakeup_receiver: crossbeam_channel::Receiver<StateAction>,
     ) -> thread::JoinHandle<()> {
+        let mut broadcast_count = 0;
+
+        let (broadcast_sender, broadcast_receiver) = crossbeam_channel::unbounded();
         let (pp_signal_sender, pp_signal_receiver) = crossbeam_channel::bounded(1);
 
-        let join_handles = vec![
-            self.povver_plant.start(wakeup_receiver.clone(), pp_signal_sender)
-        ];
+        let (join_handles, econ_state, pp_state_mut) = {
+            let mut me = me.lock().unwrap();
+            (
+                vec![
+                    me.povver_plant.start(broadcast_receiver.clone(), pp_signal_sender)
+                ],
+                ReadOnlyRwLock::clone(&me.econ_state),
+                Arc::clone(&me.povver_plant_state),
+            )
+        };
 
-        let econ_state = ReadOnlyRwLock::clone(&self.econ_state);
-        let pp_state_mut = Arc::clone(&self.povver_plant_state);
+        broadcast_count += join_handles.len();
+
+        let send_broadcast = move |action: StateAction| {
+            for _ in 0..broadcast_count {
+                if let Err(e) = broadcast_sender.send(action.clone()) {
+                    eprintln!("HUB: Could not send action to one recipient: {e}");
+                }
+            }
+        };
+
         thread::spawn(move || {
             loop {
                 if let Ok(signal) = pp_signal_receiver.try_recv() {
@@ -87,23 +112,29 @@ impl TheHub {
                     }
                 }
 
-                while let Ok(action) = wakeup_receiver.recv() {
+                if let Ok(action) = wakeup_receiver.recv() {
+                    send_broadcast(action.clone());
                     match action {
-                        StateAction::Timer(_) => {},
+                        StateAction::Timer(event) => {
+                            match event {
+                                TimerEvent::HourChange => {
+                                    me.lock().unwrap().do_hourly_jobs();
+                                }
+                                _ => ()
+                            }
+                        },
                         StateAction::Env => {},
                         StateAction::Misc => {},
                         StateAction::Quit => {
                             println!("HUB: Quit signal received.");
+                            send_broadcast(action);
+                            for handle in join_handles {
+                                handle.join().unwrap();
+                            }
                             break;
                         }
                     }
                 }
-
-                break;
-            }
-
-            for handle in join_handles {
-                handle.join().unwrap();
             }
         })
     }

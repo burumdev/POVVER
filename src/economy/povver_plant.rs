@@ -43,29 +43,28 @@ impl PovverPlant {
 
         let last_ten_sales = Arc::clone(&self.last_ten_sales);
         thread::spawn(move || {
-            loop {
-                while let Ok(action) = wakeup_receiver.recv() {
-                    match action {
-                        StateAction::Timer(TimerEvent::HourChange) => {
-                            if state.read().unwrap().fuel == 0 {
-                                println!("Povver Plant: Fuel is low");
-                                let balance = state.read().unwrap().balance.val();
-                                let fuel_price = econ_state.read().unwrap().fuel_price.val();
-                                let max_amount = balance / fuel_price;
+            while let Ok(action) = wakeup_receiver.recv() {
+                match action {
+                    StateAction::Timer(TimerEvent::HourChange) => {
+                        println!("PP: HourChange");
+                        if state.read().unwrap().fuel == 0 {
+                            println!("Povver Plant: Fuel is low");
+                            let balance = state.read().unwrap().balance.val();
+                            let fuel_price = econ_state.read().unwrap().fuel_price.val();
+                            let max_amount = balance / fuel_price;
 
-                                if max_amount >= 1.0 {
-                                    let amount = ((max_amount / 10.0) + 1.0) as SimInt;
-                                    println!("Povver Plant: Buying fuel for amount {amount}");
-                                    signal_sender.send(PovverPlantSignals::BuyFuel(amount)).unwrap();
-                                }
+                            if max_amount >= 1.0 {
+                                let amount = ((max_amount / 10.0) + 1.0) as SimInt;
+                                println!("Povver Plant: Buying fuel for amount {amount}");
+                                signal_sender.send(PovverPlantSignals::BuyFuel(amount)).unwrap();
                             }
-                        },
-                        StateAction::Quit => {
-                            println!("Povver Plant: Quit signal received.");
-                            break;
-                        },
-                        _ => ()
+                        }
+                    },
+                    StateAction::Quit => {
+                        println!("PP: Quit signal received.");
+                        break;
                     }
+                    _ => ()
                 }
             }
         })

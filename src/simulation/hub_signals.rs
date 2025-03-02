@@ -8,6 +8,10 @@ pub struct EnergyOffer {
     amount: EnergyUnit,
 }
 
+pub enum HourlyJobs {
+    PPBoughtFuel(SimInt),
+}
+
 pub enum PovverPlantSignals {
     BuyFuel(SimInt),
 }

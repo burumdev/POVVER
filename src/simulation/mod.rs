@@ -27,8 +27,6 @@ pub type TickDuration = u64;
 
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
-const WAKEUP_RECEIVERS: usize = 3;
-
 #[derive(Debug, Clone)]
 pub enum StateAction {
     Timer(TimerEvent),
@@ -43,7 +41,7 @@ pub struct Simulation {
     env: Environment,
     economy: Economy,
     ui_controller: UIController,
-    the_hub: TheHub,
+    the_hub: Arc<Mutex<TheHub>>,
     is_running: bool,
 }
 
@@ -75,6 +73,7 @@ impl Simulation {
 
         let app_state = AppState::new(timer_state, env_state, economy_state, hub_state, misc_state);
 
+        let the_hub = Arc::new(Mutex::new(the_hub));
         Self {
             app_state,
             timer,
@@ -101,24 +100,23 @@ impl Simulation {
         self.app_state.set_misc(Misc::IsPaused(false));
 
         let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
-        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded(WAKEUP_RECEIVERS);
+        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded(16);
         let (ui_async_sender, ui_async_receiver) = tokio_mpsc::unbounded_channel();
         let state_payload = self.app_state.get_state_payload();
 
-        let join_handles = vec![
+        let mut join_handles = vec![
             self.ui_controller.run(
                 ui_flag_sender,
                 ui_async_receiver,
                 Arc::clone(&state_payload),
             ),
-            self.the_hub.start(
-                wakeup_receiver,
-            ),
+            TheHub::start(Arc::clone(&self.the_hub), wakeup_receiver),
         ];
 
-
         let send_action = |action: StateAction| {
-            wakeup_sender.send(action.clone()).unwrap();
+            if let Err(e) = wakeup_sender.send(action.clone()) {
+                eprintln!("SIM: Could not deliver message to recipient: {e}");
+            };
             ui_async_sender.send(action).unwrap();
         };
 
@@ -161,6 +159,9 @@ impl Simulation {
 
             if !self.is_running {
                 send_action(StateAction::Quit);
+                for handle in join_handles {
+                    handle.join().unwrap();
+                }
                 break;
             }
         }
