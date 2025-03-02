@@ -3,24 +3,28 @@ use crate::{
     simulation::SimInt,
 };
 
+#[derive(Debug)]
 pub struct EnergyOffer {
     price: Money,
     amount: EnergyUnit,
 }
 
-pub enum HourlyJobs {
+#[derive(Debug)]
+pub enum HourlyJob {
     PPBoughtFuel(SimInt),
 }
 
-pub enum PovverPlantSignals {
+#[derive(Debug)]
+pub enum PovverPlantSignal {
     BuyFuel(SimInt),
 }
 
-pub enum BroadcastSignals {
-    FuelPrice(Money),
+#[derive(Debug)]
+pub enum BroadcastSignal {
     SellingEnergy(EnergyOffer),
 }
 
-pub enum FactorySignals {
+#[derive(Debug)]
+pub enum FactorySignal {
     BuyEnergy(EnergyUnit),
 }

@@ -9,12 +9,13 @@ use crate::{
         economy_types::{EnergyUnit, Money}
     },
     simulation::{
-        hub_signals::PovverPlantSignals,
+        hub_signals::PovverPlantSignal,
         StateAction
     },
     utils_data::ReadOnlyRwLock,
 };
 use crate::app_state::EconomyStateData;
+use crate::simulation::hub_signals::HourlyJob;
 use crate::simulation::SimFlo;
 use crate::simulation::timer::TimerEvent;
 
@@ -23,6 +24,7 @@ pub struct TheHub {
     povver_plant_state: Arc<RwLock<PovverPlantStateData>>,
     factories_state: Arc<RwLock<Vec<FactoryStateData>>>,
     econ_state: ReadOnlyRwLock<EconomyStateData>,
+    hourly_jobs: Vec<HourlyJob>,
 }
 
 impl TheHub {
@@ -47,6 +49,7 @@ impl TheHub {
                 povver_plant_state: Arc::clone(&povver_plant_state),
                 factories_state: Arc::clone(&factories_state),
                 econ_state,
+                hourly_jobs: Vec::new()
             },
             HubState {
                 povver_plant: povver_plant_state,
@@ -58,7 +61,14 @@ impl TheHub {
 
 impl TheHub {
     fn do_hourly_jobs(&mut self) {
-        println!("Hey there doing hourly jobs!");
+        println!("HUB: doing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs);
+        for job in self.hourly_jobs.drain(..) {
+            match job {
+                HourlyJob::PPBoughtFuel(amount) => {
+                    self.povver_plant_state.write().unwrap().fuel += 0;
+                }
+            }
+        }
     }
 }
 
@@ -97,17 +107,15 @@ impl TheHub {
             loop {
                 if let Ok(signal) = pp_signal_receiver.try_recv() {
                     match signal {
-                        PovverPlantSignals::BuyFuel(amount) => {
-                            println!("PP BUYS FUEL");
-                            println!("Economy: {:?}", econ_state.read().unwrap());
+                        PovverPlantSignal::BuyFuel(amount) => {
+                            println!("HUB: PP buys fuel with amount {amount}");
                             let price = econ_state.read().unwrap().fuel_price;
                             let mut pp = pp_state_mut.write().unwrap();
                             if pp.balance.dec(amount as SimFlo * price.val()) {
-                                pp.fuel += amount;
+                                me.lock().unwrap().hourly_jobs.push(HourlyJob::PPBoughtFuel(amount));
                             } else {
                                 pp.is_bankrupt = true;
                             }
-                            println!("Povver plant state: {:?}", pp);
                         }
                     }
                 }
