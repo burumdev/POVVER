@@ -32,7 +32,7 @@ impl Economy {
         let state = Arc::new(RwLock::new(EconomyStateData {
             inflation_rate: rng.gen_range(2.0..10.0),
             inflation_direction,
-            fuel_price: Money::new(rng.gen_range(100.00..400.00)),
+            fuel_price: Money::new(rng.gen_range(100.00..200.00)),
         }));
 
         (

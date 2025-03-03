@@ -1,5 +1,4 @@
 use std::sync::{mpsc, Arc, Mutex};
-use crossbeam_channel::internal::SelectHandle;
 use tokio::sync::mpsc as tokio_mpsc;
 
 mod speed;
@@ -7,7 +6,7 @@ use speed::SPEEDS_ARRAY;
 use hub::TheHub;
 
 pub mod hub;
-pub mod hub_signals;
+pub mod hub_types;
 mod hub_constants;
 
 pub mod timer;
@@ -64,7 +63,12 @@ impl Simulation {
         let (mut env, env_state) = Environment::new(Arc::clone(&timer_state));
         env.update();
         let (economy, economy_state) = Economy::new();
-        let (the_hub, hub_state) = TheHub::new(ReadOnlyRwLock::from(economy_state.clone()));
+
+        let (the_hub, hub_state) = TheHub::new(
+            ReadOnlyRwLock::from(economy_state.clone()),
+            ReadOnlyRwLock::from(timer_state.clone()),
+        );
+        let the_hub = Arc::new(Mutex::new(the_hub));
 
         let misc_state = Arc::new(Mutex::new(MiscStateData {
             is_paused,
@@ -73,7 +77,6 @@ impl Simulation {
 
         let app_state = AppState::new(timer_state, env_state, economy_state, hub_state, misc_state);
 
-        let the_hub = Arc::new(Mutex::new(the_hub));
         Self {
             app_state,
             timer,
@@ -104,7 +107,7 @@ impl Simulation {
         let (ui_async_sender, ui_async_receiver) = tokio_mpsc::unbounded_channel();
         let state_payload = self.app_state.get_state_payload();
 
-        let mut join_handles = vec![
+        let join_handles = vec![
             self.ui_controller.run(
                 ui_flag_sender,
                 ui_async_receiver,
@@ -126,6 +129,14 @@ impl Simulation {
         send_action(StateAction::Env);
 
         while self.timer.ticker.recv().is_ok() {
+            if !self.is_running {
+                send_action(StateAction::Quit);
+                for handle in join_handles {
+                    handle.join().unwrap();
+                }
+                break;
+            }
+
             let timer_event = self.timer.tick(misc.is_paused);
             match &timer_event {
                 te if *te != TimerEvent::NothingUnusual && *te != TimerEvent::Paused => {
@@ -152,17 +163,9 @@ impl Simulation {
             if let Ok(flag) = flag_result {
                 match flag {
                     UIFlag::Pause => self.toggle_paused(),
-                    UIFlag::Quit => self.quit(),
                     UIFlag::SpeedChange(speed_index) => self.change_speed(speed_index),
+                    UIFlag::Quit => self.quit(),
                 }
-            }
-
-            if !self.is_running {
-                send_action(StateAction::Quit);
-                for handle in join_handles {
-                    handle.join().unwrap();
-                }
-                break;
             }
         }
 

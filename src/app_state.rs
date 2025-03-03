@@ -40,6 +40,7 @@ pub struct PovverPlantStateData {
     pub fuel_capacity: SimInt,
     pub production_capacity: EnergyUnit,
     pub balance: Money,
+    pub is_awaiting_fuel: bool,
     pub is_bankrupt: bool,
 }
 

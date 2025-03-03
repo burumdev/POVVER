@@ -9,9 +9,16 @@ pub struct EnergyOffer {
     amount: EnergyUnit,
 }
 
-#[derive(Debug)]
-pub enum HourlyJob {
+#[derive(Debug, Clone)]
+pub enum HourlyJobKind {
     PPBoughtFuel(SimInt),
+}
+
+#[derive(Debug, Clone)]
+pub struct HourlyJob {
+    pub kind: HourlyJobKind,
+    pub delay: SimInt,
+    pub hour_created: SimInt,
 }
 
 #[derive(Debug)]
