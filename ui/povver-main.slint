@@ -1,5 +1,17 @@
 import { GlobCallbacks, Globs } from "./globals.slint";
-import { UIState, TimerData, MonthData, EnvData, Date, Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel } from "./state.slint";
+import {
+	UIState,
+	TimerData,
+	MonthData,
+	EnvData,
+	MacroEconData,
+	Date,
+	Cloud,
+	CloudSize,
+	SunStage,
+	WindDirection,
+	WindSpeedLevel
+} from "./state.slint";
 
 import { Utils } from "./utils.slint";
 
@@ -28,6 +40,7 @@ export component PovverMain inherits Window {
     in property <TimerData> timer <=> Globs.timer;
     in property <MonthData> month <=> Globs.month;
     in property <EnvData> env <=> Globs.env;
+    in property <MacroEconData> macroecon <=> Globs.macroecon;
     in property <UIState> state <=> Globs.state;
 
 	// Event callbacks

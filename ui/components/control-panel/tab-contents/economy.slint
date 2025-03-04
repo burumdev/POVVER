@@ -1,5 +1,33 @@
+import { MacroEconData } from "../../../state.slint";
+import { Globs } from "../../../globals.slint";
+
 import { TabContent } from "./tab-content.slint";
+import { DataTable } from "../../common/datatable.slint";
+import { CellData } from "../../common/datacell.slint";
 
 export component EconomyTab inherits TabContent {
-	background: blue;
+	in property <MacroEconData> macroecon: Globs.macroecon;
+
+	DataTable {
+		items: [
+			{
+				label: "Macroeconomics",
+				is_category: true,
+			},
+			{
+				label: "Inflation rate",
+				value: macroecon.inflation-rate,
+				value_postfix: " %",
+			},
+			{
+				label: "Inflation direction",
+				value: "Up or Down",
+			},
+			{
+				label: "Fuel price",
+				value: macroecon.fuel-price,
+				value_postfix: " ϟ",
+			},
+		];
+	}
 }

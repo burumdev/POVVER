@@ -1,6 +1,8 @@
+import { Palette } from "../../theme.slint";
+
 export component TabButton inherits Rectangle {
 	in property<bool> is-active: false;
-	in property<color> bg: gray;
+	in property<color> bg: Palette.bg_lightgray;
 	in property<string> button-text: "Button";
 
 	callback clicked <=> area.clicked;
@@ -13,6 +15,7 @@ export component TabButton inherits Rectangle {
 
 	Text {
 		text: button-text;
+		font-size: 11px;
 		font-weight: 700;
 	}
 

@@ -7,6 +7,8 @@ mod utils_traits;
 mod utils_data;
 
 mod simulation;
+mod logger;
+
 use simulation::Simulation;
 
 fn main() {

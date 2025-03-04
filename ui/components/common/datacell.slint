@@ -12,13 +12,19 @@ export component DataCell inherits HorizontalLayout {
 	alignment: space-between;
 
 	if data.is_category :
-		Text {
-			color: text-color;
-			text: data.label;
-			horizontal-alignment: center;
-			width: 100%;
-			stroke-width: 1px;
-			stroke: text-color.darker(0.5);
+		VerticalLayout {
+			Rectangle {
+				height: 10px;
+			}
+			Text {
+				color: text-color;
+				text: data.label;
+				horizontal-alignment: center;
+				width: 100%;
+				font-size: 16px;
+				stroke-width: 1px;
+				stroke: text-color.darker(0.5);
+			}
 		}
 	if !data.is_category :
 		Text {

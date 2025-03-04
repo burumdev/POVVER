@@ -1,5 +1,9 @@
 use std::sync::{mpsc, Arc, Mutex};
-use tokio::sync::mpsc as tokio_mpsc;
+use slint::SharedString;
+use tokio::{
+    sync::mpsc as tokio_mpsc,
+    sync::broadcast as tokio_broadcast
+};
 
 mod speed;
 use speed::SPEEDS_ARRAY;
@@ -42,10 +46,12 @@ pub struct Simulation {
     ui_controller: UIController,
     the_hub: Arc<Mutex<TheHub>>,
     is_running: bool,
+    ui_log_channel: (tokio_broadcast::Sender<SharedString>, tokio_broadcast::Receiver<SharedString>),
 }
 
 impl Simulation {
     pub fn new() -> Self {
+        let ui_log_channel = tokio_broadcast::channel(128);
         let ui_controller = UIController::new();
 
         let speed_index = 3;
@@ -69,6 +75,7 @@ impl Simulation {
         let (the_hub, hub_state) = TheHub::new(
             ReadOnlyRwLock::from(economy_state.clone()),
             ReadOnlyRwLock::from(timer_state.clone()),
+            ui_log_channel.0.clone()
         );
         let the_hub = Arc::new(Mutex::new(the_hub));
 
@@ -87,6 +94,7 @@ impl Simulation {
             ui_controller,
             the_hub,
             is_running: false,
+            ui_log_channel,
         }
     }
 }
@@ -96,6 +104,7 @@ impl Simulation {
         self.app_state.set_misc(Misc::SpeedIndex(speed_index as usize));
         self.timer.set_tick_duration(SPEEDS_ARRAY[speed_index as usize].get_tick_duration());
     }
+
 }
 
 impl Simulation {
@@ -104,15 +113,16 @@ impl Simulation {
 
         self.app_state.set_misc(Misc::IsPaused(false));
 
-        let (ui_flag_sender, ui_flag_receiver) = mpsc::channel();
-        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded(16);
-        let (ui_async_sender, ui_async_receiver) = tokio_mpsc::unbounded_channel();
+        let (ui_flag_sender, ui_flag_receiver) = mpsc::channel::<UIFlag>();
+        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded::<StateAction>(16);
+        let (ui_wakeup_sender, ui_wakeup_receiver) = tokio_mpsc::unbounded_channel::<StateAction>();
         let state_payload = self.app_state.get_state_payload();
 
         let join_handles = vec![
             self.ui_controller.run(
                 ui_flag_sender,
-                ui_async_receiver,
+                ui_wakeup_receiver,
+                self.ui_log_channel.1.resubscribe(),
                 Arc::clone(&state_payload),
             ),
             TheHub::start(Arc::clone(&self.the_hub), wakeup_receiver),
@@ -122,13 +132,14 @@ impl Simulation {
             if let Err(e) = wakeup_sender.send(action.clone()) {
                 eprintln!("SIM: Could not deliver message to recipient: {e}");
             };
-            ui_async_sender.send(action).unwrap();
+            ui_wakeup_sender.send(action).unwrap();
         };
 
-        let mut misc = self.app_state.get_misc_state_updates().unwrap();
         send_action(StateAction::Misc);
         send_action(StateAction::Timer(TimerEvent::MonthChange));
         send_action(StateAction::Env);
+
+        let mut misc = self.app_state.get_misc_state_updates().unwrap();
 
         while self.timer.ticker.recv().is_ok() {
             if !self.is_running {
@@ -171,7 +182,7 @@ impl Simulation {
             }
         }
 
-        println!("SIM: This simulation ended. Now yours continue.");
+        println!("This simulation ended. Now yours continue.");
     }
 
     pub fn quit(&mut self) {

@@ -2,9 +2,9 @@ use std::{
     sync::{mpsc, Arc},
     thread,
 };
-
 use tokio::{
     sync::mpsc as tokio_mpsc,
+    sync::broadcast as tokio_broadcast,
 };
 
 use slint::{ModelRc, CloseRequestResponse, SharedString};
@@ -36,6 +36,7 @@ impl UIController {
         &self,
         flag_sender: mpsc::Sender<UIFlag>,
         mut wakeup_receiver: tokio_mpsc::UnboundedReceiver<StateAction>,
+        mut log_receiver: tokio_broadcast::Receiver<SharedString>,
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
@@ -67,24 +68,47 @@ impl UIController {
                 while let Some(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
-                            let timer_lock = state.timer.read().unwrap();
-                            appw.set_timer(
-                                TimerData {
-                                    date: timer_lock.date.clone(),
-                                }
-                            );
-
-                            if event == TimerEvent::MonthChange {
-                                appw.set_month(
-                                    MonthData {
-                                        day_start: timer_lock.month_data.day_start,
-                                        day_end: timer_lock.month_data.day_end,
-                                        name: SharedString::from(timer_lock.month_data.name),
-                                        sunshine_factor: timer_lock.month_data.sunshine_factor,
-                                        windspeed_factor: timer_lock.month_data.windspeed_factor,
-                                        cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
+                            {
+                                let timer_lock = state.timer.read().unwrap();
+                                appw.set_timer(
+                                    TimerData {
+                                        date: timer_lock.date.clone(),
                                     }
                                 );
+                            }
+
+                            match event {
+                                TimerEvent::MonthChange => {
+                                    {
+                                        let timer_lock = state.timer.read().unwrap();
+                                        appw.set_month(
+                                            MonthData {
+                                                day_start: timer_lock.month_data.day_start,
+                                                day_end: timer_lock.month_data.day_end,
+                                                name: SharedString::from(timer_lock.month_data.name),
+                                                sunshine_factor: timer_lock.month_data.sunshine_factor,
+                                                windspeed_factor: timer_lock.month_data.windspeed_factor,
+                                                cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
+                                            }
+                                        );
+                                    }
+                                    {
+                                        let econ_lock = state.economy.read().unwrap();
+                                        appw.set_macroecon(
+                                            MacroEconData {
+                                                fuel_price: econ_lock.fuel_price.val(),
+                                                inflation_direction: econ_lock.inflation_direction.clone().into(),
+                                                inflation_rate: econ_lock.inflation_rate,
+                                            }
+                                        )
+                                    }
+                                },
+                                TimerEvent::NothingUnusual => {
+                                    if let Ok(message) = log_receiver.try_recv() {
+                                        println!("UI: Message received: {message}");
+                                    }
+                                },
+                                _ => ()
                             }
                         },
                         StateAction::Env => {

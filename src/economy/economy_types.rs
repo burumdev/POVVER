@@ -1,5 +1,6 @@
 use crate::{
     simulation::{SimFlo, SimInt},
+    ui_controller::UpDown as UIUpDown,
     utils_traits::Flippable,
 };
 
@@ -46,6 +47,14 @@ impl Money {
 pub enum UpDown {
     Up,
     Down,
+}
+impl From<UpDown> for UIUpDown {
+    fn from(other: UpDown) -> Self {
+        match other {
+            UpDown::Up => Self::Up,
+            UpDown::Down => Self::Down,
+        }
+    }
 }
 impl Flippable for UpDown {
     fn flip(&mut self) -> Self {

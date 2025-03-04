@@ -6,6 +6,8 @@ import { TabButton } from "../common/tab-button.slint";
 import { EnvironmentTab } from "./tab-contents/environment.slint";
 import { EconomyTab } from "./tab-contents/economy.slint";
 import { IndustriesTab } from "./tab-contents/industries.slint";
+import { PovverPlantTab } from "./tab-contents/povver-plant.slint";
+import { EventsTab } from "./tab-contents/events.slint";
 
 export component PanelTabs inherits Rectangle {
 	background: Palette.bg_darkgray;
@@ -28,6 +30,16 @@ export component PanelTabs inherits Rectangle {
 				button-text: "Industries";
                 clicked => { root.active-tab = 2; }
             }
+            TabButton {
+                is-active: root.active-tab == 3;
+				button-text: "Povver Plant";
+                clicked => { root.active-tab = 3; }
+            }
+            TabButton {
+                is-active: root.active-tab == 4;
+				button-text: "Events";
+                clicked => { root.active-tab = 4; }
+            }
         }
         Rectangle {
             clip: true;
@@ -39,6 +51,12 @@ export component PanelTabs inherits Rectangle {
             }
             IndustriesTab {
                 x: root.active-tab == 2 ? 0 : root.active-tab < 2 ? - self.width - 1px : parent.width + 1px;
+            }
+            PovverPlantTab {
+                x: root.active-tab == 3 ? 0 : root.active-tab < 3 ? - self.width - 1px : parent.width + 1px;
+            }
+            EventsTab {
+                x: root.active-tab == 4 ? 0 : root.active-tab < 4 ? - self.width - 1px : parent.width + 1px;
             }
         }
     }

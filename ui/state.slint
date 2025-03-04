@@ -33,6 +33,7 @@ struct SunData {
 	stage: SunStage,
 }
 
+
 export enum CloudSize {
 	Small,
 	Medium,
@@ -64,6 +65,17 @@ export struct EnvData {
 	wind_direction: WindDirection,
 	wind_speed_level: WindSpeedLevel,
 	clouds: [Cloud],
+}
+
+enum UpDown {
+	Up,
+	Down
+}
+
+export struct MacroEconData {
+	inflation_rate: float,
+	inflation_direction: UpDown,
+	fuel_price: float
 }
 
 export struct UIState {

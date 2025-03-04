@@ -3,6 +3,9 @@ use std::{
     thread,
 };
 use crossbeam_channel::{Receiver, bounded, unbounded};
+use slint::SharedString;
+use tokio::sync::broadcast as tokio_broadcast;
+
 use crate::{
     app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData},
     economy::{
@@ -18,6 +21,7 @@ use crate::{
         timer::TimerEvent,
     },
     utils_data::ReadOnlyRwLock,
+    logger::Logger,
 };
 
 pub struct TheHub {
@@ -27,13 +31,15 @@ pub struct TheHub {
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     hourly_jobs: Vec<HourlyJob>,
-    daily_jobs: Vec<DailyJob>
+    daily_jobs: Vec<DailyJob>,
+    ui_log_sender: tokio_broadcast::Sender<SharedString>,
 }
 
 impl TheHub {
     pub fn new(
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
         timer_state_ro: ReadOnlyRwLock<TimerStateData>,
+        ui_log_sender: tokio_broadcast::Sender<SharedString>,
     ) -> (Self, HubState) {
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: 0,
@@ -48,6 +54,7 @@ impl TheHub {
         let povver_plant = Arc::new(Mutex::new(PovverPlant::new(
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
             ReadOnlyRwLock::clone(&econ_state_ro),
+            ui_log_sender.clone(),
         )));
 
         (
@@ -59,6 +66,7 @@ impl TheHub {
                 timer_state_ro,
                 hourly_jobs: Vec::new(),
                 daily_jobs: Vec::new(),
+                ui_log_sender,
             },
             HubState {
                 povver_plant: povver_plant_state,
@@ -70,7 +78,7 @@ impl TheHub {
 
 impl TheHub {
     fn pp_buys_fuel(&mut self, amount: SimInt) {
-        println!("HUB: PP buys fuel for amount {amount}");
+        self.log_ui_console(format!("PP buys fuel for amount {amount}"));
         let price = self.econ_state_ro.read().unwrap().fuel_price;
         let fee = price.val() * amount as SimFlo;
 
@@ -94,7 +102,7 @@ impl TheHub {
                 self.povver_plant_state.write().unwrap().is_awaiting_fuel = true;
             }
         } else {
-            println!("HUB: PP couldn't pay for fuel amount {amount} for the price of {fee}. Transaction canceled.");
+            self.log_ui_console(format!("PP couldn't pay for fuel amount {amount} for the price of {fee}. Transaction canceled."));
         }
     }
 
@@ -109,16 +117,17 @@ impl TheHub {
                 delay: 5,
                 day_created: self.timer_state_ro.read().unwrap().date.day,
             });
-            println!("HUB: PP is upgrading it's fuel capacity. ETA is 5 days.");
+            self.log_ui_console("PP is upgrading it's fuel capacity. ETA is 5 days.".to_string());
+            println!();
         } else {
-            println!("HUB: PP couldn't pay for fuel capacity increase. Upgrade canceled.");
+            self.log_ui_console("PP couldn't pay for fuel capacity increase. Upgrade canceled.".to_string());
         }
     }
 }
 
 impl TheHub {
     fn do_hourly_jobs(&mut self) {
-        println!("HUB: processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs);
+        self.log_console(format!("processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs));
         let this_hour = self.timer_state_ro.read().unwrap().date.hour;
 
         let mut due_jobs = Vec::new();
@@ -142,7 +151,7 @@ impl TheHub {
     }
 
     fn do_daily_jobs(&mut self) {
-        println!("HUB: processing {} daily jobs: {:?}", self.daily_jobs.len(), self.daily_jobs);
+        self.log_console(format!("processing {} daily jobs: {:?}", self.daily_jobs.len(), self.daily_jobs));
         let today = self.timer_state_ro.read().unwrap().date.day;
 
         let mut due_jobs = Vec::new();
@@ -166,7 +175,7 @@ impl TheHub {
     }
 
     fn transfer_fuel_to_pp(&self, amount: SimInt) {
-        println!("HUB: Transfering {amount} fuel to PP.");
+        self.log_ui_console(format!("Transfering {amount} fuel to PP."));
 
         let mut pp = self.povver_plant_state.write().unwrap();
         pp.fuel += amount;
@@ -174,7 +183,7 @@ impl TheHub {
     }
 
     fn increase_pp_fuel_cap(&self) {
-        println!("HUB: increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}.");
+        self.log_ui_console(format!("increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}."));
         self.povver_plant_state.write().unwrap().fuel_capacity += PP_FUEL_CAPACITY_INCREASE;
     }
 }
@@ -225,19 +234,20 @@ impl TheHub {
                     match action {
                         StateAction::Timer(event) => {
                             match event {
+                                TimerEvent::DayChange => {
+                                    me.lock().unwrap().do_hourly_jobs();
+                                    me.lock().unwrap().do_daily_jobs();
+                                }
                                 TimerEvent::HourChange => {
                                     me.lock().unwrap().do_hourly_jobs();
                                 },
-                                TimerEvent::DayChange => {
-                                    me.lock().unwrap().do_daily_jobs();
-                                }
                                 _ => ()
                             }
                         },
                         StateAction::Env => {},
                         StateAction::Misc => {},
                         StateAction::Quit => {
-                            println!("HUB: Quit signal received.");
+                            me.lock().unwrap().log_console("Quit signal received.".to_string());
                             send_broadcast(action);
                             for handle in join_handles {
                                 handle.join().unwrap();
@@ -248,5 +258,14 @@ impl TheHub {
                 }
             }
         })
+    }
+}
+
+impl Logger for TheHub {
+    fn get_log_prefix(&self) -> String {
+        "HUB".to_string()
+    }
+    fn get_log_sender(&self) -> tokio_broadcast::Sender<SharedString> {
+        self.ui_log_sender.clone()
     }
 }
