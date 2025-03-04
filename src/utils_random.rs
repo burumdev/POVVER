@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use num_traits::{SaturatingAdd, SaturatingSub, Signed, Unsigned};
 use rand::{distributions::uniform::SampleUniform, Rng};
 
@@ -14,7 +13,7 @@ pub fn random_inc_dec_clamp_signed<R, T>(
 ) -> T
 where
     R: Rng,
-    T: Copy + Signed + PartialOrd + SampleUniform + Display,
+    T: Copy + Signed + PartialOrd + SampleUniform,
 {
     let lower = if value - lower_end < min {
         min

@@ -13,6 +13,8 @@ use crate::{
         timer::TimerEvent,
         hub_types::PovverPlantSignal,
         SimInt,
+        SimFlo,
+        hub_constants::PP_FUEL_CAPACITY_INCREASE_COST
     },
 };
 
@@ -50,14 +52,21 @@ impl PovverPlant {
             f if f <= self.fuel_buy_threshold => {
                 if !is_awaiting_fuel {
                     println!("PP: Fuel is low");
-                    let (balance, fuel_price) = (
-                        self.state_ro.read().unwrap().balance.val(),
-                        self.econ_state_ro.read().unwrap().fuel_price.val(),
-                    );
+                    let (balance, fuel_capacity, fuel_price) = {
+                        let state = self.state_ro.read().unwrap();
+                        (
+                            state.balance.val(),
+                            state.fuel_capacity,
+                            self.econ_state_ro.read().unwrap().fuel_price.val(),
+                        )
+                    };
 
                     let max_amount = balance / fuel_price;
                     if max_amount >= 1.0 {
-                        let amount = ((max_amount / 10.0) + 1.0) as SimInt;
+                        let amount = (((max_amount / 10.0) + 1.0) as SimInt).clamp(0, fuel_capacity);
+                        if amount == fuel_capacity {
+                            self.maybe_upgrade_fuel_capacity(balance, sender);
+                        }
                         println!("PP: Buying fuel for amount {amount}");
                         sender.send(PovverPlantSignal::BuyFuel(amount)).unwrap();
                     }
@@ -69,6 +78,12 @@ impl PovverPlant {
                 println!("PP: Fuel check completed. Amount {fuel} is sufficient.");
             },
             _ => unreachable!()
+        }
+    }
+
+    fn maybe_upgrade_fuel_capacity(&mut self, balance: SimFlo, sender: &Sender<PovverPlantSignal>) {
+        if (balance / 4.0) > PP_FUEL_CAPACITY_INCREASE_COST.val() {
+            sender.send(PovverPlantSignal::IncreaseFuelCapacity).unwrap();
         }
     }
 }

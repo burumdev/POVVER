@@ -81,7 +81,7 @@ impl UIController {
                                         day_end: timer_lock.month_data.day_end,
                                         name: SharedString::from(timer_lock.month_data.name),
                                         sunshine_factor: timer_lock.month_data.sunshine_factor,
-                                        windspeed_factor: timer_lock.month_data.cloud_forming_factor,
+                                        windspeed_factor: timer_lock.month_data.windspeed_factor,
                                         cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
                                     }
                                 );

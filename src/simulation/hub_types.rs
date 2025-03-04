@@ -21,9 +21,22 @@ pub struct HourlyJob {
     pub hour_created: SimInt,
 }
 
+#[derive(Debug, Clone)]
+pub enum DailyJobKind {
+    PPFuelCapIncrease,
+}
+
+#[derive(Debug, Clone)]
+pub struct DailyJob {
+    pub kind: DailyJobKind,
+    pub delay: SimInt,
+    pub day_created: SimInt,
+}
+
 #[derive(Debug)]
 pub enum PovverPlantSignal {
     BuyFuel(SimInt),
+    IncreaseFuelCapacity,
 }
 
 #[derive(Debug)]

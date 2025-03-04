@@ -59,7 +59,6 @@ pub struct EconomyStateData {
 pub struct HubState {
     pub povver_plant: Arc<RwLock<PovverPlantStateData>>,
     pub factories: Arc<RwLock<Vec<FactoryStateData>>>,
-
 }
 
 pub struct AppState {

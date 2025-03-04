@@ -3,11 +3,11 @@ use tokio::sync::mpsc as tokio_mpsc;
 
 mod speed;
 use speed::SPEEDS_ARRAY;
-use hub::TheHub;
 
 pub mod hub;
+use hub::TheHub;
 pub mod hub_types;
-mod hub_constants;
+pub mod hub_constants;
 
 pub mod timer;
 use timer::{Timer, TimerEvent};
@@ -17,8 +17,8 @@ use crate::{
     economy::Economy,
     environment::Environment,
     ui_controller::{Date, UIController, UIFlag},
+    utils_data::ReadOnlyRwLock,
 };
-use crate::utils_data::ReadOnlyRwLock;
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
@@ -60,8 +60,10 @@ impl Simulation {
 
         let (mut timer, timer_state) = Timer::new(SPEEDS_ARRAY[speed_index].get_tick_duration(), init_date);
         timer.tick(is_paused);
+
         let (mut env, env_state) = Environment::new(Arc::clone(&timer_state));
         env.update();
+
         let (economy, economy_state) = Economy::new();
 
         let (the_hub, hub_state) = TheHub::new(

@@ -4,21 +4,21 @@ use std::{
 };
 use crossbeam_channel::{Receiver, bounded, unbounded};
 use crate::{
-    app_state::{PovverPlantStateData, FactoryStateData, HubState},
+    app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData},
     economy::{
         povver_plant::PovverPlant,
         economy_types::{EnergyUnit, Money}
     },
     simulation::{
-        hub_types::PovverPlantSignal,
-        StateAction
+        hub_types::{PovverPlantSignal, HourlyJob, HourlyJobKind, DailyJob, DailyJobKind},
+        hub_constants::{PP_FUEL_CAPACITY_INCREASE_COST, PP_FUEL_CAPACITY_INCREASE},
+        StateAction,
+        SimFlo,
+        SimInt,
+        timer::TimerEvent,
     },
     utils_data::ReadOnlyRwLock,
 };
-use crate::app_state::{EconomyStateData, TimerStateData};
-use crate::simulation::hub_types::{HourlyJob, HourlyJobKind};
-use crate::simulation::{SimFlo, SimInt};
-use crate::simulation::timer::TimerEvent;
 
 pub struct TheHub {
     povver_plant: Arc<Mutex<PovverPlant>>,
@@ -27,6 +27,7 @@ pub struct TheHub {
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     hourly_jobs: Vec<HourlyJob>,
+    daily_jobs: Vec<DailyJob>
 }
 
 impl TheHub {
@@ -56,7 +57,8 @@ impl TheHub {
                 factories_state: Arc::clone(&factories_state),
                 econ_state_ro,
                 timer_state_ro,
-                hourly_jobs: Vec::new()
+                hourly_jobs: Vec::new(),
+                daily_jobs: Vec::new(),
             },
             HubState {
                 povver_plant: povver_plant_state,
@@ -67,39 +69,14 @@ impl TheHub {
 }
 
 impl TheHub {
-    fn do_hourly_jobs(&mut self) {
-        println!("HUB: processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs);
-        let this_hour = self.timer_state_ro.read().unwrap().date.hour;
-
-        let mut due_jobs = Vec::new();
-        self.hourly_jobs
-            .retain_mut(|job| {
-                if (job.hour_created + job.delay).clamp(0, 23) == this_hour {
-                    due_jobs.push(job.clone());
-                    return false;
-                }
-
-                true
-            });
-
-        for job in due_jobs {
-            match job.kind {
-                HourlyJobKind::PPBoughtFuel(amount) => {
-                    self.transfer_fuel_to_pp(amount);
-                }
-            }
-        }
-    }
-
     fn pp_buys_fuel(&mut self, amount: SimInt) {
         println!("HUB: PP buys fuel for amount {amount}");
         let price = self.econ_state_ro.read().unwrap().fuel_price;
         let fee = price.val() * amount as SimFlo;
 
-        let transaction_successful = {
+        let transaction_successful =
             self.povver_plant_state.write().unwrap()
-                .balance.dec(fee)
-        };
+                .balance.dec(fee);
 
         if transaction_successful {
             let delay = (amount as SimFlo / 5.0).floor() as SimInt;
@@ -117,8 +94,74 @@ impl TheHub {
                 self.povver_plant_state.write().unwrap().is_awaiting_fuel = true;
             }
         } else {
-            println!("HUB: PP couldn't pay for fuel amount {amount} for the price of {fee}. PP is BANKRUPT!");
-            self.povver_plant_state.write().unwrap().is_bankrupt = true;
+            println!("HUB: PP couldn't pay for fuel amount {amount} for the price of {fee}. Transaction canceled.");
+        }
+    }
+
+    fn pp_increases_fuel_capacity(&mut self) {
+        let transaction_successful =
+            self.povver_plant_state.write().unwrap()
+                .balance.dec(PP_FUEL_CAPACITY_INCREASE_COST.val());
+
+        if transaction_successful {
+            self.daily_jobs.push(DailyJob {
+                kind: DailyJobKind::PPFuelCapIncrease,
+                delay: 5,
+                day_created: self.timer_state_ro.read().unwrap().date.day,
+            });
+            println!("HUB: PP is upgrading it's fuel capacity. ETA is 5 days.");
+        } else {
+            println!("HUB: PP couldn't pay for fuel capacity increase. Upgrade canceled.");
+        }
+    }
+}
+
+impl TheHub {
+    fn do_hourly_jobs(&mut self) {
+        println!("HUB: processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs);
+        let this_hour = self.timer_state_ro.read().unwrap().date.hour;
+
+        let mut due_jobs = Vec::new();
+        self.hourly_jobs
+            .retain_mut(|job| {
+                if (job.hour_created + job.delay) % 23 == this_hour {
+                    due_jobs.push(job.clone());
+                    return false;
+                }
+
+                true
+            });
+
+        for job in due_jobs {
+            match job.kind {
+                HourlyJobKind::PPBoughtFuel(amount) => {
+                    self.transfer_fuel_to_pp(amount);
+                }
+            }
+        }
+    }
+
+    fn do_daily_jobs(&mut self) {
+        println!("HUB: processing {} daily jobs: {:?}", self.daily_jobs.len(), self.daily_jobs);
+        let today = self.timer_state_ro.read().unwrap().date.day;
+
+        let mut due_jobs = Vec::new();
+        self.daily_jobs
+            .retain_mut(|job| {
+                if (job.day_created + job.delay) % 30 == today {
+                    due_jobs.push(job.clone());
+                    return false;
+                }
+
+                true
+            });
+
+        for job in due_jobs {
+            match job.kind {
+                DailyJobKind::PPFuelCapIncrease => {
+                    self.increase_pp_fuel_cap();
+                }
+            }
         }
     }
 
@@ -128,6 +171,11 @@ impl TheHub {
         let mut pp = self.povver_plant_state.write().unwrap();
         pp.fuel += amount;
         pp.is_awaiting_fuel = false;
+    }
+
+    fn increase_pp_fuel_cap(&self) {
+        println!("HUB: increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}.");
+        self.povver_plant_state.write().unwrap().fuel_capacity += PP_FUEL_CAPACITY_INCREASE;
     }
 }
 
@@ -165,6 +213,9 @@ impl TheHub {
                     match signal {
                         PovverPlantSignal::BuyFuel(amount) => {
                             me.lock().unwrap().pp_buys_fuel(amount);
+                        },
+                        PovverPlantSignal::IncreaseFuelCapacity => {
+                            me.lock().unwrap().pp_increases_fuel_capacity();
                         }
                     }
                 }
@@ -176,6 +227,9 @@ impl TheHub {
                             match event {
                                 TimerEvent::HourChange => {
                                     me.lock().unwrap().do_hourly_jobs();
+                                },
+                                TimerEvent::DayChange => {
+                                    me.lock().unwrap().do_daily_jobs();
                                 }
                                 _ => ()
                             }
