@@ -19,7 +19,7 @@ use crate::{
         SimFlo,
         hub_constants::PP_FUEL_CAPACITY_INCREASE_COST
     },
-    logger::Logger,
+    logger::{Logger, LogMessage, MessageSource},
 };
 
 pub struct PovverPlant {
@@ -27,14 +27,14 @@ pub struct PovverPlant {
     state_ro: ReadOnlyRwLock<PovverPlantStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     fuel_buy_threshold: SimInt,
-    ui_log_sender: tokio_broadcast::Sender<SharedString>,
+    ui_log_sender: tokio_broadcast::Sender<LogMessage>,
 }
 
 impl PovverPlant {
     pub fn new(
         state_ro: ReadOnlyRwLock<PovverPlantStateData>,
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
-        ui_log_sender: tokio_broadcast::Sender<SharedString>,
+        ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> Self {
         Self {
             last_ten_sales: SlidingWindow::new(10),
@@ -131,7 +131,10 @@ impl Logger for PovverPlant {
     fn get_log_prefix(&self) -> String {
         "Povver Plant".to_string()
     }
-    fn get_log_sender(&self) -> tokio_broadcast::Sender<SharedString> {
+    fn get_message_source(&self) -> MessageSource {
+        MessageSource::PP
+    }
+    fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage> {
         self.ui_log_sender.clone()
     }
 }

@@ -22,6 +22,7 @@ use crate::{
     environment::Environment,
     ui_controller::{Date, UIController, UIFlag},
     utils_data::ReadOnlyRwLock,
+    logger::LogMessage,
 };
 
 pub type SimInt = i32;
@@ -46,7 +47,7 @@ pub struct Simulation {
     ui_controller: UIController,
     the_hub: Arc<Mutex<TheHub>>,
     is_running: bool,
-    ui_log_channel: (tokio_broadcast::Sender<SharedString>, tokio_broadcast::Receiver<SharedString>),
+    ui_log_channel: (tokio_broadcast::Sender<LogMessage>, tokio_broadcast::Receiver<LogMessage>),
 }
 
 impl Simulation {

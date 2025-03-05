@@ -13,6 +13,7 @@ use crate::{
     app_state::StatePayload,
     simulation::{SimInt, StateAction}
 };
+use crate::logger::LogMessage;
 use crate::simulation::timer::TimerEvent;
 
 pub enum UIFlag {
@@ -36,7 +37,7 @@ impl UIController {
         &self,
         flag_sender: mpsc::Sender<UIFlag>,
         mut wakeup_receiver: tokio_mpsc::UnboundedReceiver<StateAction>,
-        mut log_receiver: tokio_broadcast::Receiver<SharedString>,
+        mut log_receiver: tokio_broadcast::Receiver<LogMessage>,
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
@@ -105,7 +106,7 @@ impl UIController {
                                 },
                                 TimerEvent::NothingUnusual => {
                                     if let Ok(message) = log_receiver.try_recv() {
-                                        println!("UI: Message received: {message}");
+                                        println!("UI: Message received: {:?}", message);
                                     }
                                 },
                                 _ => ()

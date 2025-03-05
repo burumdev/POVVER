@@ -42,6 +42,7 @@ export component PovverMain inherits Window {
     in property <EnvData> env <=> Globs.env;
     in property <MacroEconData> macroecon <=> Globs.macroecon;
     in property <UIState> state <=> Globs.state;
+    in property <[string]> messages <=> Globs.messages;
 
 	// Event callbacks
     pure callback toggle_pause <=> GlobCallbacks.toggle_pause;

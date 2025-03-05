@@ -21,7 +21,7 @@ use crate::{
         timer::TimerEvent,
     },
     utils_data::ReadOnlyRwLock,
-    logger::Logger,
+    logger::{Logger, LogMessage, MessageSource},
 };
 
 pub struct TheHub {
@@ -32,14 +32,14 @@ pub struct TheHub {
     timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     hourly_jobs: Vec<HourlyJob>,
     daily_jobs: Vec<DailyJob>,
-    ui_log_sender: tokio_broadcast::Sender<SharedString>,
+    ui_log_sender: tokio_broadcast::Sender<LogMessage>,
 }
 
 impl TheHub {
     pub fn new(
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
         timer_state_ro: ReadOnlyRwLock<TimerStateData>,
-        ui_log_sender: tokio_broadcast::Sender<SharedString>,
+        ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: 0,
@@ -265,7 +265,10 @@ impl Logger for TheHub {
     fn get_log_prefix(&self) -> String {
         "HUB".to_string()
     }
-    fn get_log_sender(&self) -> tokio_broadcast::Sender<SharedString> {
+    fn get_message_source(&self) -> MessageSource {
+        MessageSource::Hub
+    }
+    fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage> {
         self.ui_log_sender.clone()
     }
 }
