@@ -1,4 +1,4 @@
-import { UILogMessage } from "../../../state.slint";
+import { UILogMessage, UILogLevel } from "../../../state.slint";
 import { Globs } from "../../../globals.slint";
 import { Palette } from "../../../theme.slint";
 
@@ -12,10 +12,22 @@ component Message {
 		padding-top: 4px;
 		Text {
 			text: msg.message;
-			color: Palette.bright_text;
 			font-size: 12px;
 			horizontal-alignment: left;
 			wrap: word-wrap;
+			font-weight: 700;
+
+			states [
+				info when msg.level == UILogLevel.Info: {
+					color: Palette.log_info;
+				}
+				warn when msg.level == UILogLevel.Warning: {
+					color: Palette.log_warn;
+				}
+				critical when msg.level == UILogLevel.Critical: {
+					color: Palette.log_critical;
+				}
+			]
 		}
 		Rectangle {
 			height: 1px;
@@ -25,6 +37,7 @@ component Message {
 		}
 	}
 }
+
 export component EventsTab inherits TabContent {
 	ListView {
 		for message in Globs.messages : Message {
