@@ -1,40 +1,92 @@
 use tokio::sync::broadcast as tokio_broadcast;
-use slint::{SharedString, ToSharedString};
-use crate::simulation::SimInt;
+use slint::SharedString;
+use crate::{
+    simulation::SimInt,
+    ui_controller::{UILogMessage, UILogLevel, UIMessageSource},
+};
+
+use std::mem::discriminant;
 
 #[derive(Debug, Clone)]
+pub enum LogLevel {
+    Info,
+    Warning,
+    Critical,
+}
+impl From<LogLevel> for UILogLevel {
+    fn from(ll: LogLevel) -> Self {
+        match ll {
+            LogLevel::Info => UILogLevel::Info,
+            LogLevel::Warning => UILogLevel::Warning,
+            LogLevel::Critical => UILogLevel::Critical,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum MessageSource {
     Hub,
     PP,
     Factory(SimInt),
+}
+impl From<MessageSource> for UIMessageSource {
+    fn from(source: MessageSource) -> Self {
+        match source {
+            MessageSource::Hub => UIMessageSource::Hub,
+            MessageSource::PP => UIMessageSource::PP,
+            MessageSource::Factory(_) => UIMessageSource::Factory,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct LogMessage {
     source: MessageSource,
     message: SharedString,
+    log_level: LogLevel,
+}
+impl From<LogMessage> for UILogMessage {
+    fn from(lm: LogMessage) -> Self {
+        let mut factory_id = -1;
+        if let MessageSource::Factory(id) = lm.source {
+            factory_id = id;
+        }
+
+        UILogMessage {
+            source: lm.source.into(),
+            level: lm.log_level.into(),
+            message: lm.message,
+            factory_id
+        }
+    }
 }
 
 pub trait Logger {
     fn get_log_prefix(&self) -> String;
     fn get_message_source(&self) -> MessageSource;
     fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage>;
-    fn log_console(&self, message: String) {
-        println!("{}: {}", self.get_log_prefix(), message);
+    fn log_console(&self, message: String, level: LogLevel) {
+        let level_prefix = match level {
+            LogLevel::Info => "",
+            LogLevel::Warning => "WARNING: ",
+            LogLevel::Critical => "CRITICAL!: ",
+        };
+        println!("{}{}: {}", level_prefix, self.get_log_prefix(), message);
     }
 
-    fn log_ui(&self, message: String) {
+    fn log_ui(&self, message: String, level: LogLevel) {
         let msg = self.get_log_prefix() + ": " + &message;
         self.get_log_sender().send(
             LogMessage {
                 source: self.get_message_source(),
                 message: SharedString::from(msg),
+                log_level: level,
             }
         ).unwrap();
     }
 
-    fn log_ui_console(&self, message: String) {
-        self.log_ui(message.clone());
-        self.log_console(message);
+    fn log_ui_console(&self, message: String, level: LogLevel) {
+        self.log_ui(message.clone(), level.clone());
+        self.log_console(message, level);
     }
 }

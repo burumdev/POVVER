@@ -5,8 +5,6 @@ use std::{
 use crossbeam_channel::{Sender, Receiver};
 use tokio::sync::broadcast as tokio_broadcast;
 
-use slint::SharedString;
-
 use crate::{
     app_state::{EconomyStateData, PovverPlantStateData},
     economy::economy_types::Money,
@@ -19,7 +17,12 @@ use crate::{
         SimFlo,
         hub_constants::PP_FUEL_CAPACITY_INCREASE_COST
     },
-    logger::{Logger, LogMessage, MessageSource},
+    logger::{
+        Logger,
+        LogLevel::{Info, Warning, Critical},
+        LogMessage,
+        MessageSource
+    },
 };
 
 pub struct PovverPlant {
@@ -58,7 +61,7 @@ impl PovverPlant {
         match fuel {
             f if f <= self.fuel_buy_threshold => {
                 if !is_awaiting_fuel {
-                    self.log_ui_console("Fuel is low..".to_string());
+                    self.log_ui_console("Fuel is low..".to_string(), Warning);
                     let (balance, fuel_capacity, fuel_price) = {
                         let state = self.state_ro.read().unwrap();
                         (
@@ -74,16 +77,16 @@ impl PovverPlant {
                         if amount == fuel_capacity {
                             self.maybe_upgrade_fuel_capacity(balance, sender);
                         }
-                        self.log_ui_console(format!("Buying fuel for amount {amount}"));
+                        self.log_ui_console(format!("Buying fuel for amount {amount}"), Info);
                         sender.send(PovverPlantSignal::BuyFuel(amount)).unwrap();
                     }
                 } else {
-                    self.log_ui_console("Awaiting new fuel. Fuel level is critical!".to_string());
+                    self.log_ui_console("Awaiting new fuel. Fuel level is critical!".to_string(), Critical);
                     println!();
                 }
             },
             f if f > self.fuel_buy_threshold => {
-                self.log_ui_console(format!("Fuel check completed. Amount {fuel} is sufficient."));
+                self.log_ui_console(format!("Fuel check completed. Amount {fuel} is sufficient."), Info);
             },
             _ => unreachable!()
         }
@@ -113,13 +116,13 @@ impl PovverPlant {
                                 .check_buy_fuel(&signal_sender);
                         },
                         StateAction::Quit => {
-                            me.lock().unwrap().log_console("Quit signal received.".to_string());
+                            me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                             break;
                         }
                         _ => ()
                     }
                 } else { // PP is BANKRUPT!
-                    me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string());
+                    me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
                     break;
                 }
             }

@@ -1,5 +1,34 @@
+import { UILogMessage } from "../../../state.slint";
+import { Globs } from "../../../globals.slint";
+import { Palette } from "../../../theme.slint";
+
+import { ListView } from "std-widgets.slint";
 import { TabContent } from "./tab-content.slint";
 
+component Message {
+	in property <UILogMessage> msg;
+	VerticalLayout {
+		padding-bottom: 4px;
+		padding-top: 4px;
+		Text {
+			text: msg.message;
+			color: Palette.bright_text;
+			font-size: 12px;
+			horizontal-alignment: left;
+			wrap: word-wrap;
+		}
+		Rectangle {
+			height: 1px;
+			width: 100%;
+			border-color: white;
+			border-width: 1px;
+		}
+	}
+}
 export component EventsTab inherits TabContent {
-	background: white;
+	ListView {
+		for message in Globs.messages : Message {
+			msg: message;
+		}
+	}
 }

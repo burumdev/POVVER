@@ -183,7 +183,7 @@ impl Simulation {
             }
         }
 
-        println!("This simulation ended. Now yours continue.");
+        println!("SIM: This simulation ended. Now yours continue.");
     }
 
     pub fn quit(&mut self) {

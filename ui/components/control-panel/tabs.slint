@@ -13,51 +13,59 @@ export component PanelTabs inherits Rectangle {
 	background: Palette.bg_darkgray;
     in-out property <int> active-tab;
     VerticalLayout {
+        height: 100%;
+        width: 100%;
         tab_bar := HorizontalLayout {
             spacing: 3px;
             TabButton {
                 is-active: root.active-tab == 0;
-				button-text: "Environment";
+				button-text: "Events";
                 clicked => { root.active-tab = 0; }
             }
             TabButton {
                 is-active: root.active-tab == 1;
-				button-text: "Economy";
+				button-text: "Environment";
                 clicked => { root.active-tab = 1; }
             }
             TabButton {
                 is-active: root.active-tab == 2;
-				button-text: "Industries";
+				button-text: "Economy";
                 clicked => { root.active-tab = 2; }
             }
             TabButton {
                 is-active: root.active-tab == 3;
-				button-text: "Povver Plant";
+				button-text: "Industries";
                 clicked => { root.active-tab = 3; }
             }
             TabButton {
                 is-active: root.active-tab == 4;
-				button-text: "Events";
+				button-text: "Povver Plant";
                 clicked => { root.active-tab = 4; }
             }
         }
-        Rectangle {
-            clip: true;
-            EnvironmentTab {
-                x: root.active-tab == 0 ? 0 : root.active-tab < 0 ? - self.width - 1px : parent.width + 1px;
-            }
-            EconomyTab {
-                x: root.active-tab == 1 ? 0 : root.active-tab < 1 ? - self.width - 1px : parent.width + 1px;
-            }
-            IndustriesTab {
-                x: root.active-tab == 2 ? 0 : root.active-tab < 2 ? - self.width - 1px : parent.width + 1px;
-            }
-            PovverPlantTab {
-                x: root.active-tab == 3 ? 0 : root.active-tab < 3 ? - self.width - 1px : parent.width + 1px;
-            }
-            EventsTab {
-                x: root.active-tab == 4 ? 0 : root.active-tab < 4 ? - self.width - 1px : parent.width + 1px;
-            }
+
+        VerticalLayout {
+            padding-top: 16px;
+            padding-left: 8px;
+            padding-right: 8px;
+			Rectangle {
+				clip: true;
+				EventsTab {
+					x: root.active-tab == 0 ? 0 : root.active-tab < 0 ? - self.width - 1px : parent.width + 1px;
+				}
+				EnvironmentTab {
+					x: root.active-tab == 1 ? 0 : root.active-tab < 1 ? - self.width - 1px : parent.width + 1px;
+				}
+				EconomyTab {
+					x: root.active-tab == 2 ? 0 : root.active-tab < 2 ? - self.width - 1px : parent.width + 1px;
+				}
+				IndustriesTab {
+					x: root.active-tab == 3 ? 0 : root.active-tab < 3 ? - self.width - 1px : parent.width + 1px;
+				}
+				PovverPlantTab {
+					x: root.active-tab == 4 ? 0 : root.active-tab < 4 ? - self.width - 1px : parent.width + 1px;
+				}
+			}
         }
     }
 }

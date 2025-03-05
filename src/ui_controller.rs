@@ -7,14 +7,13 @@ use tokio::{
     sync::broadcast as tokio_broadcast,
 };
 
-use slint::{ModelRc, CloseRequestResponse, SharedString};
+use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel};
 
 use crate::{
     app_state::StatePayload,
-    simulation::{SimInt, StateAction}
+    simulation::{SimInt, StateAction, timer::TimerEvent},
+    logger::LogMessage
 };
-use crate::logger::LogMessage;
-use crate::simulation::timer::TimerEvent;
 
 pub enum UIFlag {
     Pause,
@@ -66,6 +65,10 @@ impl UIController {
                 let appw = app_weak.clone().unwrap();
                 appw.window().set_maximized(true);
 
+                appw.set_messages(ModelRc::from(VecModel::from_slice(&[])));
+                let messages_rc = appw.get_messages();
+                let messages_model = messages_rc.as_any().downcast_ref::<VecModel<UILogMessage>>().unwrap();
+
                 while let Some(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
@@ -107,6 +110,7 @@ impl UIController {
                                 TimerEvent::NothingUnusual => {
                                     if let Ok(message) = log_receiver.try_recv() {
                                         println!("UI: Message received: {:?}", message);
+                                        messages_model.push(message.into());
                                     }
                                 },
                                 _ => ()

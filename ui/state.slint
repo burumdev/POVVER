@@ -82,3 +82,22 @@ export struct UIState {
     is_paused: bool,
     speed_index: int,
 }
+
+export enum UIMessageSource {
+	Hub,
+	PP,
+	Factory
+}
+
+export enum UILogLevel {
+	Info,
+	Warning,
+	Critical
+}
+
+export struct UILogMessage {
+	source: UIMessageSource,
+	message: string,
+	level: UILogLevel,
+	factory_id: int,
+}

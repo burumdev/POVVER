@@ -3,7 +3,6 @@ use std::{
     thread,
 };
 use crossbeam_channel::{Receiver, bounded, unbounded};
-use slint::SharedString;
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
@@ -21,7 +20,12 @@ use crate::{
         timer::TimerEvent,
     },
     utils_data::ReadOnlyRwLock,
-    logger::{Logger, LogMessage, MessageSource},
+    logger::{
+        Logger,
+        LogLevel::{Info, Warning, Critical},
+        LogMessage,
+        MessageSource
+    },
 };
 
 pub struct TheHub {
@@ -78,7 +82,6 @@ impl TheHub {
 
 impl TheHub {
     fn pp_buys_fuel(&mut self, amount: SimInt) {
-        self.log_ui_console(format!("PP buys fuel for amount {amount}"));
         let price = self.econ_state_ro.read().unwrap().fuel_price;
         let fee = price.val() * amount as SimFlo;
 
@@ -99,10 +102,11 @@ impl TheHub {
                         hour_created,
                     }
                 );
+                self.log_ui_console(format!("PP bought fuel for amount {amount}"), Info);
                 self.povver_plant_state.write().unwrap().is_awaiting_fuel = true;
             }
         } else {
-            self.log_ui_console(format!("PP couldn't pay for fuel amount {amount} for the price of {fee}. Transaction canceled."));
+            self.log_ui_console(format!("PP couldn't pay for fuel amount {amount} for the price of {fee}. Transaction canceled."), Warning);
         }
     }
 
@@ -117,17 +121,17 @@ impl TheHub {
                 delay: 5,
                 day_created: self.timer_state_ro.read().unwrap().date.day,
             });
-            self.log_ui_console("PP is upgrading it's fuel capacity. ETA is 5 days.".to_string());
+            self.log_ui_console("PP is upgrading it's fuel capacity. ETA is 5 days.".to_string(), Info);
             println!();
         } else {
-            self.log_ui_console("PP couldn't pay for fuel capacity increase. Upgrade canceled.".to_string());
+            self.log_ui_console("PP couldn't pay for fuel capacity increase. Upgrade canceled.".to_string(), Critical);
         }
     }
 }
 
 impl TheHub {
     fn do_hourly_jobs(&mut self) {
-        self.log_console(format!("processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs));
+        self.log_console(format!("processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs), Info);
         let this_hour = self.timer_state_ro.read().unwrap().date.hour;
 
         let mut due_jobs = Vec::new();
@@ -151,7 +155,7 @@ impl TheHub {
     }
 
     fn do_daily_jobs(&mut self) {
-        self.log_console(format!("processing {} daily jobs: {:?}", self.daily_jobs.len(), self.daily_jobs));
+        self.log_console(format!("processing {} daily jobs: {:?}", self.daily_jobs.len(), self.daily_jobs), Info);
         let today = self.timer_state_ro.read().unwrap().date.day;
 
         let mut due_jobs = Vec::new();
@@ -175,7 +179,7 @@ impl TheHub {
     }
 
     fn transfer_fuel_to_pp(&self, amount: SimInt) {
-        self.log_ui_console(format!("Transfering {amount} fuel to PP."));
+        self.log_ui_console(format!("Transfering {amount} fuel to Povver Plant."), Info);
 
         let mut pp = self.povver_plant_state.write().unwrap();
         pp.fuel += amount;
@@ -183,7 +187,7 @@ impl TheHub {
     }
 
     fn increase_pp_fuel_cap(&self) {
-        self.log_ui_console(format!("increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}."));
+        self.log_ui_console(format!("Increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}."), Info);
         self.povver_plant_state.write().unwrap().fuel_capacity += PP_FUEL_CAPACITY_INCREASE;
     }
 }
@@ -247,7 +251,7 @@ impl TheHub {
                         StateAction::Env => {},
                         StateAction::Misc => {},
                         StateAction::Quit => {
-                            me.lock().unwrap().log_console("Quit signal received.".to_string());
+                            me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                             send_broadcast(action);
                             for handle in join_handles {
                                 handle.join().unwrap();
