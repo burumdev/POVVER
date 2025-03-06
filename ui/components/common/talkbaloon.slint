@@ -1,0 +1,42 @@
+export component TalkBaloon inherits VerticalLayout {
+	in property <string> txt;
+	in property <bool> is_shown: false;
+
+	width: 250px;
+	height: 160px;
+
+	Rectangle {
+		Image {
+			width: 115%;
+			source: @image-url("../../images/talkingbaloon.svg");
+		}
+		VerticalLayout {
+			Text {
+				horizontal-alignment: left;
+				text: txt;
+				wrap: word-wrap;
+				font-size: 12px;
+				font-weight: 700;
+			}
+		}
+	}
+
+	states [
+		appearing when is_shown : {
+			opacity: 1;
+			in {
+				animate opacity {
+					duration: 100ms;
+				}
+			}
+		}
+		dissapearing when !is_shown : {
+			opacity: 0;
+			out {
+				animate opacity {
+					duration: 100ms;
+				}
+			}
+		}
+	]
+}

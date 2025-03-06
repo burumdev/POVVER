@@ -101,3 +101,9 @@ export struct UILogMessage {
 	level: UILogLevel,
 	factory_id: int,
 }
+
+export struct CategoryMessages {
+	hub: [UILogMessage],
+	pp: [UILogMessage],
+	factory: [UILogMessage],
+}

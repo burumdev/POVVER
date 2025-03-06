@@ -1,13 +1,16 @@
 use std::{
     sync::{mpsc, Arc},
+    rc::Rc,
     thread,
 };
+use std::error::Error;
+use rand::distributions::uniform::SampleBorrow;
 use tokio::{
     sync::mpsc as tokio_mpsc,
     sync::broadcast as tokio_broadcast,
 };
 
-use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel};
+use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, FilterModel};
 
 use crate::{
     app_state::StatePayload,
@@ -69,6 +72,9 @@ impl UIController {
                 let messages_rc = appw.get_messages();
                 let messages_model = messages_rc.as_any().downcast_ref::<VecModel<UILogMessage>>().unwrap();
 
+                let hub_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == UIMessageSource::Hub));
+                let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == UIMessageSource::PP));
+                let factory_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == UIMessageSource::Factory));
                 while let Some(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
@@ -110,6 +116,14 @@ impl UIController {
                                 TimerEvent::NothingUnusual => {
                                     if let Ok(message) = log_receiver.try_recv() {
                                         messages_model.push(message.into());
+
+                                        appw.set_category_messages({
+                                            CategoryMessages {
+                                                hub: ModelRc::new(VecModel::from_iter(hub_filtered.iter())),
+                                                pp: ModelRc::new(VecModel::from_iter(pp_filtered.iter())),
+                                                factory: ModelRc::new(VecModel::from_iter(factory_filtered.iter())),
+                                            }
+                                        });
                                     }
                                 },
                                 _ => ()

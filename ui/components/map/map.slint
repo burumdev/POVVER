@@ -5,6 +5,8 @@ import { Palette } from "../../theme.slint";
 import { Sky } from "./sky.slint";
 import { Ground } from "./ground.slint";
 
+import { PovverPlant } from "../pp/pp.slint";
+
 export component Map inherits Rectangle {
     width: 80%;
     height: 100%;
@@ -31,10 +33,15 @@ export component Map inherits Rectangle {
 			source: @image-url("../../images/mountains.svg");
 		}
 		Ground {}
+		PovverPlant {
+			x: 100px;
+			y: 750px;
+			z: 4;
+		}
 		// Brightness filter for the whole scene
 		// Depends on sun brightness
 		Rectangle {
-			z: 3;
+			z: 2;
 			property <float> sb: sun_brightness / 100;
 			property <float> opaque: sb == 0 ? 0.95 : 1 - sb;
 			background: rgba(0, 0, 0, opaque);

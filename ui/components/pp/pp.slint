@@ -1,0 +1,44 @@
+import { SunStage, UILogMessage } from "../../state.slint";
+import { Globs } from "../../globals.slint";
+
+import { TalkBaloon } from "../common/talkbaloon.slint";
+
+export component PovverPlant inherits Rectangle {
+	width: 300px;
+	height: 300px;
+
+	property <SunStage> sun_stage: Globs.env.the_sun.stage;
+	property <[UILogMessage]> messages: Globs.category_messages.pp;
+	property <int> last_msg_index: messages.length - 1;
+	property <UILogMessage> last_message: messages[last_msg_index];
+	property <bool> baloon_shown: false;
+
+	timer := Timer {
+		interval: 100ms;
+		running: false;
+		triggered => {
+			baloon_shown = !baloon_shown;
+			self.running = false;
+		}
+	}
+
+	changed last_msg_index => {
+		baloon_shown = false;
+		timer.running = true;
+	}
+
+	Image {
+		source: sun_stage ==
+			SunStage.Set ? @image-url("../../images/pp-night.svg") :
+			sun_stage == SunStage.Weak ?
+			@image-url("../../images/pp-dawndusk.svg") :
+			@image-url("../../images/pp.svg");
+		width: 300px;
+	}
+	TalkBaloon {
+		y: 30px;
+		x: 320px;
+		txt: last_message.message;
+		is_shown: baloon_shown;
+	}
+}
