@@ -13,7 +13,7 @@ use crate::{
     },
     simulation::{
         hub_types::{PovverPlantSignal, HourlyJob, HourlyJobKind, DailyJob, DailyJobKind},
-        hub_constants::{PP_FUEL_CAPACITY_INCREASE_COST, PP_FUEL_CAPACITY_INCREASE},
+        hub_constants::*,
         StateAction,
         SimFlo,
         SimInt,
@@ -46,10 +46,10 @@ impl TheHub {
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
-            fuel: 0,
-            fuel_capacity: 50,
-            production_capacity: EnergyUnit::new(400),
-            balance: Money::new(10000.0),
+            fuel: PP_INIT_FUEL,
+            fuel_capacity: PP_INIT_FUEL_CAP,
+            production_capacity: PP_INIT_PRODUCTION_CAP,
+            balance: PP_INIT_MONEY,
             is_awaiting_fuel: false,
             is_bankrupt: false,
         }));

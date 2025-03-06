@@ -1,5 +1,5 @@
-use std::ops::{Div, Sub};
-use crate::simulation::{SimFlo, SimInt};
+use std::ops::Div;
+use crate::simulation::SimFlo;
 
 pub trait Flippable {
     fn flip(&mut self) -> Self;

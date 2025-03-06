@@ -109,7 +109,6 @@ impl UIController {
                                 },
                                 TimerEvent::NothingUnusual => {
                                     if let Ok(message) = log_receiver.try_recv() {
-                                        println!("UI: Message received: {:?}", message);
                                         messages_model.push(message.into());
                                     }
                                 },
