@@ -2,9 +2,11 @@ use crate::{
     economy::{
         industries::Industry,
         economy_types::{Money, EnergyUnit},
-    }
+    },
+    simulation::{SimFlo, SimInt},
 };
 
+#[derive(Debug)]
 pub struct UnitProductionCost {
     energy: EnergyUnit,
     labor: Money,
@@ -13,12 +15,31 @@ pub struct UnitProductionCost {
     packaging: Money,
 }
 
+#[derive(Debug)]
+pub struct ProductDemandTimeline {
+    inc_quarter: SimInt,
+    dec_quarter: SimInt,
+    dec_half: SimInt,
+    dec_three_quarters: SimInt,
+    deadline: SimInt,
+}
+
+#[derive(Debug)]
+pub struct ProductDemandInfo {
+    base_percentage: SimFlo,
+    max_percentage: SimFlo,
+    unit_per_percent: SimInt,
+    demand_timeline: ProductDemandTimeline,
+}
+
+#[derive(Debug)]
 pub struct Product {
     name: &'static str,
     description: &'static str,
     unit_production_cost: UnitProductionCost,
     rnd_cost: Money,
     industry: Industry,
+    demand_info: ProductDemandInfo,
 }
 
 impl Product {
@@ -34,6 +55,18 @@ impl Product {
         },
         rnd_cost: Money::new(16743.56),
         industry: Industry::SEMICONDUCTORS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 45.0,
+            max_percentage: 80.0,
+            unit_per_percent: 100,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 2,
+                dec_quarter: 6,
+                dec_half: 12,
+                dec_three_quarters: 16,
+                deadline: 24,
+            }
+        }
     };
     pub const MICROCHIP: Self = Self {
         name: "Microchip",
@@ -47,6 +80,18 @@ impl Product {
         },
         rnd_cost: Money::new(69376.12),
         industry: Industry::SEMICONDUCTORS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 65.0,
+            max_percentage: 95.0,
+            unit_per_percent: 50,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 1,
+                dec_quarter: 4,
+                dec_half: 8,
+                dec_three_quarters: 12,
+                deadline: 16,
+            }
+        }
     };
     pub const SAAS: Self = Self {
         name: "SaaS",
@@ -60,6 +105,18 @@ impl Product {
         },
         rnd_cost: Money::new(3670.45),
         industry: Industry::SOFTWARE,
+        demand_info: ProductDemandInfo {
+            base_percentage: 15.0,
+            max_percentage: 75.0,
+            unit_per_percent: 50,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 4,
+                dec_quarter: 6,
+                dec_half: 8,
+                dec_three_quarters: 10,
+                deadline: 12,
+            }
+        }
     };
     pub const COMPUTER_VIRUS: Self = Self {
         name: "Computer Virus",
@@ -73,6 +130,18 @@ impl Product {
         },
         rnd_cost: Money::new(87450.23),
         industry: Industry::SOFTWARE,
+        demand_info: ProductDemandInfo {
+            base_percentage: 60.0,
+            max_percentage: 70.0,
+            unit_per_percent: 5,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 2,
+                dec_quarter: 10,
+                dec_half: 16,
+                dec_three_quarters: 24,
+                deadline: 32,
+            }
+        }
     };
     pub const PAPER: Self = Self {
         name: "Paper",
@@ -86,6 +155,18 @@ impl Product {
         },
         rnd_cost: Money::new(42760.49),
         industry: Industry::BANK,
+        demand_info: ProductDemandInfo {
+            base_percentage: 90.0,
+            max_percentage: 100.0,
+            unit_per_percent: 1000,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 1,
+                dec_quarter: 16,
+                dec_half: 24,
+                dec_three_quarters: 32,
+                deadline: 64,
+            }
+        }
     };
     pub const DEBT: Self = Self {
         name: "Debt",
@@ -99,6 +180,18 @@ impl Product {
         },
         rnd_cost: Money::new(105234.8),
         industry: Industry::BANK,
+        demand_info: ProductDemandInfo {
+            base_percentage: 70.0,
+            max_percentage: 100.0,
+            unit_per_percent: 175,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 2,
+                dec_quarter: 8,
+                dec_half: 12,
+                dec_three_quarters: 14,
+                deadline: 16,
+            }
+        }
     };
     pub const SKIN_CLEANER: Self = Self {
         name: "Skin Cleaner",
@@ -112,6 +205,18 @@ impl Product {
         },
         rnd_cost: Money::new(5873.76),
         industry: Industry::COSMETICS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 10.0,
+            max_percentage: 50.0,
+            unit_per_percent: 1780,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 8,
+                dec_quarter: 10,
+                dec_half: 12,
+                dec_three_quarters: 14,
+                deadline: 16,
+            }
+        }
     };
     pub const ELIXIR_OF_YOUTH: Self = Self {
         name: "Elixir of Youth",
@@ -125,6 +230,18 @@ impl Product {
         },
         rnd_cost: Money::new(83456.71),
         industry: Industry::COSMETICS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 30.0,
+            max_percentage: 75.0,
+            unit_per_percent: 777,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 4,
+                dec_quarter: 8,
+                dec_half: 12,
+                dec_three_quarters: 16,
+                deadline: 20,
+            }
+        }
     };
     pub const UNGUIDED_ROCKET: Self = Self {
         name: "Unguided Rocket",
@@ -138,6 +255,18 @@ impl Product {
         },
         rnd_cost: Money::new(56984.34),
         industry: Industry::MISSILES,
+        demand_info: ProductDemandInfo {
+            base_percentage: 50.0,
+            max_percentage: 85.0,
+            unit_per_percent: 1600,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 2,
+                dec_quarter: 10,
+                dec_half: 16,
+                dec_three_quarters: 24,
+                deadline: 64,
+            }
+        }
     };
     pub const GUIDED_MISSILE: Self = Self {
         name: "Guided Missile",
@@ -151,6 +280,18 @@ impl Product {
         },
         rnd_cost: Money::new(253875.5),
         industry: Industry::MISSILES,
+        demand_info: ProductDemandInfo {
+            base_percentage: 40.0,
+            max_percentage: 100.0,
+            unit_per_percent: 250,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 3,
+                dec_quarter: 14,
+                dec_half: 20,
+                dec_three_quarters: 32,
+                deadline: 64,
+            }
+        }
     };
     pub const AMMO: Self = Self {
         name: "Ammo",
@@ -164,6 +305,18 @@ impl Product {
         },
         rnd_cost: Money::new(1874.32),
         industry: Industry::ARMS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 90.0,
+            max_percentage: 100.0,
+            unit_per_percent: 30000,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 1,
+                dec_quarter: 16,
+                dec_half: 32,
+                dec_three_quarters: 64,
+                deadline: 128,
+            }
+        }
     };
     pub const SEMI_AUTO: Self = Self {
         name: "Semi-Auto",
@@ -177,6 +330,18 @@ impl Product {
         },
         rnd_cost: Money::new(7849.28),
         industry: Industry::ARMS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 60.0,
+            max_percentage: 85.0,
+            unit_per_percent: 2200,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 4,
+                dec_quarter: 8,
+                dec_half: 16,
+                dec_three_quarters: 18,
+                deadline: 20,
+            }
+        }
     };
     pub const SUGAR_DRINK: Self = Self {
         name: "Sugar Drink",
@@ -190,6 +355,18 @@ impl Product {
         },
         rnd_cost: Money::new(538.29),
         industry: Industry::PROCESSED_FOODS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 30.0,
+            max_percentage: 70.0,
+            unit_per_percent: 12655,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 4,
+                dec_quarter: 8,
+                dec_half: 16,
+                dec_three_quarters: 32,
+                deadline: 40,
+            }
+        }
     };
     pub const SYNTHETIC_MEAT: Self = Self {
         name: "Synthetic Meat",
@@ -203,6 +380,18 @@ impl Product {
         },
         rnd_cost: Money::new(136592.0),
         industry: Industry::PROCESSED_FOODS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 30.0,
+            max_percentage: 70.0,
+            unit_per_percent: 5000,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 2,
+                dec_quarter: 8,
+                dec_half: 16,
+                dec_three_quarters: 24,
+                deadline: 28,
+            }
+        }
     };
     pub const PREGNANCY_TEST: Self = Self {
         name: "Pregnancy Test",
@@ -216,10 +405,22 @@ impl Product {
         },
         rnd_cost: Money::new(67356.39),
         industry: Industry::PHARMACEUTICALS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 75.0,
+            max_percentage: 100.0,
+            unit_per_percent: 6800,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 1,
+                dec_quarter: 12,
+                dec_half: 24,
+                dec_three_quarters: 48,
+                deadline: 128,
+            }
+        }
     };
     pub const BIRTH_CONTROL_PILL: Self = Self {
         name: "Birth Control Pill",
-        description: "Some religions don't like this product, but we bought the majority of them long ago.",
+        description: "Some religions don't like this product, but we bought the majority of them long time ago.",
         unit_production_cost: UnitProductionCost {
             energy: EnergyUnit::new(3),
             labor: Money::new(674.23),
@@ -229,10 +430,22 @@ impl Product {
         },
         rnd_cost: Money::new(826658.3),
         industry: Industry::PHARMACEUTICALS,
+        demand_info: ProductDemandInfo {
+            base_percentage: 55.0,
+            max_percentage: 82.0,
+            unit_per_percent: 3428,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 3,
+                dec_quarter: 12,
+                dec_half: 24,
+                dec_three_quarters: 48,
+                deadline: 64,
+            }
+        }
     };
     pub const CHATBOT_TOKENS: Self = Self {
         name: "Chatbot Tokens",
-        description: "Now you can move R&D and development ops to overseas and pretend using chatbots instead to boost your stock prices.",
+        description: "Now you can move R&D and ops to overseas and pretend using chatbots instead to boost your stock prices.",
         unit_production_cost: UnitProductionCost {
             energy: EnergyUnit::new(12),
             labor: Money::new(421.60),
@@ -242,6 +455,18 @@ impl Product {
         },
         rnd_cost: Money::new(62859.2),
         industry: Industry::E_YAY,
+        demand_info: ProductDemandInfo {
+            base_percentage: 12.0,
+            max_percentage: 45.0,
+            unit_per_percent: 128670,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 8,
+                dec_quarter: 12,
+                dec_half: 14,
+                dec_three_quarters: 16,
+                deadline: 18,
+            }
+        }
     };
     pub const ASSISTANT_INTRUDER: Self = Self {
         name: "Assistant Intruder",
@@ -255,6 +480,18 @@ impl Product {
         },
         rnd_cost: Money::new(748293.22),
         industry: Industry::E_YAY,
+        demand_info: ProductDemandInfo {
+            base_percentage: 45.0,
+            max_percentage: 70.0,
+            unit_per_percent: 100,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 4,
+                dec_quarter: 8,
+                dec_half: 12,
+                dec_three_quarters: 16,
+                deadline: 24,
+            }
+        }
     };
     pub const GRADUATE: Self = Self {
         name: "Graduate",
@@ -268,6 +505,18 @@ impl Product {
         },
         rnd_cost: Money::new(102.30),
         industry: Industry::UNIVERSITY,
+        demand_info: ProductDemandInfo {
+            base_percentage: 50.0,
+            max_percentage: 80.0,
+            unit_per_percent: 1500,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 2,
+                dec_quarter: 6,
+                dec_half: 10,
+                dec_three_quarters: 16,
+                deadline: 24,
+            }
+        }
     };
     pub const STUDENT_DEBT: Self = Self {
         name: "Student Debt",
@@ -281,6 +530,18 @@ impl Product {
         },
         rnd_cost: Money::new(1_984_054.7),
         industry: Industry::UNIVERSITY,
+        demand_info: ProductDemandInfo {
+            base_percentage: 20.0,
+            max_percentage: 60.0,
+            unit_per_percent: 2500,
+            demand_timeline: ProductDemandTimeline {
+                inc_quarter: 4,
+                dec_quarter: 8,
+                dec_half: 12,
+                dec_three_quarters: 16,
+                deadline: 24,
+            }
+        }
     };
 }
 

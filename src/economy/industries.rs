@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Industry {
     name: &'static str,
     description: &'static str,
@@ -14,11 +15,11 @@ impl Industry {
     };
     pub const BANK: Self = Self {
         name: "Bank",
-        description: "Produces means of exchange and debt.",
+        description: "Produces means of exchange and debt, debt and more debt.",
     };
     pub const COSMETICS: Self = Self {
         name: "Cosmetics",
-        description: "Converts toxic chemicals to mildly toxic beautifiers.",
+        description: "Converts toxic chemicals to mildly toxic ones that don't burn your skin in relatively low concentrations.",
     };
     pub const MISSILES: Self = Self {
         name: "Missiles",
@@ -38,7 +39,7 @@ impl Industry {
     };
     pub const E_YAY: Self = Self {
         name: "E-YAY!",
-        description: "Electronic YAY! produces chat bots with unlimited access to copyrighted data and compute repetition."
+        description: "Electronic YAY! Produces chat bots with unlimited access to copyrighted data and compute repetition."
     };
     pub const UNIVERSITY: Self = Self {
         name: "University",

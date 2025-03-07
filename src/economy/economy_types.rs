@@ -1,4 +1,5 @@
 use crate::{
+    economy::products::Product,
     simulation::{SimFlo, SimInt},
     ui_controller::UpDown as UIUpDown,
     utils_traits::Flippable,
@@ -79,5 +80,21 @@ pub struct EnergyUnit(SimInt);
 impl EnergyUnit {
     pub const fn new(unit: SimInt) -> Self {
         Self(unit)
+    }
+}
+
+#[derive(Debug)]
+pub struct ProductDemand {
+    product: Product,
+    percent: SimFlo,
+    age: SimInt,
+}
+impl ProductDemand {
+    pub fn new(product: Product, percent: SimFlo) -> Self {
+        Self {
+            product,
+            percent,
+            age: 0,
+        }
     }
 }

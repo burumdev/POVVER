@@ -348,7 +348,7 @@ impl Environment {
                 let randomized = random_inc_dec_clamp_signed(
                     &mut self.rng,
                     ws_val,
-                    lower_modifier + 10,
+                    lower_modifier + 5,
                     5,
                     0,
                     WINDSPEED_MAX,
