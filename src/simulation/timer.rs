@@ -21,6 +21,23 @@ pub enum TimerEvent {
     MonthChange,
     YearChange,
 }
+impl TimerEvent {
+    pub fn at_least_hour(&self) -> bool {
+        self == &TimerEvent::HourChange ||
+            self == &TimerEvent::DayChange ||
+            self == &TimerEvent::MonthChange ||
+            self == &TimerEvent::YearChange
+    }
+    pub fn at_least_day(&self) -> bool {
+        self == &TimerEvent::DayChange ||
+            self == &TimerEvent::MonthChange ||
+            self == &TimerEvent::YearChange
+    }
+    pub fn at_least_month(&self) -> bool {
+        self == &TimerEvent::MonthChange ||
+            self == &TimerEvent::YearChange
+    }
+}
 
 pub struct Timer
 {

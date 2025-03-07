@@ -19,7 +19,6 @@ pub struct EnvStateData {
     pub wind_speed: WindSpeed,
     pub wind_direction: WindDirection,
     pub the_sun: TheSun,
-    pub sunshine_reduction: SimFlo,
 }
 
 #[derive(Debug, Clone)]

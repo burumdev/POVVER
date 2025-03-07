@@ -1,5 +1,7 @@
-use std::sync::{mpsc, Arc, Mutex};
-use slint::SharedString;
+use std::{
+    sync::{mpsc, Arc, Mutex},
+};
+
 use tokio::{
     sync::mpsc as tokio_mpsc,
     sync::broadcast as tokio_broadcast
@@ -144,21 +146,28 @@ impl Simulation {
 
         while self.timer.ticker.recv().is_ok() {
             if !self.is_running {
+                // Send quit signal to every recipient for cleanups
                 send_action(StateAction::Quit);
+                // Join all handles
                 for handle in join_handles {
                     handle.join().unwrap();
                 }
+                // Break out of main loop
                 break;
             }
 
             let timer_event = self.timer.tick(misc.is_paused);
             match &timer_event {
-                te if *te != TimerEvent::NothingUnusual && *te != TimerEvent::Paused => {
+                te if te.at_least_hour() => {
                     self.env.update();
                     println!("ENV updated: {:?}", self.env);
                     send_action(StateAction::Env);
 
-                    if *te == TimerEvent::MonthChange {
+                    if te.at_least_day() {
+                        self.economy.update_product_demands();
+                    }
+
+                    if te.at_least_month() {
                         self.economy.update_macroeconomics();
                         println!("ECONOMY: {:?}", self.economy);
                     }
@@ -166,6 +175,7 @@ impl Simulation {
                 _ => ()
             }
 
+            // Send timer signal to recipients to wake them up for timed jobs.
             send_action(StateAction::Timer(timer_event));
 
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {

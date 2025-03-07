@@ -69,7 +69,6 @@ impl Environment {
             wind_speed,
             wind_direction,
             the_sun: TheSun::default(),
-            sunshine_reduction: 0.0,
         }));
 
         (

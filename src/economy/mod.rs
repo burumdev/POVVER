@@ -85,7 +85,7 @@ impl Economy {
         ));
     }
 
-    pub fn maybe_new_product_demand(&self) {
+    pub fn update_product_demands(&self) {
 
     }
 }
