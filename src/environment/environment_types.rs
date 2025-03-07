@@ -1,9 +1,11 @@
-use super::{SUNSHINE_MAX, WINDSPEED_MAX};
+use num_traits::FromPrimitive;
+use super::WINDSPEED_MAX;
 use crate::{
     simulation::{SimFlo, SimInt},
     ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel},
     utils_traits::Flippable,
 };
+use crate::utils_traits::{AsFactor, Percentage};
 
 pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 
@@ -39,14 +41,23 @@ impl Default for SunBrightness {
         Self::NONE
     }
 }
-impl SunBrightness {
-    pub fn val(&self) -> SimFlo {
+impl AsFactor for SunBrightness {
+    fn val(&self) -> SimFlo {
         self.0
     }
-    pub fn set(&mut self, val: SimFlo) {
-        self.0 = val.clamp(0.0, SUNSHINE_MAX);
+}
+impl FromPrimitive for SunBrightness {
+    fn from_i64(val: i64) -> Option<Self> {
+        Some(Self(val as SimFlo))
+    }
+    fn from_u64(val: u64) -> Option<Self> {
+        Some(Self(val as SimFlo))
+    }
+    fn from_f32(val: SimFlo) -> Option<Self> {
+        Some(Self(val))
     }
 }
+impl Percentage for SunBrightness {}
 impl PartialEq<SimFlo> for SunBrightness {
     fn eq(&self, other: &SimFlo) -> bool {
         self.0.eq(other)

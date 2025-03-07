@@ -11,14 +11,13 @@ use crate::{
     simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, CloudSize, SunStage, WindDirection, WindSpeedLevel},
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
-    utils_traits::Flippable,
+    utils_traits::*,
 };
 
 pub const WINDSPEED_MAX: SimInt = 120;
 const CLOUD_POS_MAX: SimInt = 15;
 pub const CLOUDS_MAX: SimInt = 32;
 const SUN_POS_MAX: SimInt = 15;
-pub const SUNSHINE_MAX: SimFlo = 100.0;
 
 #[derive(Debug)]
 pub struct Environment {

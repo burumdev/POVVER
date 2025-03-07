@@ -3,7 +3,7 @@ use crate::{
     environment::{TheSun, WindSpeed, months::Month},
     simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, Date, WindDirection},
-    economy::economy_types::{Money, EnergyUnit, UpDown},
+    economy::economy_types::{Money, EnergyUnit, UpDown, ProductDemand},
     utils_data::ReadOnlyRwLock,
 };
 
@@ -54,6 +54,7 @@ pub struct EconomyStateData {
     pub inflation_rate: SimFlo,
     pub inflation_direction: UpDown,
     pub fuel_price: Money,
+    pub product_demands: Vec<ProductDemand>,
 }
 
 pub struct HubState {

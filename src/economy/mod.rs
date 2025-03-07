@@ -13,7 +13,7 @@ pub mod povver_plant;
 
 use crate::{
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed},
-    utils_traits::{Flippable, Percentage},
+    utils_traits::{Flippable, AsFactor},
     app_state::EconomyStateData,
 };
 
@@ -33,6 +33,7 @@ impl Economy {
             inflation_rate: rng.gen_range(2.0..10.0),
             inflation_direction,
             fuel_price: Money::new(rng.gen_range(100.00..200.00)),
+            product_demands: Vec::new(),
         }));
 
         (
@@ -82,5 +83,9 @@ impl Economy {
             FUEL_PRICE_MIN,
             FUEL_PRICE_MAX,
         ));
+    }
+
+    pub fn maybe_new_product_demand(&self) {
+
     }
 }
