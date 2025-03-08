@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard},
 };
 
+#[derive(Debug)]
 pub struct SlidingWindow<T> {
     data: VecDeque<T>,
     capacity: usize,

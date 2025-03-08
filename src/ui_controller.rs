@@ -35,7 +35,7 @@ impl UIController {
 impl UIController {
     pub fn run(
         &self,
-        flag_sender: mpsc::Sender<UIFlag>,
+        flag_sender: crossbeam_channel::Sender<UIFlag>,
         mut wakeup_receiver: tokio_mpsc::UnboundedReceiver<StateAction>,
         mut log_receiver: tokio_broadcast::Receiver<LogMessage>,
         state: Arc<StatePayload>,

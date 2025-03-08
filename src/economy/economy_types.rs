@@ -83,18 +83,20 @@ impl EnergyUnit {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ProductDemand {
-    product: Product,
-    percent: SimFlo,
-    age: SimInt,
+    pub product: &'static Product,
+    pub percent: SimFlo,
+    pub age: SimInt,
+    pub demand_meet_percent: SimFlo,
 }
 impl ProductDemand {
-    pub fn new(product: Product, percent: SimFlo) -> Self {
+    pub fn new(product: &'static Product, percent: SimFlo) -> Self {
         Self {
             product,
             percent,
             age: 0,
+            demand_meet_percent: 0.0
         }
     }
 }

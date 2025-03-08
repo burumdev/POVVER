@@ -6,6 +6,7 @@ use crate::{
     economy::economy_types::{Money, EnergyUnit, UpDown, ProductDemand},
     utils_data::ReadOnlyRwLock,
 };
+use crate::utils_data::SlidingWindow;
 
 #[derive(Debug)]
 pub struct TimerStateData {
@@ -54,6 +55,7 @@ pub struct EconomyStateData {
     pub inflation_direction: UpDown,
     pub fuel_price: Money,
     pub product_demands: Vec<ProductDemand>,
+    pub past_25_product_demands: SlidingWindow<ProductDemand>,
 }
 
 pub struct HubState {

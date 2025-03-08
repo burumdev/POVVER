@@ -8,38 +8,43 @@ use crate::{
 
 #[derive(Debug)]
 pub struct UnitProductionCost {
-    energy: EnergyUnit,
-    labor: Money,
-    raw_materials: Money,
-    equipment_maintenance: Money,
-    packaging: Money,
+    pub energy: EnergyUnit,
+    pub labor: Money,
+    pub raw_materials: Money,
+    pub equipment_maintenance: Money,
+    pub packaging: Money,
 }
 
 #[derive(Debug)]
 pub struct ProductDemandTimeline {
-    inc_quarter: SimInt,
-    dec_quarter: SimInt,
-    dec_half: SimInt,
-    dec_three_quarters: SimInt,
-    deadline: SimInt,
+    pub inc_quarter: SimInt,
+    pub dec_quarter: SimInt,
+    pub dec_half: SimInt,
+    pub dec_three_quarters: SimInt,
+    pub deadline: SimInt,
 }
 
 #[derive(Debug)]
 pub struct ProductDemandInfo {
-    base_percentage: SimFlo,
-    max_percentage: SimFlo,
-    unit_per_percent: SimInt,
-    demand_timeline: ProductDemandTimeline,
+    pub min_percentage: SimFlo,
+    pub max_percentage: SimFlo,
+    pub unit_per_percent: SimInt,
+    pub demand_timeline: ProductDemandTimeline,
 }
 
 #[derive(Debug)]
 pub struct Product {
-    name: &'static str,
-    description: &'static str,
-    unit_production_cost: UnitProductionCost,
-    rnd_cost: Money,
-    industry: Industry,
-    demand_info: ProductDemandInfo,
+    pub name: &'static str,
+    pub description: &'static str,
+    pub unit_production_cost: UnitProductionCost,
+    pub rnd_cost: Money,
+    pub industry: Industry,
+    pub demand_info: ProductDemandInfo,
+}
+impl PartialEq for Product {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 
 impl Product {
@@ -56,7 +61,7 @@ impl Product {
         rnd_cost: Money::new(16743.56),
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
-            base_percentage: 45.0,
+            min_percentage: 45.0,
             max_percentage: 80.0,
             unit_per_percent: 100,
             demand_timeline: ProductDemandTimeline {
@@ -81,7 +86,7 @@ impl Product {
         rnd_cost: Money::new(69376.12),
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
-            base_percentage: 65.0,
+            min_percentage: 65.0,
             max_percentage: 95.0,
             unit_per_percent: 50,
             demand_timeline: ProductDemandTimeline {
@@ -106,7 +111,7 @@ impl Product {
         rnd_cost: Money::new(3670.45),
         industry: Industry::SOFTWARE,
         demand_info: ProductDemandInfo {
-            base_percentage: 15.0,
+            min_percentage: 15.0,
             max_percentage: 75.0,
             unit_per_percent: 50,
             demand_timeline: ProductDemandTimeline {
@@ -131,7 +136,7 @@ impl Product {
         rnd_cost: Money::new(87450.23),
         industry: Industry::SOFTWARE,
         demand_info: ProductDemandInfo {
-            base_percentage: 60.0,
+            min_percentage: 60.0,
             max_percentage: 70.0,
             unit_per_percent: 5,
             demand_timeline: ProductDemandTimeline {
@@ -156,7 +161,7 @@ impl Product {
         rnd_cost: Money::new(42760.49),
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
-            base_percentage: 90.0,
+            min_percentage: 90.0,
             max_percentage: 100.0,
             unit_per_percent: 1000,
             demand_timeline: ProductDemandTimeline {
@@ -181,7 +186,7 @@ impl Product {
         rnd_cost: Money::new(105234.8),
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
-            base_percentage: 70.0,
+            min_percentage: 70.0,
             max_percentage: 100.0,
             unit_per_percent: 175,
             demand_timeline: ProductDemandTimeline {
@@ -206,7 +211,7 @@ impl Product {
         rnd_cost: Money::new(5873.76),
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
-            base_percentage: 10.0,
+            min_percentage: 10.0,
             max_percentage: 50.0,
             unit_per_percent: 1780,
             demand_timeline: ProductDemandTimeline {
@@ -231,7 +236,7 @@ impl Product {
         rnd_cost: Money::new(83456.71),
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
-            base_percentage: 30.0,
+            min_percentage: 30.0,
             max_percentage: 75.0,
             unit_per_percent: 777,
             demand_timeline: ProductDemandTimeline {
@@ -256,7 +261,7 @@ impl Product {
         rnd_cost: Money::new(56984.34),
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
-            base_percentage: 50.0,
+            min_percentage: 50.0,
             max_percentage: 85.0,
             unit_per_percent: 1600,
             demand_timeline: ProductDemandTimeline {
@@ -281,7 +286,7 @@ impl Product {
         rnd_cost: Money::new(253875.5),
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
-            base_percentage: 40.0,
+            min_percentage: 40.0,
             max_percentage: 100.0,
             unit_per_percent: 250,
             demand_timeline: ProductDemandTimeline {
@@ -306,7 +311,7 @@ impl Product {
         rnd_cost: Money::new(1874.32),
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
-            base_percentage: 90.0,
+            min_percentage: 90.0,
             max_percentage: 100.0,
             unit_per_percent: 30000,
             demand_timeline: ProductDemandTimeline {
@@ -331,7 +336,7 @@ impl Product {
         rnd_cost: Money::new(7849.28),
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
-            base_percentage: 60.0,
+            min_percentage: 60.0,
             max_percentage: 85.0,
             unit_per_percent: 2200,
             demand_timeline: ProductDemandTimeline {
@@ -356,7 +361,7 @@ impl Product {
         rnd_cost: Money::new(538.29),
         industry: Industry::PROCESSED_FOODS,
         demand_info: ProductDemandInfo {
-            base_percentage: 30.0,
+            min_percentage: 30.0,
             max_percentage: 70.0,
             unit_per_percent: 12655,
             demand_timeline: ProductDemandTimeline {
@@ -381,7 +386,7 @@ impl Product {
         rnd_cost: Money::new(136592.0),
         industry: Industry::PROCESSED_FOODS,
         demand_info: ProductDemandInfo {
-            base_percentage: 30.0,
+            min_percentage: 30.0,
             max_percentage: 70.0,
             unit_per_percent: 5000,
             demand_timeline: ProductDemandTimeline {
@@ -406,7 +411,7 @@ impl Product {
         rnd_cost: Money::new(67356.39),
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
-            base_percentage: 75.0,
+            min_percentage: 75.0,
             max_percentage: 100.0,
             unit_per_percent: 6800,
             demand_timeline: ProductDemandTimeline {
@@ -431,7 +436,7 @@ impl Product {
         rnd_cost: Money::new(826658.3),
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
-            base_percentage: 55.0,
+            min_percentage: 55.0,
             max_percentage: 82.0,
             unit_per_percent: 3428,
             demand_timeline: ProductDemandTimeline {
@@ -456,7 +461,7 @@ impl Product {
         rnd_cost: Money::new(62859.2),
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
-            base_percentage: 12.0,
+            min_percentage: 12.0,
             max_percentage: 45.0,
             unit_per_percent: 128670,
             demand_timeline: ProductDemandTimeline {
@@ -481,7 +486,7 @@ impl Product {
         rnd_cost: Money::new(748293.22),
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
-            base_percentage: 45.0,
+            min_percentage: 45.0,
             max_percentage: 70.0,
             unit_per_percent: 100,
             demand_timeline: ProductDemandTimeline {
@@ -506,7 +511,7 @@ impl Product {
         rnd_cost: Money::new(102.30),
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {
-            base_percentage: 50.0,
+            min_percentage: 50.0,
             max_percentage: 80.0,
             unit_per_percent: 1500,
             demand_timeline: ProductDemandTimeline {
@@ -531,7 +536,7 @@ impl Product {
         rnd_cost: Money::new(1_984_054.7),
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {
-            base_percentage: 20.0,
+            min_percentage: 20.0,
             max_percentage: 60.0,
             unit_per_percent: 2500,
             demand_timeline: ProductDemandTimeline {

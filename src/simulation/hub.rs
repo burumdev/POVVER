@@ -169,7 +169,7 @@ impl TheHub {
                 true
             });
 
-        for job in due_jobs {
+        for job in due_jobs.drain(..) {
             match job.kind {
                 DailyJobKind::PPFuelCapIncrease => {
                     self.increase_pp_fuel_cap();

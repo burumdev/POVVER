@@ -73,7 +73,7 @@ impl Simulation {
         let (mut env, env_state) = Environment::new(Arc::clone(&timer_state));
         env.update();
 
-        let (economy, economy_state) = Economy::new();
+        let (economy, economy_state) = Economy::new(ReadOnlyRwLock::from(timer_state.clone()));
 
         let (the_hub, hub_state) = TheHub::new(
             ReadOnlyRwLock::from(economy_state.clone()),
@@ -116,7 +116,7 @@ impl Simulation {
 
         self.app_state.set_misc(Misc::IsPaused(false));
 
-        let (ui_flag_sender, ui_flag_receiver) = mpsc::channel::<UIFlag>();
+        let (ui_flag_sender, ui_flag_receiver) = crossbeam_channel::bounded::<UIFlag>(16);
         let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded::<StateAction>(16);
         let (ui_wakeup_sender, ui_wakeup_receiver) = tokio_mpsc::unbounded_channel::<StateAction>();
         let state_payload = self.app_state.get_state_payload();
@@ -160,16 +160,14 @@ impl Simulation {
             match &timer_event {
                 te if te.at_least_hour() => {
                     self.env.update();
-                    println!("ENV updated: {:?}", self.env);
                     send_action(StateAction::Env);
 
-                    if te.at_least_day() {
-                        self.economy.update_product_demands();
-                    }
-
-                    if te.at_least_month() {
-                        self.economy.update_macroeconomics();
-                        println!("ECONOMY: {:?}", self.economy);
+                    if !te.at_least_month() || !te.at_least_day() {
+                        self.economy.hourly_update();
+                    } else if te.at_least_day() && !te.at_least_month() {
+                        self.economy.daily_update();
+                    } else if te.at_least_month() {
+                        self.economy.monthly_update();
                     }
                 },
                 _ => ()
