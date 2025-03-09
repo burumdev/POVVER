@@ -2,6 +2,7 @@ use std::{
     thread,
     sync::{Arc, Mutex},
 };
+use std::time::Duration;
 use crossbeam_channel::{Sender, Receiver};
 use tokio::sync::broadcast as tokio_broadcast;
 
@@ -15,7 +16,8 @@ use crate::{
         hub_types::PovverPlantSignal,
         SimInt,
         SimFlo,
-        hub_constants::PP_FUEL_CAPACITY_INCREASE_COST
+        hub_constants::PP_FUEL_CAPACITY_INCREASE_COST,
+        speed::Speed,
     },
     logger::{
         Logger,
@@ -108,23 +110,30 @@ impl PovverPlant {
         let state_ro = ReadOnlyRwLock::clone(&me.lock().unwrap().state_ro);
 
         thread::spawn(move || {
-            while let Ok(action) = wakeup_receiver.recv() {
-                if !state_ro.read().unwrap().is_bankrupt {
-                    match action {
-                        StateAction::Timer(TimerEvent::HourChange) => {
-                            me.lock().unwrap()
-                                .check_buy_fuel(&signal_sender);
-                        },
-                        StateAction::Quit => {
-                            me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
-                            break;
+            let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
+            loop {
+                if let Ok(action) = wakeup_receiver.try_recv() {
+                    if !state_ro.read().unwrap().is_bankrupt {
+                        match action {
+                            StateAction::Timer(TimerEvent::HourChange) => {
+                                me.lock().unwrap()
+                                    .check_buy_fuel(&signal_sender);
+                            }
+                            StateAction::SpeedChange(td) => {
+                                sleeptime = td / 2;
+                            }
+                            StateAction::Quit => {
+                                me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
+                                break;
+                            }
+                            _ => ()
                         }
-                        _ => ()
+                    } else { // PP is BANKRUPT!
+                        me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
+                        break;
                     }
-                } else { // PP is BANKRUPT!
-                    me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
-                    break;
                 }
+                thread::sleep(Duration::from_millis(sleeptime));
             }
         })
     }

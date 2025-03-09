@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{Arc, Mutex},
 };
 
 use tokio::{
@@ -7,7 +7,7 @@ use tokio::{
     sync::broadcast as tokio_broadcast
 };
 
-mod speed;
+pub mod speed;
 use speed::SPEEDS_ARRAY;
 
 pub mod hub;
@@ -36,6 +36,7 @@ pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 #[derive(Debug, Clone)]
 pub enum StateAction {
     Timer(TimerEvent),
+    SpeedChange(TickDuration),
     Env,
     Misc,
     Quit
@@ -75,6 +76,11 @@ impl Simulation {
 
         let (economy, economy_state) = Economy::new(ReadOnlyRwLock::from(timer_state.clone()));
 
+        let misc_state = Arc::new(Mutex::new(MiscStateData {
+            is_paused,
+            speed_index,
+        }));
+
         let (the_hub, hub_state) = TheHub::new(
             ReadOnlyRwLock::from(economy_state.clone()),
             ReadOnlyRwLock::from(timer_state.clone()),
@@ -82,10 +88,6 @@ impl Simulation {
         );
         let the_hub = Arc::new(Mutex::new(the_hub));
 
-        let misc_state = Arc::new(Mutex::new(MiscStateData {
-            is_paused,
-            speed_index,
-        }));
 
         let app_state = AppState::new(timer_state, env_state, economy_state, hub_state, misc_state);
 
@@ -107,7 +109,6 @@ impl Simulation {
         self.app_state.set_misc(Misc::SpeedIndex(speed_index as usize));
         self.timer.set_tick_duration(SPEEDS_ARRAY[speed_index as usize].get_tick_duration());
     }
-
 }
 
 impl Simulation {
@@ -185,7 +186,10 @@ impl Simulation {
             if let Ok(flag) = flag_result {
                 match flag {
                     UIFlag::Pause => self.toggle_paused(),
-                    UIFlag::SpeedChange(speed_index) => self.change_speed(speed_index),
+                    UIFlag::SpeedChange(speed_index) => {
+                        self.change_speed(speed_index);
+                        send_action(StateAction::SpeedChange(self.timer.get_tick_duration()));
+                    },
                     UIFlag::Quit => self.quit(),
                 }
             }

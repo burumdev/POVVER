@@ -2,14 +2,14 @@ use std::{
     sync::{Arc, Mutex, RwLock},
     thread,
 };
+use std::time::Duration;
 use crossbeam_channel::{Receiver, bounded, unbounded};
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
-    app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData},
+    app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData, MiscStateData},
     economy::{
         povver_plant::PovverPlant,
-        economy_types::{EnergyUnit, Money}
     },
     simulation::{
         hub_types::{PovverPlantSignal, HourlyJob, HourlyJobKind, DailyJob, DailyJobKind},
@@ -18,6 +18,7 @@ use crate::{
         SimFlo,
         SimInt,
         timer::TimerEvent,
+        speed::Speed,
     },
     utils_data::ReadOnlyRwLock,
     logger::{
@@ -221,6 +222,7 @@ impl TheHub {
         };
 
         thread::spawn(move || {
+            let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
                 if let Ok(signal) = pp_signal_receiver.try_recv() {
                     match signal {
@@ -233,7 +235,7 @@ impl TheHub {
                     }
                 }
 
-                if let Ok(action) = wakeup_receiver.recv() {
+                if let Ok(action) = wakeup_receiver.try_recv() {
                     send_broadcast(action.clone());
                     match action {
                         StateAction::Timer(event) => {
@@ -248,6 +250,9 @@ impl TheHub {
                                 _ => ()
                             }
                         },
+                        StateAction::SpeedChange(td) => {
+                            sleeptime = td / 2;
+                        }
                         StateAction::Env => {},
                         StateAction::Misc => {},
                         StateAction::Quit => {
@@ -260,6 +265,8 @@ impl TheHub {
                         }
                     }
                 }
+
+                thread::sleep(Duration::from_millis(sleeptime));
             }
         })
     }

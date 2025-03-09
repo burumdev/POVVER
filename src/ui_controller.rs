@@ -149,6 +149,7 @@ impl UIController {
                         StateAction::Quit => {
                             break;
                         },
+                        _ => ()
                     }
                 }
             }).unwrap();
