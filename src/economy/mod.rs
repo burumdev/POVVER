@@ -104,7 +104,7 @@ impl Economy {
             let min_percent = product.demand_info.min_percentage;
             if inflation_hundred < min_percent && inflation_hundred != -1.0 {
                 let mut bonus = 0.0;
-                let product_in_last_25 = last_25.iter()
+                last_25.iter()
                     .filter(|demand| demand.product == product)
                     .for_each(|demand| {
                         match demand.demand_meet_percent {

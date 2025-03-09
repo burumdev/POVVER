@@ -1,22 +1,34 @@
-export component TalkBaloon inherits VerticalLayout {
-	in property <string> txt;
-	in property <bool> is_shown: false;
+import { UILogMessage, UILogLevel } from "../../state.slint";
+import { Palette } from "../../theme.slint";
 
-	width: 250px;
+export component TalkBaloon inherits VerticalLayout {
+	in property <UILogMessage> msg;
+	in property <bool> is_shown: false;
+	property <bool> is_info: msg.level == UILogLevel.Info;
+	property <bool> is_warning: msg.level == UILogLevel.Warning;
+	property <bool> is_critical: msg.level == UILogLevel.Critical;
+
+	width: 300px;
 	height: 160px;
 
 	Rectangle {
 		Image {
-			width: 115%;
-			source: @image-url("../../images/talkingbaloon.svg");
+			width: 100%;
+			source: is_info ? @image-url("../../images/talkingbaloon-info.svg") :
+				is_warning ? @image-url("../../images/talkingbaloon-warning.svg") :
+				@image-url("../../images/talkingbaloon-critical.svg");
 		}
 		VerticalLayout {
+			padding-top: 5px;
+			padding-left: 32px;
+			padding-right: 32px;
 			Text {
 				horizontal-alignment: left;
-				text: txt;
+				text: msg.message;
 				wrap: word-wrap;
 				font-size: 12px;
 				font-weight: 700;
+				color: is_info ? Palette.log_info : is_warning ? Palette.log_warn : Palette.log_critical;
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-import { SunStage, UILogMessage } from "../../state.slint";
+import { SunStage, UILogMessage, UIMessageSource, UILogLevel } from "../../state.slint";
 import { Globs } from "../../globals.slint";
 
 import { TalkBaloon } from "../common/talkbaloon.slint";
@@ -38,7 +38,14 @@ export component PovverPlant inherits Rectangle {
 	TalkBaloon {
 		y: 30px;
 		x: 320px;
-		txt: last_message.message;
+		//For testing purposes
+//		msg: {
+//			message: "Hey there, just testing some stuff with this talking baloon here. For this I'll have to write some very long sentence into the baloon, so that I can measure distances and make this visually work in general. The length of this sentence is one of the essential parts of this.",
+//			source: UIMessageSource.PP,
+//			level: UILogLevel.Critical,
+//			factory_id: 0
+//		};
+		msg: last_message;
 		is_shown: baloon_shown;
 	}
 }
