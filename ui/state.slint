@@ -1,3 +1,4 @@
+// TIMER
 export struct Date {
    minute: int,
    hour: int,
@@ -6,6 +7,11 @@ export struct Date {
    year: int,
 }
 
+export struct TimerData {
+    date: Date,
+}
+
+// ENVIRONMENT
 export struct MonthData {
     day_start: int,
     day_end: int,
@@ -13,10 +19,6 @@ export struct MonthData {
     sunshine_factor: float,
     windspeed_factor: float,
     cloud_forming_factor: float,
-}
-
-export struct TimerData {
-    date: Date,
 }
 
 export enum SunStage {
@@ -67,7 +69,8 @@ export struct EnvData {
 	clouds: [Cloud],
 }
 
-enum UpDown {
+// ECONOMY
+export enum UpDown {
 	Up,
 	Down
 }
@@ -78,32 +81,41 @@ export struct MacroEconData {
 	fuel_price: float
 }
 
-export struct UIState {
-    is_paused: bool,
-    speed_index: int,
+export struct ProductDemand {
+	product_name: string,
+	percent: float,
+	age: int,
+	demand_met: float,
 }
 
-export enum UIMessageSource {
+// LOG MESSAGES
+export enum MessageSource {
 	Hub,
 	PP,
 	Factory
 }
 
-export enum UILogLevel {
+export enum LogLevel {
 	Info,
 	Warning,
 	Critical
 }
 
-export struct UILogMessage {
-	source: UIMessageSource,
+export struct LogMessage {
+	source: MessageSource,
 	message: string,
-	level: UILogLevel,
+	level: LogLevel,
 	factory_id: int,
 }
 
 export struct CategoryMessages {
-	hub: [UILogMessage],
-	pp: [UILogMessage],
-	factory: [UILogMessage],
+	hub: [LogMessage],
+	pp: [LogMessage],
+	factory: [LogMessage],
+}
+
+// MISC
+export struct UIMisc {
+    is_paused: bool,
+    speed_index: int,
 }

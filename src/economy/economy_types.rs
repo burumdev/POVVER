@@ -1,7 +1,8 @@
+use slint::ToSharedString;
 use crate::{
     economy::products::Product,
     simulation::{SimFlo, SimInt},
-    ui_controller::UpDown as UIUpDown,
+    ui_controller::{UpDown as UIUpDown, ProductDemand as UIProductDemand },
     utils_traits::Flippable,
 };
 
@@ -97,6 +98,16 @@ impl ProductDemand {
             percent,
             age: 0,
             demand_meet_percent: 0.0
+        }
+    }
+}
+impl From<&ProductDemand> for UIProductDemand {
+    fn from(other: &ProductDemand) -> Self {
+        Self {
+            product_name: other.product.name.to_shared_string(),
+            age: other.age,
+            demand_met: other.demand_meet_percent,
+            percent: other.percent,
         }
     }
 }

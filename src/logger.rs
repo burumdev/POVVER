@@ -2,10 +2,8 @@ use tokio::sync::broadcast as tokio_broadcast;
 use slint::SharedString;
 use crate::{
     simulation::SimInt,
-    ui_controller::{UILogMessage, UILogLevel, UIMessageSource},
+    ui_controller::{LogMessage as UILogMessage, LogLevel as UILogLevel, MessageSource as UIMessageSource},
 };
-
-use std::mem::discriminant;
 
 #[derive(Debug, Clone)]
 pub enum LogLevel {

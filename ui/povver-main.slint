@@ -1,6 +1,6 @@
 import { GlobCallbacks, Globs } from "./globals.slint";
 import {
-	UIState,
+	UIMisc,
 	TimerData,
 	MonthData,
 	EnvData,
@@ -11,10 +11,11 @@ import {
 	SunStage,
 	WindDirection,
 	WindSpeedLevel,
-	UILogMessage,
-	UILogLevel,
-	UIMessageSource,
-	CategoryMessages
+	LogMessage,
+	LogLevel,
+	MessageSource,
+	CategoryMessages,
+	ProductDemand
 } from "./state.slint";
 
 import { Utils } from "./utils.slint";
@@ -27,7 +28,7 @@ import "./fonts/MonaspiceArNerdFont-Medium.otf";
 import "./fonts/MonaspiceArNerdFont-Bold.otf";
 
 export {
-    UIState,
+    UIMisc,
     Date,
     MonthData,
     Cloud,
@@ -35,10 +36,11 @@ export {
     SunStage,
     WindDirection,
     WindSpeedLevel,
-    UILogMessage,
-    UILogLevel,
-    UIMessageSource,
-    CategoryMessages
+    LogMessage,
+    LogLevel,
+    MessageSource,
+    CategoryMessages,
+    ProductDemand
 }
 
 export component PovverMain inherits Window {
@@ -49,9 +51,10 @@ export component PovverMain inherits Window {
     in property <MonthData> month <=> Globs.month;
     in property <EnvData> env <=> Globs.env;
     in property <MacroEconData> macroecon <=> Globs.macroecon;
-    in property <UIState> state <=> Globs.state;
-    in property <[UILogMessage]> messages <=> Globs.messages;
+    in property <UIMisc> misc <=> Globs.misc;
+    in property <[LogMessage]> messages <=> Globs.messages;
     in property <CategoryMessages> category_messages <=> Globs.category_messages;
+    in property <[ProductDemand]> product_demands <=> Globs.product_demands;
 
 	// Event callbacks
     pure callback toggle_pause <=> GlobCallbacks.toggle_pause;

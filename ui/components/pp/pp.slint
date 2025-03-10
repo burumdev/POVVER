@@ -1,4 +1,4 @@
-import { SunStage, UILogMessage, UIMessageSource, UILogLevel } from "../../state.slint";
+import { SunStage, LogMessage, MessageSource, LogLevel } from "../../state.slint";
 import { Globs } from "../../globals.slint";
 
 import { TalkBaloon } from "../common/talkbaloon.slint";
@@ -8,9 +8,9 @@ export component PovverPlant inherits Rectangle {
 	height: 300px;
 
 	property <SunStage> sun_stage: Globs.env.the_sun.stage;
-	property <[UILogMessage]> messages: Globs.category_messages.pp;
+	property <[LogMessage]> messages: Globs.category_messages.pp;
 	property <int> last_msg_index: messages.length - 1;
-	property <UILogMessage> last_message: messages[last_msg_index];
+	property <LogMessage> last_message: messages[last_msg_index];
 	property <bool> baloon_shown: false;
 
 	timer := Timer {

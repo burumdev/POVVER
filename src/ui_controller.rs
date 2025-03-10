@@ -1,5 +1,5 @@
 use std::{
-    sync::{mpsc, Arc},
+    sync::Arc,
     thread,
 };
 
@@ -13,7 +13,7 @@ use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, Filter
 use crate::{
     app_state::StatePayload,
     simulation::{SimInt, StateAction, timer::TimerEvent},
-    logger::LogMessage
+    logger::LogMessage as LoggerMessage,
 };
 
 pub enum UIFlag {
@@ -37,7 +37,7 @@ impl UIController {
         &self,
         flag_sender: crossbeam_channel::Sender<UIFlag>,
         mut wakeup_receiver: tokio_mpsc::UnboundedReceiver<StateAction>,
-        mut log_receiver: tokio_broadcast::Receiver<LogMessage>,
+        mut log_receiver: tokio_broadcast::Receiver<LoggerMessage>,
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
@@ -68,11 +68,11 @@ impl UIController {
 
                 appw.set_messages(ModelRc::from(VecModel::from_slice(&[])));
                 let messages_rc = appw.get_messages();
-                let messages_model = messages_rc.as_any().downcast_ref::<VecModel<UILogMessage>>().unwrap();
+                let messages_model = messages_rc.as_any().downcast_ref::<VecModel<LogMessage>>().unwrap();
 
-                let hub_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == UIMessageSource::Hub));
-                let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == UIMessageSource::PP));
-                let factory_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == UIMessageSource::Factory));
+                let hub_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Hub));
+                let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::PP));
+                let factory_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Factory));
                 while let Some(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
@@ -141,7 +141,7 @@ impl UIController {
                         },
                         StateAction::Misc => {
                             let misc_lock = state.misc.lock().unwrap();
-                            appw.set_state(UIState {
+                            appw.set_misc(UIMisc {
                                 is_paused: misc_lock.is_paused,
                                 speed_index: misc_lock.speed_index as SimInt,
                             });

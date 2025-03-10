@@ -182,8 +182,7 @@ impl Simulation {
                 send_action(StateAction::Misc);
             }
 
-            let flag_result = ui_flag_receiver.try_recv();
-            if let Ok(flag) = flag_result {
+            if let Ok(flag) = ui_flag_receiver.try_recv() {
                 match flag {
                     UIFlag::Pause => self.toggle_paused(),
                     UIFlag::SpeedChange(speed_index) => {

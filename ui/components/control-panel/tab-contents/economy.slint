@@ -1,5 +1,5 @@
 import { ListView } from "std-widgets.slint";
-import { MacroEconData } from "../../../state.slint";
+import { MacroEconData, UpDown } from "../../../state.slint";
 import { Globs } from "../../../globals.slint";
 
 import { TabContent } from "./tab-content.slint";
@@ -21,7 +21,7 @@ export component EconomyTab inherits TabContent {
 				},
 				{
 					label: "Inflation direction",
-					value: "Up or Down",
+					value: macroecon.inflation-direction == UpDown.Up ? "Up" : "Down",
 				},
 				{
 					label: "Fuel price",

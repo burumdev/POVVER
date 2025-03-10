@@ -1,4 +1,4 @@
-import { TimerData, MonthData, EnvData, MacroEconData, UIState, UILogMessage, CategoryMessages } from "./state.slint";
+import { TimerData, MonthData, EnvData, MacroEconData, UIMisc, LogMessage, CategoryMessages, ProductDemand } from "./state.slint";
 
 export global GlobCallbacks {
     pure callback toggle_pause;
@@ -6,13 +6,14 @@ export global GlobCallbacks {
 }
 
 export global Globs {
+    in property <UIMisc> misc;
 	in property <TimerData> timer;
 	in property <MonthData> month;
 	in property <EnvData> env;
 	in property <MacroEconData> macroecon;
-    in property <UIState> state;
-    in property <[UILogMessage]> messages;
+    in property <[LogMessage]> messages;
     in property <CategoryMessages> category_messages;
+    in property <[ProductDemand]> product_demands;
 
 	out property <{ small: [image], medium: [image], big: [image]}> cloud_images: {
 		small: [

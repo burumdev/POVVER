@@ -34,7 +34,7 @@ export component DateTimeControls inherits Rectangle {
 				height: 34px;
 
 				Image {
-					source: Globs.state.is_paused ? @image-url("../../images/icons/play.svg") : @image-url("../../images/icons/pause.svg");
+					source: Globs.misc.is_paused ? @image-url("../../images/icons/play.svg") : @image-url("../../images/icons/pause.svg");
 					height: 20px;
 				}
 
@@ -42,7 +42,6 @@ export component DateTimeControls inherits Rectangle {
 					mouse-cursor: pointer;
 					clicked => {
 						GlobCallbacks.toggle_pause();
-						debug(Globs.state.is_paused);
 					}
 				}
 			}
@@ -120,7 +119,7 @@ export component DateTimeControls inherits Rectangle {
 				maximum: 6;
 				minimum: 0;
 				step: 1;
-				value: Globs.state.speed_index;
+				value: Globs.misc.speed_index;
 				changed(value) => {
 					self.value = Math.round(value);
 				}

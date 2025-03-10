@@ -1,12 +1,12 @@
-import { UILogMessage, UILogLevel } from "../../state.slint";
+import { LogMessage, LogLevel } from "../../state.slint";
 import { Palette } from "../../theme.slint";
 
 export component TalkBaloon inherits VerticalLayout {
-	in property <UILogMessage> msg;
+	in property <LogMessage> msg;
 	in property <bool> is_shown: false;
-	property <bool> is_info: msg.level == UILogLevel.Info;
-	property <bool> is_warning: msg.level == UILogLevel.Warning;
-	property <bool> is_critical: msg.level == UILogLevel.Critical;
+	property <bool> is_info: msg.level == LogLevel.Info;
+	property <bool> is_warning: msg.level == LogLevel.Warning;
+	property <bool> is_critical: msg.level == LogLevel.Critical;
 
 	width: 300px;
 	height: 160px;
