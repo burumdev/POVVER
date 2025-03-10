@@ -1,3 +1,6 @@
+import { Palette } from "../../theme.slint";
+import { PanelTitle } from "panel-title.slint";
+
 export struct CellData {
 	label: string,
 	value: string,
@@ -11,21 +14,9 @@ export component DataCell inherits HorizontalLayout {
 
 	alignment: space-between;
 
-	if data.is_category :
-		VerticalLayout {
-			Rectangle {
-				height: 10px;
-			}
-			Text {
-				color: text-color;
-				text: data.label;
-				horizontal-alignment: center;
-				width: 100%;
-				font-size: 16px;
-				stroke-width: 1px;
-				stroke: text-color.darker(0.5);
-			}
-		}
+	if data.is_category : PanelTitle {
+		txt: data.label;
+	}
 	if !data.is_category :
 		Text {
 			color: text-color;

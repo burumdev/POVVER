@@ -1,0 +1,19 @@
+import { Palette } from "../../theme.slint";
+
+export component PanelTitle inherits VerticalLayout {
+	in property <string> txt;
+
+	Rectangle {
+		height: 10px;
+	}
+
+	Text {
+		color: Palette.bright_text;
+		text: txt;
+		horizontal-alignment: center;
+		width: 100%;
+		font-size: 16px;
+		stroke-width: 1px;
+		stroke: Palette.bright_text.darker(0.5);
+	}
+}

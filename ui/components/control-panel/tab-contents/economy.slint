@@ -1,33 +1,46 @@
+import { ListView } from "std-widgets.slint";
 import { MacroEconData } from "../../../state.slint";
 import { Globs } from "../../../globals.slint";
 
 import { TabContent } from "./tab-content.slint";
 import { DataTable } from "../../common/datatable.slint";
 import { CellData } from "../../common/datacell.slint";
+import { PanelTitle } from "../../common/panel-title.slint";
 
 export component EconomyTab inherits TabContent {
 	in property <MacroEconData> macroecon: Globs.macroecon;
 
-	DataTable {
-		items: [
-			{
-				label: "Macroeconomics",
-				is_category: true,
-			},
-			{
-				label: "Inflation rate",
-				value: macroecon.inflation-rate,
-				value_postfix: " %",
-			},
-			{
-				label: "Inflation direction",
-				value: "Up or Down",
-			},
-			{
-				label: "Fuel price",
-				value: macroecon.fuel-price,
-				value_postfix: " ϟ",
-			},
-		];
+	VerticalLayout {
+		DataTable {
+			title: "Macroeconomics";
+			items: [
+				{
+					label: "Inflation rate",
+					value: macroecon.inflation-rate,
+					value_postfix: " %",
+				},
+				{
+					label: "Inflation direction",
+					value: "Up or Down",
+				},
+				{
+					label: "Fuel price",
+					value: macroecon.fuel-price,
+					value_postfix: " ϟ",
+				},
+			];
+		}
+		PanelTitle {
+			txt: "Product Demands";
+		}
+/*
+		ListView {
+			height: 100%;
+			for message in Globs.messages: Message {
+				msg: message;
+			}
+		}
+*/
 	}
+
 }

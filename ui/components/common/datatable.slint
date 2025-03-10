@@ -1,9 +1,15 @@
 import { DataCell, CellData } from "./datacell.slint";
+import { PanelTitle } from "panel-title.slint";
 
 export component DataTable inherits VerticalLayout {
 	in property <[CellData]> items;
+	in property <string> title: "";
 	spacing: 8px;
 	alignment: start;
+
+	if title != "": PanelTitle {
+		txt: title;
+	}
 
 	for item in items: DataCell {
 		data: item;

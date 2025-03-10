@@ -113,6 +113,7 @@ impl PovverPlant {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
                 if let Ok(action) = wakeup_receiver.try_recv() {
+                    thread::sleep(Duration::from_micros(500));
                     if !state_ro.read().unwrap().is_bankrupt {
                         match action {
                             StateAction::Timer(TimerEvent::HourChange) => {

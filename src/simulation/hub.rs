@@ -103,7 +103,7 @@ impl TheHub {
                         hour_created,
                     }
                 );
-                self.log_ui_console(format!("PP bought fuel for amount {amount}"), Info);
+                self.log_ui_console(format!("PP bought fuel for amount {amount}. ETA is {delay} hours."), Info);
                 self.povver_plant_state.write().unwrap().is_awaiting_fuel = true;
             }
         } else {

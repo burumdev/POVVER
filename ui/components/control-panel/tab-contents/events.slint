@@ -1,46 +1,45 @@
+import { ListView } from "std-widgets.slint";
 import { UILogMessage, UILogLevel } from "../../../state.slint";
 import { Globs } from "../../../globals.slint";
 import { Palette } from "../../../theme.slint";
 
-import { ListView } from "std-widgets.slint";
 import { TabContent } from "./tab-content.slint";
 
 component Message {
 	in property <UILogMessage> msg;
-	VerticalLayout {
-		padding-bottom: 4px;
-		padding-top: 4px;
-		Text {
-			text: msg.message;
-			font-size: 12px;
-			horizontal-alignment: left;
-			wrap: word-wrap;
-			font-weight: 700;
-
-			states [
-				info when msg.level == UILogLevel.Info: {
-					color: Palette.log_info;
-				}
-				warn when msg.level == UILogLevel.Warning: {
-					color: Palette.log_warn;
-				}
-				critical when msg.level == UILogLevel.Critical: {
-					color: Palette.log_critical;
-				}
-			]
+	Rectangle {
+		min-height: 50px;
+		VerticalLayout {
+			padding: 8px;
+			txt := Text {
+				text: msg.message;
+				font-size: 12px;
+				horizontal-alignment: left;
+				wrap: word-wrap;
+				font-weight: 700;
+			}
 		}
-		Rectangle {
-			height: 1px;
-			width: 100%;
-			border-color: white;
-			border-width: 1px;
-		}
+		states [
+			info when msg.level == UILogLevel.Info: {
+				txt.color: Palette.log_info;
+				background: Palette.log_info.darker(3);
+			}
+			warn when msg.level == UILogLevel.Warning: {
+				txt.color: Palette.log_warn;
+				background: Palette.log_warn.darker(3);
+			}
+			critical when msg.level == UILogLevel.Critical: {
+				txt.color: Palette.log_critical;
+				background: Palette.log_critical.darker(3);
+			}
+		]
 	}
 }
 
 export component EventsTab inherits TabContent {
 	ListView {
-		for message in Globs.messages : Message {
+		height: 100%;
+		for message in Globs.messages: Message {
 			msg: message;
 		}
 	}
