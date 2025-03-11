@@ -34,9 +34,16 @@ pub type TickDuration = u64;
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
 #[derive(Debug, Clone)]
+pub enum EconUpdate {
+    Macro,
+    Demands
+}
+
+#[derive(Debug, Clone)]
 pub enum StateAction {
     Timer(TimerEvent),
     SpeedChange(TickDuration),
+    EconUpdate(EconUpdate),
     Env,
     Misc,
     Quit
@@ -132,23 +139,24 @@ impl Simulation {
             TheHub::start(Arc::clone(&self.the_hub), wakeup_receiver),
         ];
 
-        let send_action = |action: StateAction| {
+        let send_action_all = |action: StateAction| {
             if let Err(e) = wakeup_sender.send(action.clone()) {
                 eprintln!("SIM: Could not deliver message to recipient: {e}");
             };
             ui_wakeup_sender.send(action).unwrap();
         };
 
-        send_action(StateAction::Misc);
-        send_action(StateAction::Timer(TimerEvent::MonthChange));
-        send_action(StateAction::Env);
+        send_action_all(StateAction::Timer(TimerEvent::MonthChange));
+        send_action_all(StateAction::Env);
+        ui_wakeup_sender.send(StateAction::Misc).unwrap();
+        ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
 
         while self.timer.ticker.recv().is_ok() {
             if !self.is_running {
                 // Send quit signal to every recipient for cleanups
-                send_action(StateAction::Quit);
+                send_action_all(StateAction::Quit);
                 // Join all handles
                 for handle in join_handles {
                     handle.join().unwrap();
@@ -161,25 +169,28 @@ impl Simulation {
             match &timer_event {
                 te if te.at_least_hour() => {
                     self.env.update();
-                    send_action(StateAction::Env);
+                    send_action_all(StateAction::Env);
+                    self.economy.update_product_demands();
 
-                    if !te.at_least_month() || !te.at_least_day() {
-                        self.economy.hourly_update();
-                    } else if te.at_least_day() && !te.at_least_month() {
-                        self.economy.daily_update();
-                    } else if te.at_least_month() {
-                        self.economy.monthly_update();
+                    if te.at_least_day() {
+                        self.economy.maybe_new_product_demands();
                     }
+                    if te.at_least_month() {
+                        self.economy.update_macroeconomics();
+                        ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
+                    }
+
+                    ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Demands)).unwrap();
                 },
                 _ => ()
             }
 
             // Send timer signal to recipients to wake them up for timed jobs.
-            send_action(StateAction::Timer(timer_event));
+            send_action_all(StateAction::Timer(timer_event));
 
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {
                 misc = new_misc;
-                send_action(StateAction::Misc);
+                ui_wakeup_sender.send(StateAction::Misc).unwrap();
             }
 
             if let Ok(flag) = ui_flag_receiver.try_recv() {
@@ -187,7 +198,7 @@ impl Simulation {
                     UIFlag::Pause => self.toggle_paused(),
                     UIFlag::SpeedChange(speed_index) => {
                         self.change_speed(speed_index);
-                        send_action(StateAction::SpeedChange(self.timer.get_tick_duration()));
+                        wakeup_sender.send(StateAction::SpeedChange(self.timer.get_tick_duration())).unwrap();
                     },
                     UIFlag::Quit => self.quit(),
                 }

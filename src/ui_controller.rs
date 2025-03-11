@@ -15,6 +15,7 @@ use crate::{
     simulation::{SimInt, StateAction, timer::TimerEvent},
     logger::LogMessage as LoggerMessage,
 };
+use crate::simulation::EconUpdate;
 
 pub enum UIFlag {
     Pause,
@@ -73,6 +74,7 @@ impl UIController {
                 let hub_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Hub));
                 let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::PP));
                 let factory_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Factory));
+
                 while let Some(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
@@ -86,7 +88,7 @@ impl UIController {
                             }
 
                             match event {
-                                TimerEvent::MonthChange => {
+                                te if te.at_least_month() => {
                                     {
                                         let timer_lock = state.timer.read().unwrap();
                                         appw.set_month(
@@ -100,19 +102,12 @@ impl UIController {
                                             }
                                         );
                                     }
-                                    {
-                                        let econ_lock = state.economy.read().unwrap();
-                                        appw.set_macroecon(
-                                            MacroEconData {
-                                                fuel_price: econ_lock.fuel_price.val(),
-                                                inflation_direction: econ_lock.inflation_direction.clone().into(),
-                                                inflation_rate: econ_lock.inflation_rate,
-                                            }
-                                        )
-                                    }
                                 },
                                 TimerEvent::NothingUnusual => {
                                     if let Ok(message) = log_receiver.try_recv() {
+                                        if messages_model.iter().len() >= 50 {
+                                            messages_model.remove(0);
+                                        }
                                         messages_model.push(message.into());
 
                                         appw.set_category_messages({
@@ -139,6 +134,32 @@ impl UIController {
                                 }
                             );
                         },
+                        StateAction::EconUpdate(update_type) => {
+                            match update_type {
+                                EconUpdate::Macro => {
+                                    let econ_lock = state.economy.read().unwrap();
+                                    appw.set_macroecon(
+                                        MacroEconData {
+                                            fuel_price: econ_lock.fuel_price.val(),
+                                            inflation_direction: econ_lock.inflation_direction.clone().into(),
+                                            inflation_rate: econ_lock.inflation_rate,
+                                        }
+                                    )
+                                },
+                                EconUpdate::Demands => {
+                                    let econ_lock = state.economy.read().unwrap();
+                                    appw.set_product_demands(
+                                        ModelRc::from(
+                                            econ_lock.product_demands
+                                                .iter()
+                                                .map(|demand| demand.into())
+                                                .collect::<Vec<ProductDemand>>()
+                                                .as_slice()
+                                        )
+                                    );
+                                }
+                            }
+                        }
                         StateAction::Misc => {
                             let misc_lock = state.misc.lock().unwrap();
                             appw.set_misc(UIMisc {

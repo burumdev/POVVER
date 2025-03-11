@@ -99,12 +99,12 @@ impl Economy {
             -1.0
         };
 
-        let last_25 = &self.state.read().unwrap().past_25_product_demands;
         for product in PRODUCTS {
             let min_percent = product.demand_info.min_percentage;
             if inflation_hundred < min_percent && inflation_hundred != -1.0 {
                 let mut bonus = 0.0;
-                last_25.iter()
+                self.state.read().unwrap().past_25_product_demands
+                    .iter()
                     .filter(|demand| demand.product == product)
                     .for_each(|demand| {
                         match demand.demand_meet_percent {
@@ -166,7 +166,7 @@ impl Economy {
             demand.age += 1;
             let demand_timeline = &demand.product.demand_info.demand_timeline;
             match demand.age {
-                age if age >= demand_timeline.deadline => {
+                age if age >= demand_timeline.deadline || demand.percent < 0.01 => {
                     old_demands.push(demand.clone());
 
                     return false;
@@ -200,11 +200,8 @@ impl Economy {
     }
     pub fn daily_update(&mut self) {
         self.maybe_new_product_demands();
-        self.update_product_demands();
     }
     pub fn monthly_update(&mut self) {
         self.update_macroeconomics();
-        self.maybe_new_product_demands();
-        self.update_product_demands();
     }
 }

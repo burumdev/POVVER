@@ -262,7 +262,8 @@ impl TheHub {
                                 handle.join().unwrap();
                             }
                             break;
-                        }
+                        },
+                        _ => (),
                     }
                 }
 
