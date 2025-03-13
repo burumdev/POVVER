@@ -1,4 +1,4 @@
-use crossbeam_channel::{Receiver, Sender, unbounded, bounded, TryRecvError };
+use crossbeam_channel::{Receiver, Sender, unbounded, bounded };
 
 use crate::{
     simulation::StateAction,
@@ -32,17 +32,9 @@ impl HubComms {
     fn hub_pp_sender(&self) -> &Sender<HubPPSignal> {
         &self.hub_pp_channel.0
     }
-
-    fn pp_hub_receiver(&self) -> &Receiver<PPHubSignal> {
-        &self.pp_hub_channel.1
-    }
 }
 
 impl HubComms {
-    pub fn clone_broadcast_sender(&self) -> Sender<StateAction> {
-        self.broadcast_channel.0.clone()
-    }
-
     pub fn clone_broadcast_receiver(&self) -> Receiver<StateAction> {
         self.broadcast_channel.1.clone()
     }
@@ -53,10 +45,6 @@ impl HubComms {
 
     pub fn clone_pp_hub_receiver(&self) -> Receiver<PPHubSignal> {
         self.pp_hub_channel.1.clone()
-    }
-
-    pub fn clone_hub_pp_sender(&self) -> Sender<HubPPSignal> {
-        self.hub_pp_channel.0.clone()
     }
 
     pub fn clone_hub_pp_receiver(&self) -> Receiver<HubPPSignal> {

@@ -69,5 +69,6 @@ impl TheHub {
     pub fn increase_pp_fuel_cap(&self) {
         self.log_ui_console(format!("Increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}."), Info);
         self.povver_plant_state.write().unwrap().fuel_capacity += PP_FUEL_CAPACITY_INCREASE;
+        self.comms.hub_to_pp(HubPPSignal::FuelCapacityIncreased);
     }
 }

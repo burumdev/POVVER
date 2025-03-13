@@ -128,8 +128,10 @@ impl PovverPlant {
                 if let Ok(signal) = hub_pp_receiver.try_recv() {
                     match signal {
                         HubPPSignal::FuelTransfered => {
-                            println!("LONG AWAITED FUEL ARRIVED!");
                             // Immediately resume production if we receive long awaited fuel!
+                        }
+                        HubPPSignal::FuelCapacityIncreased => {
+                            // Fuel capacity increased. Let's do something about it!
                         }
                     }
                 }

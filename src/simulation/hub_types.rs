@@ -52,6 +52,7 @@ pub enum PPHubSignal {
 #[derive(Debug, PartialEq)]
 pub enum HubPPSignal {
     FuelTransfered,
+    FuelCapacityIncreased,
 }
 
 #[derive(Debug)]
