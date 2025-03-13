@@ -1,7 +1,7 @@
 use tokio::sync::broadcast as tokio_broadcast;
 use slint::SharedString;
 use crate::{
-    simulation::SimInt,
+    simulation::hub_types::MessageEntity,
     ui_controller::{LogMessage as UILogMessage, LogLevel as UILogLevel, MessageSource as UIMessageSource},
 };
 
@@ -11,6 +11,7 @@ pub enum LogLevel {
     Warning,
     Critical,
 }
+
 impl From<LogLevel> for UILogLevel {
     fn from(ll: LogLevel) -> Self {
         match ll {
@@ -21,32 +22,28 @@ impl From<LogLevel> for UILogLevel {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MessageSource {
-    Hub,
-    PP,
-    Factory(SimInt),
-}
-impl From<MessageSource> for UIMessageSource {
-    fn from(source: MessageSource) -> Self {
+
+
+impl From<MessageEntity> for UIMessageSource {
+    fn from(source: MessageEntity) -> Self {
         match source {
-            MessageSource::Hub => UIMessageSource::Hub,
-            MessageSource::PP => UIMessageSource::PP,
-            MessageSource::Factory(_) => UIMessageSource::Factory,
+            MessageEntity::Hub => UIMessageSource::Hub,
+            MessageEntity::PP => UIMessageSource::PP,
+            MessageEntity::Factory(_) => UIMessageSource::Factory,
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct LogMessage {
-    source: MessageSource,
+    source: MessageEntity,
     message: SharedString,
     log_level: LogLevel,
 }
 impl From<LogMessage> for UILogMessage {
     fn from(lm: LogMessage) -> Self {
         let mut factory_id = -1;
-        if let MessageSource::Factory(id) = lm.source {
+        if let MessageEntity::Factory(id) = lm.source {
             factory_id = id;
         }
 
@@ -61,7 +58,7 @@ impl From<LogMessage> for UILogMessage {
 
 pub trait Logger {
     fn get_log_prefix(&self) -> String;
-    fn get_message_source(&self) -> MessageSource;
+    fn get_message_source(&self) -> MessageEntity;
     fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage>;
     fn log_console(&self, message: String, level: LogLevel) {
         let level_prefix = match level {

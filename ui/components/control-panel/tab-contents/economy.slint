@@ -12,11 +12,11 @@ component DemandItem {
 	in property <ProductDemand> pd;
 
 	Rectangle {
-		height: 50px;
 		background: Palette.bg_lightgray;
+		height: 50px;
 		VerticalLayout {
 			padding: 8px;
-			txt := Text {
+			Text {
 				text: pd.product_name + " demand " + pd.percent + "%, since " + pd.age + " hours and " + pd.demand_met + "% is met.";
 				font-size: 10px;
 				horizontal-alignment: left;
@@ -32,6 +32,7 @@ export component EconomyTab inherits TabContent {
 
 	VerticalLayout {
 		height: 100%;
+		alignment: space-between;
 		VerticalLayout {
 			height: 8%;
 			DataTable {
@@ -55,7 +56,7 @@ export component EconomyTab inherits TabContent {
 			}
 		}
 		VerticalLayout {
-			height: 90%;
+			height: 92%;
 			PanelTitle {
 				txt: "Product Demands";
 			}
@@ -65,6 +66,126 @@ export component EconomyTab inherits TabContent {
 				for pd in Globs.product_demands: DemandItem {
 					pd: pd;
 				}
+/*
+				for pd in [
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+					{
+						product_name: "Test Name",
+						percent: 45.55555,
+						age: 6,
+						demand_met: 0.5,
+					},
+				] : DemandItem {
+					pd: pd;
+				}
+*/
 			}
 		}
 	}

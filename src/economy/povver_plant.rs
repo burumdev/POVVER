@@ -13,7 +13,7 @@ use crate::{
     simulation::{
         StateAction,
         timer::TimerEvent,
-        hub_types::PovverPlantSignal,
+        hub_types::{PovverPlantSignal, MessageEntity},
         SimInt,
         SimFlo,
         hub_constants::PP_FUEL_CAPACITY_INCREASE_COST,
@@ -23,7 +23,6 @@ use crate::{
         Logger,
         LogLevel::{Info, Warning, Critical},
         LogMessage,
-        MessageSource
     },
 };
 
@@ -144,8 +143,8 @@ impl Logger for PovverPlant {
     fn get_log_prefix(&self) -> String {
         "Povver Plant".to_string()
     }
-    fn get_message_source(&self) -> MessageSource {
-        MessageSource::PP
+    fn get_message_source(&self) -> MessageEntity {
+        MessageEntity::PP
     }
     fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage> {
         self.ui_log_sender.clone()

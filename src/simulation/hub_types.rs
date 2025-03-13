@@ -3,6 +3,16 @@ use crate::{
     simulation::SimInt,
 };
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum MessageEntity {
+    Hub,
+    PP,
+    Factory(SimInt),
+}
+
+pub enum HubMessage {
+    EnergyOffer(EnergyOffer)
+}
 #[derive(Debug)]
 pub struct EnergyOffer {
     price: Money,
