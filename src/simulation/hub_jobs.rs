@@ -24,7 +24,7 @@ impl TheHub {
                 true
             });
 
-        for job in due_jobs {
+        for job in due_jobs.drain(..) {
             match job.kind {
                 HourlyJobKind::PPBoughtFuel(amount) => {
                     self.transfer_fuel_to_pp(amount);
@@ -63,6 +63,7 @@ impl TheHub {
         let mut pp = self.povver_plant_state.write().unwrap();
         pp.fuel += amount;
         pp.is_awaiting_fuel = false;
+        self.comms.hub_to_pp(HubPPSignal::FuelTransfered);
     }
 
     pub fn increase_pp_fuel_cap(&self) {

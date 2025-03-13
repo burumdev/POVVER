@@ -44,9 +44,14 @@ pub struct DailyJob {
 }
 
 #[derive(Debug)]
-pub enum PovverPlantSignal {
+pub enum PPHubSignal {
     BuyFuel(SimInt),
     IncreaseFuelCapacity,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum HubPPSignal {
+    FuelTransfered,
 }
 
 #[derive(Debug)]

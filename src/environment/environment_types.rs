@@ -5,7 +5,7 @@ use crate::{
     ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel},
     utils_traits::Flippable,
 };
-use crate::utils_traits::{AsFactor, Percentage};
+use crate::utils_traits::{AsFactor, Percentable};
 
 pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 
@@ -57,7 +57,7 @@ impl FromPrimitive for SunBrightness {
         Some(Self(val))
     }
 }
-impl Percentage for SunBrightness {}
+impl Percentable for SunBrightness {}
 impl PartialEq<SimFlo> for SunBrightness {
     fn eq(&self, other: &SimFlo) -> bool {
         self.0.eq(other)

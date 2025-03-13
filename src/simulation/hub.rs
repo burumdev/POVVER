@@ -3,7 +3,7 @@ use std::{
     thread,
 };
 use std::time::Duration;
-use crossbeam_channel::{Receiver, bounded};
+use crossbeam_channel::Receiver;
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
@@ -28,15 +28,15 @@ use crate::{
 };
 
 pub struct TheHub {
-    povver_plant: Arc<Mutex<PovverPlant>>,
+    pub povver_plant: Arc<Mutex<PovverPlant>>,
     pub povver_plant_state: Arc<RwLock<PovverPlantStateData>>,
     pub factories_state: Arc<RwLock<Vec<FactoryStateData>>>,
     pub econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     pub timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     pub hourly_jobs: Vec<HourlyJob>,
     pub daily_jobs: Vec<DailyJob>,
-    ui_log_sender: tokio_broadcast::Sender<LogMessage>,
-    comms: HubComms
+    pub ui_log_sender: tokio_broadcast::Sender<LogMessage>,
+    pub comms: HubComms
 }
 
 impl TheHub {
@@ -54,11 +54,15 @@ impl TheHub {
             is_bankrupt: false,
         }));
         let factories_state = Arc::new(RwLock::new(Vec::new()));
+        let comms = HubComms::new();
 
         let povver_plant = Arc::new(Mutex::new(PovverPlant::new(
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
             ReadOnlyRwLock::clone(&econ_state_ro),
             ui_log_sender.clone(),
+            comms.clone_broadcast_receiver(),
+            comms.clone_pp_hub_sender(),
+            comms.clone_hub_pp_receiver()
         )));
 
         (
@@ -71,7 +75,7 @@ impl TheHub {
                 hourly_jobs: Vec::new(),
                 daily_jobs: Vec::new(),
                 ui_log_sender,
-                comms: HubComms::new(),
+                comms
             },
             HubState {
                 povver_plant: povver_plant_state,
@@ -86,15 +90,11 @@ impl TheHub {
         me: Arc<Mutex<Self>>,
         wakeup_receiver: Receiver<StateAction>,
     ) -> thread::JoinHandle<()> {
-        let (pp_hub_signal_sender, pp_hub_signal_receiver) = bounded(1);
-
         let join_handles = {
             let mut me_lock = me.lock().unwrap();
             let handles = vec![
                 PovverPlant::start(
                     Arc::clone(&me_lock.povver_plant),
-                    me_lock.comms.broadcast_receiver(),
-                    pp_hub_signal_sender,
                 )
             ];
             me_lock.comms.broadcast_count = handles.len();
@@ -102,15 +102,16 @@ impl TheHub {
             handles
         };
 
+        let pp_hub_receiver = me.lock().unwrap().comms.clone_pp_hub_receiver();
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
-                if let Ok(signal) = pp_hub_signal_receiver.try_recv() {
+                if let Ok(signal) = pp_hub_receiver.try_recv() {
                     match signal {
-                        PovverPlantSignal::BuyFuel(amount) => {
+                        PPHubSignal::BuyFuel(amount) => {
                             me.lock().unwrap().pp_buys_fuel(amount);
                         },
-                        PovverPlantSignal::IncreaseFuelCapacity => {
+                        PPHubSignal::IncreaseFuelCapacity => {
                             me.lock().unwrap().pp_increases_fuel_capacity();
                         }
                     }
@@ -138,9 +139,7 @@ impl TheHub {
                         StateAction::Env => {},
                         StateAction::Misc => {},
                         StateAction::Quit => {
-                            let me_lock = me.lock().unwrap();
-                            me_lock.log_console("Quit signal received.".to_string(), Warning);
-                            me_lock.comms.send_state_broadcast(action);
+                            me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                             for handle in join_handles {
                                 handle.join().unwrap();
                             }

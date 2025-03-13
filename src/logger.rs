@@ -22,8 +22,6 @@ impl From<LogLevel> for UILogLevel {
     }
 }
 
-
-
 impl From<MessageEntity> for UIMessageSource {
     fn from(source: MessageEntity) -> Self {
         match source {

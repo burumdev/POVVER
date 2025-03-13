@@ -19,6 +19,7 @@ use crate::{
     economy::products::PRODUCTS,
     simulation::SimFlo,
 };
+use crate::simulation::Percentage;
 
 #[derive(Debug)]
 pub struct Economy {
@@ -107,7 +108,7 @@ impl Economy {
                     .iter()
                     .filter(|demand| demand.product == product)
                     .for_each(|demand| {
-                        match demand.demand_meet_percent {
+                        match demand.demand_meet_percent.val() {
                             // If demand is overly met in the past. There's a negative bonus
                             mp if mp < 100.0 && mp >= 90.0 => bonus += -6.0,
                             mp if mp < 90.0 && mp >= 80.0 => bonus += 0.0,
@@ -131,7 +132,7 @@ impl Economy {
                 // Let's create a new demand for this product
                 // With bonus added.
                 self.state.write().unwrap().product_demands.push(
-                    ProductDemand::new(product, (min_percent + bonus).clamp(0.0, 100.0))
+                    ProductDemand::new(product, Percentage::new((min_percent + bonus).clamp(0.0, 100.0)))
                 );
             // If inflation is negative (deflation) we still have a
             // chance for a new demand with minimum percentage.
@@ -152,7 +153,7 @@ impl Economy {
                 // in deflationary times.
                 if one_chance_in_many(&mut self.rng, chance - (min_percent.as_factor() * chance as SimFlo) as u32) {
                     self.state.write().unwrap().product_demands.push(
-                        ProductDemand::new(product, min_percent)
+                        ProductDemand::new(product, Percentage::new(min_percent))
                     )
                 }
             }
@@ -190,18 +191,9 @@ impl Economy {
         });
 
         self.state.write().unwrap().product_demands = demands;
+
         for demand in old_demands.drain(..) {
             self.state.write().unwrap().past_25_product_demands.add(demand);
         }
-    }
-
-    pub fn hourly_update(&mut self) {
-        self.update_product_demands();
-    }
-    pub fn daily_update(&mut self) {
-        self.maybe_new_product_demands();
-    }
-    pub fn monthly_update(&mut self) {
-        self.update_macroeconomics();
     }
 }

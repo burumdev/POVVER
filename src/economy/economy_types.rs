@@ -5,6 +5,8 @@ use crate::{
     ui_controller::{UpDown as UIUpDown, ProductDemand as UIProductDemand },
     utils_traits::Flippable,
 };
+use crate::simulation::Percentage;
+use crate::utils_traits::AsFactor;
 
 pub const INFLATION_MAX: SimFlo = 50.0;
 pub const INFLATION_MIN: SimFlo = -10.0;
@@ -87,17 +89,17 @@ impl EnergyUnit {
 #[derive(Debug, Clone)]
 pub struct ProductDemand {
     pub product: &'static Product,
-    pub percent: SimFlo,
+    pub percent: Percentage,
     pub age: SimInt,
-    pub demand_meet_percent: SimFlo,
+    pub demand_meet_percent: Percentage,
 }
 impl ProductDemand {
-    pub fn new(product: &'static Product, percent: SimFlo) -> Self {
+    pub fn new(product: &'static Product, percent: Percentage) -> Self {
         Self {
             product,
             percent,
             age: 0,
-            demand_meet_percent: 0.0
+            demand_meet_percent: Percentage::default()
         }
     }
 }
@@ -106,8 +108,8 @@ impl From<&ProductDemand> for UIProductDemand {
         Self {
             product_name: other.product.name.to_shared_string(),
             age: other.age,
-            demand_met: other.demand_meet_percent,
-            percent: other.percent,
+            demand_met: other.demand_meet_percent.val(),
+            percent: other.percent.val(),
         }
     }
 }

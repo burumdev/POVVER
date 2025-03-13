@@ -1,7 +1,7 @@
 use std::{
     sync::{Arc, Mutex},
 };
-
+use num_traits::FromPrimitive;
 use tokio::{
     sync::mpsc as tokio_mpsc,
     sync::broadcast as tokio_broadcast
@@ -19,6 +19,9 @@ pub mod hub_types;
 pub mod hub_constants;
 
 pub mod timer;
+mod sim_types;
+pub use sim_types::*;
+
 use timer::{Timer, TimerEvent};
 
 use crate::{
@@ -27,12 +30,9 @@ use crate::{
     environment::Environment,
     ui_controller::{Date, UIController, UIFlag},
     utils_data::ReadOnlyRwLock,
+    utils_traits::{AsFactor, Percentable},
     logger::LogMessage,
 };
-
-pub type SimInt = i32;
-pub type SimFlo = f32;
-pub type TickDuration = u64;
 
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 

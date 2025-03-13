@@ -13,7 +13,7 @@ use crate::{
     simulation::{
         StateAction,
         timer::TimerEvent,
-        hub_types::{PovverPlantSignal, MessageEntity},
+        hub_types::{PPHubSignal, HubPPSignal, MessageEntity},
         SimInt,
         SimFlo,
         hub_constants::PP_FUEL_CAPACITY_INCREASE_COST,
@@ -32,6 +32,9 @@ pub struct PovverPlant {
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     fuel_buy_threshold: SimInt,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
+    wakeup_receiver: Receiver<StateAction>,
+    pp_hub_sender: Sender<PPHubSignal>,
+    hub_pp_receiver: Receiver<HubPPSignal>,
 }
 
 impl PovverPlant {
@@ -39,6 +42,9 @@ impl PovverPlant {
         state_ro: ReadOnlyRwLock<PovverPlantStateData>,
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
+        wakeup_receiver: Receiver<StateAction>,
+        pp_hub_sender: Sender<PPHubSignal>,
+        hub_pp_receiver: Receiver<HubPPSignal>,
     ) -> Self {
         Self {
             last_ten_sales: SlidingWindow::new(10),
@@ -46,12 +52,15 @@ impl PovverPlant {
             econ_state_ro,
             fuel_buy_threshold: 5,
             ui_log_sender,
+            wakeup_receiver,
+            pp_hub_sender,
+            hub_pp_receiver,
         }
     }
 }
 
 impl PovverPlant {
-    fn check_buy_fuel(&mut self, sender: &Sender<PovverPlantSignal>) {
+    fn check_buy_fuel(&mut self) {
         let (is_awaiting_fuel, fuel) = {
             let state = self.state_ro.read().unwrap();
             (
@@ -76,10 +85,10 @@ impl PovverPlant {
                     if max_amount >= 1.0 {
                         let amount = (((max_amount / 10.0) + 1.0) as SimInt).clamp(0, fuel_capacity);
                         if amount == fuel_capacity {
-                            self.maybe_upgrade_fuel_capacity(balance, sender);
+                            self.maybe_upgrade_fuel_capacity(balance);
                         }
                         self.log_ui_console(format!("Buying fuel for amount {amount}"), Info);
-                        sender.send(PovverPlantSignal::BuyFuel(amount)).unwrap();
+                        self.pp_hub_sender.send(PPHubSignal::BuyFuel(amount)).unwrap();
                     }
                 } else {
                     self.log_ui_console("Awaiting new fuel. Fuel level is critical!".to_string(), Critical);
@@ -93,9 +102,9 @@ impl PovverPlant {
         }
     }
 
-    fn maybe_upgrade_fuel_capacity(&mut self, balance: SimFlo, sender: &Sender<PovverPlantSignal>) {
+    fn maybe_upgrade_fuel_capacity(&mut self, balance: SimFlo) {
         if (balance / 4.0) > PP_FUEL_CAPACITY_INCREASE_COST.val() {
-            sender.send(PovverPlantSignal::IncreaseFuelCapacity).unwrap();
+            self.pp_hub_sender.send(PPHubSignal::IncreaseFuelCapacity).unwrap();
         }
     }
 }
@@ -103,21 +112,33 @@ impl PovverPlant {
 impl PovverPlant {
     pub fn start(
         me: Arc<Mutex<Self>>,
-        wakeup_receiver: Receiver<StateAction>,
-        signal_sender: Sender<PovverPlantSignal>,
     ) -> thread::JoinHandle<()> {
-        let state_ro = ReadOnlyRwLock::clone(&me.lock().unwrap().state_ro);
+        let (state_ro, wakeup_receiver, hub_pp_receiver) = {
+            let me_lock = me.lock().unwrap();
+            (
+                ReadOnlyRwLock::clone(&me_lock.state_ro),
+                me_lock.wakeup_receiver.clone(),
+                me_lock.hub_pp_receiver.clone(),
+            )
+        };
 
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
+                if let Ok(signal) = hub_pp_receiver.try_recv() {
+                    match signal {
+                        HubPPSignal::FuelTransfered => {
+                            println!("LONG AWAITED FUEL ARRIVED!");
+                            // Immediately resume production if we receive long awaited fuel!
+                        }
+                    }
+                }
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     thread::sleep(Duration::from_micros(500));
                     if !state_ro.read().unwrap().is_bankrupt {
                         match action {
                             StateAction::Timer(TimerEvent::HourChange) => {
-                                me.lock().unwrap()
-                                    .check_buy_fuel(&signal_sender);
+                                me.lock().unwrap().check_buy_fuel();
                             }
                             StateAction::SpeedChange(td) => {
                                 sleeptime = td / 2;

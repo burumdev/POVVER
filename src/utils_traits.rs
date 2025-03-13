@@ -11,7 +11,7 @@ pub trait AsFactor {
     }
     fn val(&self) -> SimFlo;
 }
-pub trait Percentage: AsFactor
+pub trait Percentable: AsFactor
 where
     Self: FromPrimitive,
 {
