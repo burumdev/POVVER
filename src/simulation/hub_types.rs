@@ -1,5 +1,4 @@
 use crate::{
-    economy::economy_types::{EnergyUnit, Money},
     simulation::SimInt,
 };
 
@@ -8,15 +7,6 @@ pub enum MessageEntity {
     Hub,
     PP,
     Factory(SimInt),
-}
-
-pub enum HubMessage {
-    EnergyOffer(EnergyOffer)
-}
-#[derive(Debug)]
-pub struct EnergyOffer {
-    price: Money,
-    amount: EnergyUnit,
 }
 
 #[derive(Debug, Clone)]
@@ -53,14 +43,4 @@ pub enum PPHubSignal {
 pub enum HubPPSignal {
     FuelTransfered,
     FuelCapacityIncreased,
-}
-
-#[derive(Debug)]
-pub enum BroadcastSignal {
-    SellingEnergy(EnergyOffer),
-}
-
-#[derive(Debug)]
-pub enum FactorySignal {
-    BuyEnergy(EnergyUnit),
 }

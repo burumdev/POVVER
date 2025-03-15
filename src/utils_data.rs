@@ -45,6 +45,10 @@ impl<T> SlidingWindow<T> {
 pub struct ReadOnlyRwLock<T>(Arc<RwLock<T>>);
 
 impl<T> ReadOnlyRwLock<T> {
+    pub fn new(data: T) -> Self {
+        Self(Arc::new(RwLock::new(data)))
+    }
+
     pub fn from(init_arc: Arc<RwLock<T>>) -> Self {
         Self(init_arc)
     }

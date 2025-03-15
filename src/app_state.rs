@@ -3,10 +3,12 @@ use crate::{
     environment::{TheSun, WindSpeed, months::Month},
     simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, Date, WindDirection},
-    economy::economy_types::{Money, EnergyUnit, UpDown, ProductDemand},
-    utils_data::ReadOnlyRwLock,
+    economy::{
+        industries::Industry,
+        economy_types::{Money, EnergyUnit, UpDown, ProductDemand}
+    },
+    utils_data::{ReadOnlyRwLock, SlidingWindow},
 };
-use crate::utils_data::SlidingWindow;
 
 #[derive(Debug)]
 pub struct TimerStateData {
@@ -46,7 +48,9 @@ pub struct PovverPlantStateData {
 
 #[derive(Debug)]
 pub struct FactoryStateData {
-    balance: Money,
+    pub balance: Money,
+    pub industry: Industry,
+    pub id: usize,
 }
 
 #[derive(Debug)]
@@ -60,7 +64,7 @@ pub struct EconomyStateData {
 
 pub struct HubState {
     pub povver_plant: Arc<RwLock<PovverPlantStateData>>,
-    pub factories: Arc<RwLock<Vec<FactoryStateData>>>,
+    pub factories: Arc<RwLock<Vec<Arc<RwLock<FactoryStateData>>>>>,
 }
 
 pub struct AppState {
@@ -78,7 +82,7 @@ pub struct StatePayload {
     pub env: ReadOnlyRwLock<EnvStateData>,
     pub economy: ReadOnlyRwLock<EconomyStateData>,
     pub povver_plant: ReadOnlyRwLock<PovverPlantStateData>,
-    pub factories: ReadOnlyRwLock<Vec<FactoryStateData>>,
+    pub factories: ReadOnlyRwLock<Vec<ReadOnlyRwLock<FactoryStateData>>>,
     pub misc: Arc<Mutex<MiscStateData>>,
 }
 
@@ -104,14 +108,30 @@ impl AppState {
 
 impl AppState {
     pub fn get_state_payload(&self) -> Arc<StatePayload> {
+        let factories = ReadOnlyRwLock::new(self.hub.factories.read().unwrap()
+            .iter()
+            .map(|factory| {
+                ReadOnlyRwLock::from(Arc::clone(factory))
+            }).collect());
+
         Arc::new(StatePayload {
             timer: ReadOnlyRwLock::from(Arc::clone(&self.timer)),
             env: ReadOnlyRwLock::from(Arc::clone(&self.env)),
             economy: ReadOnlyRwLock::from(Arc::clone(&self.economy)),
             povver_plant: ReadOnlyRwLock::from(Arc::clone(&self.hub.povver_plant)),
-            factories: ReadOnlyRwLock::from(Arc::clone(&self.hub.factories)),
+            factories,
             misc: Arc::clone(&self.misc),
         })
+    }
+
+    pub fn get_factory_state_ro(&self, id: usize) -> ReadOnlyRwLock<FactoryStateData> {
+        ReadOnlyRwLock::from(
+            Arc::clone(self.hub.factories.read().unwrap()
+                .iter()
+                .find(|factory| {
+                    factory.read().unwrap().id == id
+                }).unwrap()
+        ))
     }
 
     pub fn set_misc(&mut self, misc: Misc) {

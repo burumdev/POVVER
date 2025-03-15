@@ -27,10 +27,10 @@ use crate::{
 };
 
 pub struct PovverPlant {
+    fuel_buy_threshold: SimInt,
     last_ten_sales: SlidingWindow<Money>,
     state_ro: ReadOnlyRwLock<PovverPlantStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
-    fuel_buy_threshold: SimInt,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: Receiver<StateAction>,
     pp_hub_sender: Sender<PPHubSignal>,
@@ -47,10 +47,10 @@ impl PovverPlant {
         hub_pp_receiver: Receiver<HubPPSignal>,
     ) -> Self {
         Self {
+            fuel_buy_threshold: 5,
             last_ten_sales: SlidingWindow::new(10),
             state_ro,
             econ_state_ro,
-            fuel_buy_threshold: 5,
             ui_log_sender,
             wakeup_receiver,
             pp_hub_sender,

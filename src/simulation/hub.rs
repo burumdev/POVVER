@@ -10,6 +10,8 @@ use crate::{
     app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData},
     economy::{
         povver_plant::PovverPlant,
+        factory::Factory,
+        industries::Industry,
     },
     simulation::{
         hub_types::*,
@@ -30,7 +32,8 @@ use crate::{
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
     pub povver_plant_state: Arc<RwLock<PovverPlantStateData>>,
-    pub factories_state: Arc<RwLock<Vec<FactoryStateData>>>,
+    pub factories: Arc<RwLock<Vec<Factory>>>,
+    pub factories_state: Arc<RwLock<Vec<Arc<RwLock<FactoryStateData>>>>>,
     pub econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     pub timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     pub hourly_jobs: Vec<HourlyJob>,
@@ -45,6 +48,8 @@ impl TheHub {
         timer_state_ro: ReadOnlyRwLock<TimerStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
+        let comms = HubComms::new();
+
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: PP_INIT_FUEL,
             fuel_capacity: PP_INIT_FUEL_CAP,
@@ -53,8 +58,42 @@ impl TheHub {
             is_awaiting_fuel: false,
             is_bankrupt: false,
         }));
-        let factories_state = Arc::new(RwLock::new(Vec::new()));
-        let comms = HubComms::new();
+
+        let fs = vec![
+            Arc::new(
+                RwLock::new(
+                    FactoryStateData {
+                        balance: FACTORY_INIT_MONEY,
+                        industry: Industry::COSMETICS,
+                        id: 1,
+                    }
+                )
+            )
+        ];
+
+        let factories = fs
+            .iter()
+            .map(|f|
+                Arc::new(
+                    RwLock::new(
+                        Factory::new(
+                            ReadOnlyRwLock::from(Arc::clone(f))
+                        )
+                    )
+                )
+            );
+
+        let factories_state = Arc::new(RwLock::new(vec![
+            Arc::new(
+                RwLock::new(
+                    FactoryStateData {
+                        balance: FACTORY_INIT_MONEY,
+                        industry: Industry::COSMETICS,
+                        id: 1,
+                    }
+                )
+            )
+        ]));
 
         let povver_plant = Arc::new(Mutex::new(PovverPlant::new(
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
@@ -65,11 +104,14 @@ impl TheHub {
             comms.clone_hub_pp_receiver()
         )));
 
+        let factories = Arc::new(RwLock::new(Vec::new()));
+
         (
             Self {
                 povver_plant,
                 povver_plant_state: Arc::clone(&povver_plant_state),
                 factories_state: Arc::clone(&factories_state),
+                factories,
                 econ_state_ro,
                 timer_state_ro,
                 hourly_jobs: Vec::new(),

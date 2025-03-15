@@ -3,7 +3,7 @@ use std::{
 };
 use rand::{prelude::ThreadRng, random, Rng};
 
-mod industries;
+pub mod industries;
 mod products;
 
 pub mod economy_types;
