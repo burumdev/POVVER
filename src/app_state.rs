@@ -51,6 +51,7 @@ pub struct FactoryStateData {
     pub balance: Money,
     pub industry: Industry,
     pub id: usize,
+    pub is_bankrupt: bool,
 }
 
 #[derive(Debug)]

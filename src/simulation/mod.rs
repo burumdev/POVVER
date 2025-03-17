@@ -153,6 +153,8 @@ impl Simulation {
         send_action_all(StateAction::Env);
         ui_wakeup_sender.send(StateAction::Misc).unwrap();
         ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
+        self.economy.maybe_new_product_demands();
+        send_action_all(StateAction::EconUpdate(EconUpdate::Demands));
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
 

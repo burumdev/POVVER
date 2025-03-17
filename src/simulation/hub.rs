@@ -32,7 +32,7 @@ use crate::{
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
     pub povver_plant_state: Arc<RwLock<PovverPlantStateData>>,
-    pub factories: Arc<RwLock<Vec<Factory>>>,
+    pub factories: Arc<Mutex<Vec<Arc<Mutex<Factory>>>>>,
     pub factories_state: Arc<RwLock<Vec<Arc<RwLock<FactoryStateData>>>>>,
     pub econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     pub timer_state_ro: ReadOnlyRwLock<TimerStateData>,
@@ -59,41 +59,38 @@ impl TheHub {
             is_bankrupt: false,
         }));
 
-        let fs = vec![
+        let factories_state = vec![
             Arc::new(
                 RwLock::new(
                     FactoryStateData {
                         balance: FACTORY_INIT_MONEY,
                         industry: Industry::COSMETICS,
                         id: 1,
+                        is_bankrupt: false,
                     }
                 )
             )
         ];
 
-        let factories = fs
-            .iter()
-            .map(|f|
-                Arc::new(
-                    RwLock::new(
-                        Factory::new(
-                            ReadOnlyRwLock::from(Arc::clone(f))
+        let factories = Arc::new(
+            Mutex::new(
+                factories_state
+                    .iter()
+                    .map(|f|
+                        Arc::new(
+                            Mutex::new(
+                                Factory::new(
+                                    ReadOnlyRwLock::from(Arc::clone(f)),
+                                    ui_log_sender.clone(),
+                                    comms.clone_broadcast_receiver(),
+                                )
+                            )
                         )
-                    )
-                )
-            );
-
-        let factories_state = Arc::new(RwLock::new(vec![
-            Arc::new(
-                RwLock::new(
-                    FactoryStateData {
-                        balance: FACTORY_INIT_MONEY,
-                        industry: Industry::COSMETICS,
-                        id: 1,
-                    }
-                )
+                    ).collect()
             )
-        ]));
+        );
+
+        let factories_state = Arc::new(RwLock::new(factories_state));
 
         let povver_plant = Arc::new(Mutex::new(PovverPlant::new(
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
@@ -103,8 +100,6 @@ impl TheHub {
             comms.clone_pp_hub_sender(),
             comms.clone_hub_pp_receiver()
         )));
-
-        let factories = Arc::new(RwLock::new(Vec::new()));
 
         (
             Self {
@@ -134,11 +129,19 @@ impl TheHub {
     ) -> thread::JoinHandle<()> {
         let join_handles = {
             let mut me_lock = me.lock().unwrap();
-            let handles = vec![
+            let mut handles = vec![
                 PovverPlant::start(
                     Arc::clone(&me_lock.povver_plant),
                 )
             ];
+            handles.extend(
+                me_lock.factories.lock().unwrap()
+                    .iter()
+                    .map(|fac| Factory::start(Arc::clone(&fac)))
+                    .collect::<Vec<thread::JoinHandle<()>>>()
+                    .into_iter()
+            );
+
             me_lock.comms.broadcast_count = handles.len();
 
             handles
