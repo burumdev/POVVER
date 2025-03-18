@@ -47,6 +47,12 @@ impl Industry {
     };
 }
 
+impl PartialEq for Industry {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
 pub const INDUSTRIES: &[Industry] = &[
     Industry::SEMICONDUCTORS,
     Industry::SOFTWARE,

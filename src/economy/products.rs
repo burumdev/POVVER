@@ -58,7 +58,7 @@ impl Product {
             equipment_maintenance: Money::new(8.85),
             packaging: Money::new(0.8),
         },
-        rnd_cost: Money::new(16743.56),
+        rnd_cost: Money::new(7569.56),
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
             min_percentage: 45.0,
@@ -158,7 +158,7 @@ impl Product {
             equipment_maintenance: Money::new(72.31),
             packaging: Money::new(4.5),
         },
-        rnd_cost: Money::new(42760.49),
+        rnd_cost: Money::new(9100.49),
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
             min_percentage: 90.0,
@@ -208,7 +208,7 @@ impl Product {
             equipment_maintenance: Money::new(6.23),
             packaging: Money::new(42.32),
         },
-        rnd_cost: Money::new(5873.76),
+        rnd_cost: Money::new(3467.76),
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
             min_percentage: 10.0,
@@ -258,7 +258,7 @@ impl Product {
             equipment_maintenance: Money::new(68.34),
             packaging: Money::new(120.40),
         },
-        rnd_cost: Money::new(56984.34),
+        rnd_cost: Money::new(5698.34),
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
             min_percentage: 50.0,
@@ -333,7 +333,7 @@ impl Product {
             equipment_maintenance: Money::new(984.35),
             packaging: Money::new(92.12),
         },
-        rnd_cost: Money::new(7849.28),
+        rnd_cost: Money::new(47849.28),
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
             min_percentage: 60.0,
@@ -350,7 +350,7 @@ impl Product {
     };
     pub const SUGAR_DRINK: Self = Self {
         name: "Sugar Drink",
-        description: "Though carcinogenic and causes obesity and heart disease, noone imposes high taxes on these. We're so lucky. Hahahah :)",
+        description: "Though causes obesity and heart disease, noone imposes high taxes on these. We're so lucky. Hahahah :)",
         unit_production_cost: UnitProductionCost {
             energy: EnergyUnit::new(3),
             labor: Money::new(1.5),
@@ -408,7 +408,7 @@ impl Product {
             equipment_maintenance: Money::new(3659.1),
             packaging: Money::new(163.58),
         },
-        rnd_cost: Money::new(67356.39),
+        rnd_cost: Money::new(8735.39),
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
             min_percentage: 75.0,
@@ -458,7 +458,7 @@ impl Product {
             equipment_maintenance: Money::new(3184.32),
             packaging: Money::new(0.7),
         },
-        rnd_cost: Money::new(62859.2),
+        rnd_cost: Money::new(8285.2),
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
             min_percentage: 12.0,
@@ -506,7 +506,7 @@ impl Product {
             labor: Money::new(3256.43),
             raw_materials: Money::new(1246.33),
             equipment_maintenance: Money::new(2156.98),
-            packaging: Money::new(3.6),
+            packaging: Money::new(35.6),
         },
         rnd_cost: Money::new(102.30),
         industry: Industry::UNIVERSITY,
@@ -533,7 +533,7 @@ impl Product {
             equipment_maintenance: Money::new(10.23),
             packaging: Money::new(0.0),
         },
-        rnd_cost: Money::new(1_984_054.7),
+        rnd_cost: Money::new(984_054.7),
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {
             min_percentage: 20.0,
@@ -548,6 +548,12 @@ impl Product {
             }
         }
     };
+}
+
+impl Product {
+    pub fn by_industry(industry: &Industry) -> Vec<&Self> {
+        Vec::from(PRODUCTS.iter().filter(|&product| &product.industry == industry).collect::<Vec<_>>())
+    }
 }
 
 pub const PRODUCTS: &[Product] = &[

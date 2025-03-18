@@ -28,6 +28,8 @@ use crate::{
         LogMessage,
     },
 };
+use crate::economy::economy_types::Money;
+use crate::economy::products::Product;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -59,12 +61,20 @@ impl TheHub {
             is_bankrupt: false,
         }));
 
+        let industry_products = Product::by_industry(&Industry::COSMETICS);
+        let cheapest_rnd_product = industry_products
+            .iter()
+            .min_by(|prod_a, prod_b| prod_a.rnd_cost.val().total_cmp(&prod_b.rnd_cost.val())).unwrap();
+
+        let product_portfolio = vec![*cheapest_rnd_product];
+
         let factories_state = vec![
             Arc::new(
                 RwLock::new(
                     FactoryStateData {
-                        balance: FACTORY_INIT_MONEY,
+                        balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
                         industry: Industry::COSMETICS,
+                        product_portfolio,
                         id: 1,
                         is_bankrupt: false,
                     }
@@ -72,23 +82,20 @@ impl TheHub {
             )
         ];
 
-        let factories = Arc::new(
-            Mutex::new(
-                factories_state
-                    .iter()
-                    .map(|f|
-                        Arc::new(
-                            Mutex::new(
-                                Factory::new(
-                                    ReadOnlyRwLock::from(Arc::clone(f)),
-                                    ui_log_sender.clone(),
-                                    comms.clone_broadcast_receiver(),
-                                )
-                            )
+        let factories = Arc::new(Mutex::new(
+            factories_state
+                .iter()
+                .map(|f|
+                    Arc::new(Mutex::new(
+                        Factory::new(
+                            ReadOnlyRwLock::from(Arc::clone(f)),
+                            ReadOnlyRwLock::clone(&econ_state_ro),
+                            ui_log_sender.clone(),
+                            comms.clone_broadcast_receiver(),
                         )
-                    ).collect()
-            )
-        );
+                    ))
+                ).collect()
+        ));
 
         let factories_state = Arc::new(RwLock::new(factories_state));
 
@@ -168,11 +175,11 @@ impl TheHub {
                         StateAction::Timer(event) => {
                             let mut me_lock = me.lock().unwrap();
                             match event {
-                                TimerEvent::DayChange => {
+                                e if e.at_least_day() => {
                                     me_lock.do_hourly_jobs();
                                     me_lock.do_daily_jobs();
                                 }
-                                TimerEvent::HourChange => {
+                                e if e.at_least_hour() => {
                                     me_lock.do_hourly_jobs();
                                 },
                                 _ => ()

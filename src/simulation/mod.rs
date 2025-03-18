@@ -1,7 +1,6 @@
 use std::{
     sync::{Arc, Mutex},
 };
-use num_traits::FromPrimitive;
 use tokio::{
     sync::mpsc as tokio_mpsc,
     sync::broadcast as tokio_broadcast
@@ -30,7 +29,6 @@ use crate::{
     environment::Environment,
     ui_controller::{Date, UIController, UIFlag},
     utils_data::ReadOnlyRwLock,
-    utils_traits::{AsFactor, Percentable},
     logger::LogMessage,
 };
 

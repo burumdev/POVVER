@@ -4,7 +4,7 @@ use std::{
 use rand::{prelude::ThreadRng, random, Rng};
 
 pub mod industries;
-mod products;
+pub mod products;
 
 pub mod economy_types;
 use economy_types::*;

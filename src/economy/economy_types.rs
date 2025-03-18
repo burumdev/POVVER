@@ -86,7 +86,7 @@ impl EnergyUnit {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct ProductDemand {
     pub product: &'static Product,
     pub percent: Percentage,

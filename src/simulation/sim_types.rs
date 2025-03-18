@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Mul, MulAssign};
+use std::ops::{Add, MulAssign};
 use num_traits::FromPrimitive;
 use crate::utils_traits::{AsFactor, Percentable};
 
@@ -6,7 +6,7 @@ pub type SimInt = i32;
 pub type SimFlo = f32;
 pub type TickDuration = u64;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Percentage(SimFlo);
 impl Default for Percentage {
     fn default() -> Self {
