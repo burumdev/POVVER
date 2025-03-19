@@ -1,8 +1,6 @@
 use crate::{
     simulation::SimInt,
 };
-use crate::economy::economy_types::EnergyUnit;
-
 
 #[derive(Debug, Clone)]
 pub enum HourlyJobKind {

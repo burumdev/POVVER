@@ -10,6 +10,7 @@ pub enum LogLevel {
     Info,
     Warning,
     Critical,
+    Error,
 }
 
 impl From<LogLevel> for UILogLevel {
@@ -18,6 +19,7 @@ impl From<LogLevel> for UILogLevel {
             LogLevel::Info => UILogLevel::Info,
             LogLevel::Warning => UILogLevel::Warning,
             LogLevel::Critical => UILogLevel::Critical,
+            LogLevel::Error => UILogLevel::Error,
         }
     }
 }
@@ -63,6 +65,7 @@ pub trait Logger {
             LogLevel::Info => "",
             LogLevel::Warning => "WARNING: ",
             LogLevel::Critical => "CRITICAL!: ",
+            LogLevel::Error => "ERROR!: ",
         };
         println!("{}{}: {}", level_prefix, self.get_log_prefix(), message);
     }

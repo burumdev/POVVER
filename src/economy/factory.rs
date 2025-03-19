@@ -19,6 +19,7 @@ use crate::{
     utils_traits::AsFactor,
     utils_data::ReadOnlyRwLock,
 };
+use crate::simulation::hub_comms::Broadcastable;
 
 pub struct Factory {
     state_ro: ReadOnlyRwLock<FactoryStateData>,
@@ -26,6 +27,7 @@ pub struct Factory {
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: Receiver<StateAction>,
     factory_hub_sender: Sender<FactoryHubSignal>,
+    hub_factory_broadcast_receiver: Receiver<Arc<dyn Broadcastable>>
 }
 
 impl Factory {
@@ -35,6 +37,7 @@ impl Factory {
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
         wakeup_receiver: Receiver<StateAction>,
         factory_hub_sender: Sender<FactoryHubSignal>,
+        hub_factory_broadcast_receiver: Receiver<Arc<dyn Broadcastable>>,
     ) -> Self {
         Self {
             state_ro,
@@ -42,6 +45,7 @@ impl Factory {
             ui_log_sender,
             wakeup_receiver,
             factory_hub_sender,
+            hub_factory_broadcast_receiver,
         }
     }
 }
@@ -98,18 +102,43 @@ impl Factory {
 
 impl Factory {
     pub fn start(me: Arc<Mutex<Self>>) -> thread::JoinHandle<()> {
-        let (state_ro, econ_state_ro, wakeup_receiver) = {
+        let (my_id, state_ro, econ_state_ro, wakeup_receiver, hub_broadcast_receiver) = {
             let me_lock = me.lock().unwrap();
             (
+                me_lock.state_ro.read().unwrap().id,
                 ReadOnlyRwLock::clone(&me_lock.state_ro),
                 ReadOnlyRwLock::clone(&me_lock.econ_state_ro),
                 me_lock.wakeup_receiver.clone(),
+                me_lock.hub_factory_broadcast_receiver.clone(),
             )
         };
 
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
+                if let Ok(signal) = hub_broadcast_receiver.try_recv() {
+                    match signal.as_any() {
+                        s if s.is::<FactoryEnergyDemand>() => {
+                            if let Some(demand) = signal.as_any().downcast_ref::<FactoryEnergyDemand>() {
+                                if demand.factory_id != my_id {
+                                    //TODO
+                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
+                                    // MAYBE SELL SOME LEFTOVER ENERGY TO THE FACTORY IN NEED
+                                } else {
+                                    //TODO
+                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
+                                }
+                            } else {
+                                me.lock().unwrap().log_console("Could not downcast broadcast signal from hub!".to_string(), Error);
+                            }
+                        },
+                        _ => {
+                            //TODO
+                            me.lock().unwrap().log_console(format!("Got message: {:?}. But is not an energy demand?", signal), Critical);
+                        }
+                    }
+                }
+
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     thread::sleep(Duration::from_micros(500));
                     if !state_ro.read().unwrap().is_bankrupt {

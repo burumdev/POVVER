@@ -12,6 +12,8 @@ use crate::{
         povver_plant::PovverPlant,
         factory::Factory,
         industries::Industry,
+        economy_types::Money,
+        products::Product,
     },
     simulation::{
         hub_types::*,
@@ -27,8 +29,6 @@ use crate::{
         LogMessage,
     },
 };
-use crate::economy::economy_types::Money;
-use crate::economy::products::Product;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -90,8 +90,9 @@ impl TheHub {
                             ReadOnlyRwLock::from(Arc::clone(f)),
                             ReadOnlyRwLock::clone(&econ_state_ro),
                             ui_log_sender.clone(),
-                            comms.clone_broadcast_receiver(),
+                            comms.clone_broadcast_state_receiver(),
                             comms.clone_factory_hub_sender(),
+                            comms.clone_broadcast_signal_receiver()
                         )
                     ))
                 ).collect()
@@ -103,7 +104,7 @@ impl TheHub {
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
             ReadOnlyRwLock::clone(&econ_state_ro),
             ui_log_sender.clone(),
-            comms.clone_broadcast_receiver(),
+            comms.clone_broadcast_state_receiver(),
             comms.clone_pp_hub_sender(),
             comms.clone_hub_pp_receiver()
         )));
@@ -172,8 +173,8 @@ impl TheHub {
 
                 if let Ok(signal) = factory_hub_receiver.try_recv() {
                     match signal {
-                        FactoryHubSignal::EnergyDemand(energy_units) => {
-                            me.lock().unwrap().factory_needs_energy(energy_units);
+                        FactoryHubSignal::EnergyDemand(energy_demand) => {
+                            me.lock().unwrap().factory_needs_energy(energy_demand);
                         },
                     }
                 }

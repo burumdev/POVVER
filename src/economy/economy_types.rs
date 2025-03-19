@@ -1,12 +1,10 @@
 use slint::ToSharedString;
 use crate::{
     economy::products::Product,
-    simulation::{SimFlo, SimInt},
+    simulation::{SimFlo, SimInt, Percentage},
     ui_controller::{UpDown as UIUpDown, ProductDemand as UIProductDemand },
-    utils_traits::Flippable,
+    utils_traits::{Flippable, AsFactor}
 };
-use crate::simulation::Percentage;
-use crate::utils_traits::AsFactor;
 
 pub const INFLATION_MAX: SimFlo = 50.0;
 pub const INFLATION_MIN: SimFlo = -10.0;
@@ -77,7 +75,7 @@ impl Flippable for UpDown {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct EnergyUnit(SimInt);
 impl EnergyUnit {
     pub const fn new(unit: SimInt) -> Self {
