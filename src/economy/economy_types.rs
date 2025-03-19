@@ -77,12 +77,16 @@ impl Flippable for UpDown {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct EnergyUnit(SimInt);
-
 impl EnergyUnit {
     pub const fn new(unit: SimInt) -> Self {
         Self(unit)
+    }
+}
+impl EnergyUnit {
+    pub fn val(&self) -> SimInt {
+        self.0
     }
 }
 

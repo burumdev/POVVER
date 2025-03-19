@@ -5,7 +5,8 @@ use crate::{
         SimFlo,
         hub::TheHub,
         hub_constants::*,
-        hub_types::*
+        hub_types::*,
+        hub_comms::*
     }
 };
 
@@ -55,5 +56,9 @@ impl TheHub {
         } else {
             self.log_ui_console("PP couldn't pay for fuel capacity increase. Upgrade canceled.".to_string(), Critical);
         }
+    }
+
+    pub fn factory_needs_energy(&mut self, demand: FactoryEnergyDemand) {
+        self.log_ui_console(format!("Factory No. {} demands {} units of energy", demand.factory_id, demand.energy.val()), Warning);
     }
 }

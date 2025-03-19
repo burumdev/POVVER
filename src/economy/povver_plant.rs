@@ -13,7 +13,7 @@ use crate::{
     simulation::{
         StateAction,
         timer::TimerEvent,
-        hub_types::{PPHubSignal, HubPPSignal, MessageEntity},
+        hub_comms::{PPHubSignal, HubPPSignal, MessageEntity},
         SimInt,
         SimFlo,
         hub_constants::PP_FUEL_CAPACITY_INCREASE_COST,

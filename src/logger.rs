@@ -1,7 +1,7 @@
 use tokio::sync::broadcast as tokio_broadcast;
 use slint::SharedString;
 use crate::{
-    simulation::hub_types::MessageEntity,
+    simulation::hub_comms::MessageEntity,
     ui_controller::{LogMessage as UILogMessage, LogLevel as UILogLevel, MessageSource as UIMessageSource},
 };
 

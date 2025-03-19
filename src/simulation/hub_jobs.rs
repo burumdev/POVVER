@@ -4,7 +4,8 @@ use crate::{
         SimInt,
         hub::TheHub,
         hub_constants::*,
-        hub_types::*
+        hub_types::*,
+        hub_comms::*
     }
 };
 

@@ -11,7 +11,7 @@ use speed::SPEEDS_ARRAY;
 
 pub mod hub;
 use hub::TheHub;
-mod hub_comms;
+pub mod hub_comms;
 mod hub_events;
 mod hub_jobs;
 pub mod hub_types;
@@ -19,6 +19,7 @@ pub mod hub_constants;
 
 pub mod timer;
 mod sim_types;
+
 pub use sim_types::*;
 
 use timer::{Timer, TimerEvent};

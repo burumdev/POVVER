@@ -1,13 +1,8 @@
 use crate::{
     simulation::SimInt,
 };
+use crate::economy::economy_types::EnergyUnit;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MessageEntity {
-    Hub,
-    PP,
-    Factory(SimInt),
-}
 
 #[derive(Debug, Clone)]
 pub enum HourlyJobKind {
@@ -33,14 +28,3 @@ pub struct DailyJob {
     pub day_created: SimInt,
 }
 
-#[derive(Debug)]
-pub enum PPHubSignal {
-    BuyFuel(SimInt),
-    IncreaseFuelCapacity,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum HubPPSignal {
-    FuelTransfered,
-    FuelCapacityIncreased,
-}

@@ -18,7 +18,6 @@ use crate::{
         hub_constants::*,
         hub_comms::*,
         StateAction,
-        timer::TimerEvent,
         speed::Speed,
     },
     utils_data::ReadOnlyRwLock,
@@ -61,7 +60,7 @@ impl TheHub {
             is_bankrupt: false,
         }));
 
-        let industry_products = Product::by_industry(&Industry::COSMETICS);
+        let industry_products = Product::by_industry(&Industry::SEMICONDUCTORS);
         let cheapest_rnd_product = industry_products
             .iter()
             .min_by(|prod_a, prod_b| prod_a.rnd_cost.val().total_cmp(&prod_b.rnd_cost.val())).unwrap();
@@ -73,7 +72,7 @@ impl TheHub {
                 RwLock::new(
                     FactoryStateData {
                         balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
-                        industry: Industry::COSMETICS,
+                        industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
                         id: 1,
                         is_bankrupt: false,
@@ -92,6 +91,7 @@ impl TheHub {
                             ReadOnlyRwLock::clone(&econ_state_ro),
                             ui_log_sender.clone(),
                             comms.clone_broadcast_receiver(),
+                            comms.clone_factory_hub_sender(),
                         )
                     ))
                 ).collect()
@@ -155,6 +155,7 @@ impl TheHub {
         };
 
         let pp_hub_receiver = me.lock().unwrap().comms.clone_pp_hub_receiver();
+        let factory_hub_receiver = me.lock().unwrap().comms.clone_factory_hub_receiver();
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
@@ -166,6 +167,14 @@ impl TheHub {
                         PPHubSignal::IncreaseFuelCapacity => {
                             me.lock().unwrap().pp_increases_fuel_capacity();
                         }
+                    }
+                }
+
+                if let Ok(signal) = factory_hub_receiver.try_recv() {
+                    match signal {
+                        FactoryHubSignal::EnergyDemand(energy_units) => {
+                            me.lock().unwrap().factory_needs_energy(energy_units);
+                        },
                     }
                 }
 
