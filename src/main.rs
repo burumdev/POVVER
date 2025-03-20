@@ -5,10 +5,9 @@ mod ui_controller;
 mod utils_random;
 mod utils_traits;
 mod utils_data;
-
-mod simulation;
 mod logger;
 
+mod simulation;
 use simulation::Simulation;
 
 fn main() {

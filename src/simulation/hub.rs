@@ -3,7 +3,6 @@ use std::{
     thread,
 };
 use std::time::Duration;
-use crossbeam_channel::Receiver;
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
@@ -133,10 +132,10 @@ impl TheHub {
 impl TheHub {
     pub fn start(
         me: Arc<Mutex<Self>>,
-        wakeup_receiver: Receiver<StateAction>,
+        mut wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     ) -> thread::JoinHandle<()> {
         let join_handles = {
-            let mut me_lock = me.lock().unwrap();
+            let me_lock = me.lock().unwrap();
             let mut handles = vec![
                 PovverPlant::start(
                     Arc::clone(&me_lock.povver_plant),
@@ -149,8 +148,6 @@ impl TheHub {
                     .collect::<Vec<thread::JoinHandle<()>>>()
                     .into_iter()
             );
-
-            me_lock.comms.broadcast_count = handles.len();
 
             handles
         };

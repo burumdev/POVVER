@@ -5,6 +5,7 @@ use crate::utils_traits::{AsFactor, Percentable};
 pub type SimInt = i32;
 pub type SimFlo = f32;
 pub type TickDuration = u64;
+pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Percentage(SimFlo);

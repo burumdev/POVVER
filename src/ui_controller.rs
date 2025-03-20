@@ -3,10 +3,7 @@ use std::{
     thread,
 };
 
-use tokio::{
-    sync::mpsc as tokio_mpsc,
-    sync::broadcast as tokio_broadcast,
-};
+use tokio::sync::broadcast as tokio_broadcast;
 
 use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, FilterModel};
 
@@ -37,7 +34,7 @@ impl UIController {
     pub fn run(
         &self,
         flag_sender: crossbeam_channel::Sender<UIFlag>,
-        mut wakeup_receiver: tokio_mpsc::UnboundedReceiver<StateAction>,
+        mut wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         mut log_receiver: tokio_broadcast::Receiver<LoggerMessage>,
         state: Arc<StatePayload>,
     ) -> thread::JoinHandle<()> {
@@ -75,7 +72,7 @@ impl UIController {
                 let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::PP));
                 let factory_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Factory));
 
-                while let Some(action) = wakeup_receiver.recv().await {
+                while let Ok(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
                             {

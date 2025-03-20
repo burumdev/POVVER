@@ -32,7 +32,7 @@ pub struct PovverPlant {
     state_ro: ReadOnlyRwLock<PovverPlantStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
-    wakeup_receiver: Receiver<StateAction>,
+    wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     pp_hub_sender: Sender<PPHubSignal>,
     hub_pp_receiver: Receiver<HubPPSignal>,
 }
@@ -42,7 +42,7 @@ impl PovverPlant {
         state_ro: ReadOnlyRwLock<PovverPlantStateData>,
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
-        wakeup_receiver: Receiver<StateAction>,
+        wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         pp_hub_sender: Sender<PPHubSignal>,
         hub_pp_receiver: Receiver<HubPPSignal>,
     ) -> Self {
@@ -113,11 +113,11 @@ impl PovverPlant {
     pub fn start(
         me: Arc<Mutex<Self>>,
     ) -> thread::JoinHandle<()> {
-        let (state_ro, wakeup_receiver, hub_pp_receiver) = {
+        let (state_ro, mut wakeup_receiver, hub_pp_receiver) = {
             let me_lock = me.lock().unwrap();
             (
                 ReadOnlyRwLock::clone(&me_lock.state_ro),
-                me_lock.wakeup_receiver.clone(),
+                me_lock.wakeup_receiver.resubscribe(),
                 me_lock.hub_pp_receiver.clone(),
             )
         };

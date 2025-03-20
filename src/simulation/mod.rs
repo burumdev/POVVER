@@ -1,10 +1,8 @@
 use std::{
     sync::{Arc, Mutex},
 };
-use tokio::{
-    sync::mpsc as tokio_mpsc,
-    sync::broadcast as tokio_broadcast
-};
+
+use tokio::sync::broadcast as tokio_broadcast;
 
 pub mod speed;
 use speed::SPEEDS_ARRAY;
@@ -19,7 +17,6 @@ pub mod hub_constants;
 
 pub mod timer;
 mod sim_types;
-
 pub use sim_types::*;
 
 use timer::{Timer, TimerEvent};
@@ -33,7 +30,6 @@ use crate::{
     logger::LogMessage,
 };
 
-pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
 #[derive(Debug, Clone)]
 pub enum EconUpdate {
@@ -127,40 +123,39 @@ impl Simulation {
         self.app_state.set_misc(Misc::IsPaused(false));
 
         let (ui_flag_sender, ui_flag_receiver) = crossbeam_channel::bounded::<UIFlag>(16);
-        let (wakeup_sender, wakeup_receiver) = crossbeam_channel::bounded::<StateAction>(16);
-        let (ui_wakeup_sender, ui_wakeup_receiver) = tokio_mpsc::unbounded_channel::<StateAction>();
+        let (wakeup_sender, wakeup_receiver) = tokio_broadcast::channel::<StateAction>(64);
+        let log_receiver = self.ui_log_channel.1.resubscribe();
         let state_payload = self.app_state.get_state_payload();
 
         let join_handles = vec![
             self.ui_controller.run(
                 ui_flag_sender,
-                ui_wakeup_receiver,
-                self.ui_log_channel.1.resubscribe(),
+                wakeup_receiver.resubscribe(),
+                log_receiver,
                 Arc::clone(&state_payload),
             ),
             TheHub::start(Arc::clone(&self.the_hub), wakeup_receiver),
         ];
 
-        let send_action_all = |action: StateAction| {
+        let broadcast_action = |action: StateAction| {
             if let Err(e) = wakeup_sender.send(action.clone()) {
                 eprintln!("SIM: Could not deliver message to recipient: {e}");
             };
-            ui_wakeup_sender.send(action).unwrap();
         };
 
-        send_action_all(StateAction::Timer(TimerEvent::MonthChange));
-        send_action_all(StateAction::Env);
-        ui_wakeup_sender.send(StateAction::Misc).unwrap();
-        ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
+        broadcast_action(StateAction::Timer(TimerEvent::MonthChange));
+        broadcast_action(StateAction::Env);
+        wakeup_sender.send(StateAction::Misc).unwrap();
+        wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
         self.economy.maybe_new_product_demands();
-        send_action_all(StateAction::EconUpdate(EconUpdate::Demands));
+        broadcast_action(StateAction::EconUpdate(EconUpdate::Demands));
 
         let mut misc = self.app_state.get_misc_state_updates().unwrap();
 
         while self.timer.ticker.recv().is_ok() {
             if !self.is_running {
                 // Send quit signal to every recipient for cleanups
-                send_action_all(StateAction::Quit);
+                broadcast_action(StateAction::Quit);
                 // Join all handles
                 for handle in join_handles {
                     handle.join().unwrap();
@@ -173,7 +168,7 @@ impl Simulation {
             match &timer_event {
                 te if te.at_least_hour() => {
                     self.env.update();
-                    send_action_all(StateAction::Env);
+                    broadcast_action(StateAction::Env);
                     self.economy.update_product_demands();
 
                     if te.at_least_day() {
@@ -181,20 +176,20 @@ impl Simulation {
                     }
                     if te.at_least_month() {
                         self.economy.update_macroeconomics();
-                        ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
+                        wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
                     }
 
-                    ui_wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Demands)).unwrap();
+                    wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Demands)).unwrap();
                 },
                 _ => ()
             }
 
             // Send timer signal to recipients to wake them up for timed jobs.
-            send_action_all(StateAction::Timer(timer_event));
+            broadcast_action(StateAction::Timer(timer_event));
 
             if let Some(new_misc) = self.app_state.get_misc_state_updates() {
                 misc = new_misc;
-                ui_wakeup_sender.send(StateAction::Misc).unwrap();
+                wakeup_sender.send(StateAction::Misc).unwrap();
             }
 
             if let Ok(flag) = ui_flag_receiver.try_recv() {

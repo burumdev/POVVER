@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam_channel::Sender;
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
@@ -25,9 +25,9 @@ pub struct Factory {
     state_ro: ReadOnlyRwLock<FactoryStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
-    wakeup_receiver: Receiver<StateAction>,
+    wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     factory_hub_sender: Sender<FactoryHubSignal>,
-    hub_factory_broadcast_receiver: Receiver<Arc<dyn Broadcastable>>
+    hub_factory_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>
 }
 
 impl Factory {
@@ -35,9 +35,9 @@ impl Factory {
         state_ro: ReadOnlyRwLock<FactoryStateData>,
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
-        wakeup_receiver: Receiver<StateAction>,
+        wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         factory_hub_sender: Sender<FactoryHubSignal>,
-        hub_factory_broadcast_receiver: Receiver<Arc<dyn Broadcastable>>,
+        hub_factory_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>,
     ) -> Self {
         Self {
             state_ro,
@@ -102,14 +102,14 @@ impl Factory {
 
 impl Factory {
     pub fn start(me: Arc<Mutex<Self>>) -> thread::JoinHandle<()> {
-        let (my_id, state_ro, econ_state_ro, wakeup_receiver, hub_broadcast_receiver) = {
+        let (my_id, state_ro, econ_state_ro, mut wakeup_receiver, mut hub_broadcast_receiver) = {
             let me_lock = me.lock().unwrap();
             (
                 me_lock.state_ro.read().unwrap().id,
                 ReadOnlyRwLock::clone(&me_lock.state_ro),
                 ReadOnlyRwLock::clone(&me_lock.econ_state_ro),
-                me_lock.wakeup_receiver.clone(),
-                me_lock.hub_factory_broadcast_receiver.clone(),
+                me_lock.wakeup_receiver.resubscribe(),
+                me_lock.hub_factory_broadcast_receiver.resubscribe(),
             )
         };
 

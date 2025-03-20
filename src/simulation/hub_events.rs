@@ -61,7 +61,6 @@ impl TheHub {
     }
 
     pub fn factory_needs_energy(&mut self, demand: FactoryEnergyDemand) {
-        self.log_ui_console(format!("Factory No. {} demands {} units of energy", demand.factory_id, demand.energy.val()), Warning);
         self.comms.send_signal_broadcast(Arc::new(demand))
     }
 }

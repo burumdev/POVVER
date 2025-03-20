@@ -1,7 +1,12 @@
-use std::any::Any;
-use std::sync::Arc;
-use std::fmt::Debug;
-use crossbeam_channel::{Receiver, Sender, unbounded, bounded };
+use std::{
+    any::Any,
+    sync::Arc,
+    fmt::Debug,
+};
+use crossbeam_channel::{Receiver, Sender, bounded};
+use tokio::{
+    sync::broadcast as tokio_broadcast
+};
 
 use crate::{
     simulation::{
@@ -59,9 +64,8 @@ macro_rules! impl_broadcastable {
 impl_broadcastable!(FactoryEnergyDemand);
 
 pub struct HubComms {
-    pub broadcast_count: usize,
-    broadcast_state_channel: (Sender<StateAction>, Receiver<StateAction>),
-    broadcast_signal_channel: (Sender<Arc<dyn Broadcastable>>, Receiver<Arc<dyn Broadcastable>>),
+    broadcast_state_channel: (tokio_broadcast::Sender<StateAction>, tokio_broadcast::Receiver<StateAction>),
+    broadcast_signal_channel: (tokio_broadcast::Sender<Arc<dyn Broadcastable>>, tokio_broadcast::Receiver<Arc<dyn Broadcastable>>),
     hub_pp_channel: (Sender<HubPPSignal>, Receiver<HubPPSignal>),
     pp_hub_channel: (Sender<PPHubSignal>, Receiver<PPHubSignal>),
     factory_hub_channel: (Sender<FactoryHubSignal>, Receiver<FactoryHubSignal>)
@@ -70,23 +74,21 @@ pub struct HubComms {
 impl HubComms {
     pub fn new() -> Self {
         Self {
-            broadcast_count: 0,
-            broadcast_state_channel: unbounded(),
-            broadcast_signal_channel: unbounded(),
+            broadcast_state_channel: tokio_broadcast::channel(64),
+            broadcast_signal_channel: tokio_broadcast::channel(64),
             hub_pp_channel: bounded(4),
             pp_hub_channel: bounded(4),
             factory_hub_channel: bounded(128),
         }
     }
-
 }
 
 impl HubComms {
-    fn broadcast_state_sender(&self) -> &Sender<StateAction> {
+    fn broadcast_state_sender(&self) -> &tokio_broadcast::Sender<StateAction> {
         &self.broadcast_state_channel.0
     }
 
-    fn broadcast_signal_sender(&self) -> &Sender<Arc<dyn Broadcastable>> {
+    fn broadcast_signal_sender(&self) -> &tokio_broadcast::Sender<Arc<dyn Broadcastable>> {
         &self.broadcast_signal_channel.0
     }
 
@@ -96,12 +98,12 @@ impl HubComms {
 }
 
 impl HubComms {
-    pub fn clone_broadcast_state_receiver(&self) -> Receiver<StateAction> {
-        self.broadcast_state_channel.1.clone()
+    pub fn clone_broadcast_state_receiver(&self) -> tokio_broadcast::Receiver<StateAction> {
+        self.broadcast_state_channel.1.resubscribe()
     }
 
-    pub fn clone_broadcast_signal_receiver(&self) -> Receiver<Arc<dyn Broadcastable>> {
-        self.broadcast_signal_channel.1.clone()
+    pub fn clone_broadcast_signal_receiver(&self) -> tokio_broadcast::Receiver<Arc<dyn Broadcastable>> {
+        self.broadcast_signal_channel.1.resubscribe()
     }
 
     pub fn clone_pp_hub_sender(&self) -> Sender<PPHubSignal> {
@@ -125,18 +127,14 @@ impl HubComms {
     }
 
     pub fn send_state_broadcast(&self, action: StateAction) {
-        for _ in 0..self.broadcast_count {
-            if let Err(e) = self.broadcast_state_sender().send(action.clone()) {
-                eprintln!("HUB COMMS: Could not send state broadcast signal to one recipient: {e}");
-            }
+        if let Err(e) = self.broadcast_state_sender().send(action) {
+            eprintln!("HUB COMMS: Could not send state broadcast to one recipient: {e}");
         }
     }
 
     pub fn send_signal_broadcast(&self, signal: Arc<dyn Broadcastable>) {
-        for _ in 0..self.broadcast_count {
-            if let Err(e) = self.broadcast_signal_sender().send(signal.clone()) {
-                eprintln!("HUB COMMS: Could not send signal signal to one recipient: {e}");
-            }
+        if let Err(e) = self.broadcast_signal_sender().send(signal) {
+            eprintln!("HUB COMMS: Could not send broadcast signal to one recipient: {e}");
         }
     }
 
