@@ -35,11 +35,6 @@ pub struct FactoryEnergyDemand {
     pub factory_id: usize,
     pub energy: EnergyUnit,
 }
-impl Broadcastable for FactoryEnergyDemand {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-}
 
 #[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
@@ -49,6 +44,19 @@ pub enum FactoryHubSignal {
 pub trait Broadcastable: Send + Sync + Debug {
     fn as_any(&self) -> &dyn Any;
 }
+
+macro_rules! impl_broadcastable {
+    ($($structname:ident),+) => {
+        $(
+            impl Broadcastable for $structname {
+                fn as_any(&self) -> &dyn Any {
+                    self
+                }
+            }
+        )+
+    };
+}
+impl_broadcastable!(FactoryEnergyDemand);
 
 pub struct HubComms {
     pub broadcast_count: usize,

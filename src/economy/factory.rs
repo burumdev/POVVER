@@ -117,9 +117,10 @@ impl Factory {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
-                    match signal.as_any() {
+                    let signal_any = signal.as_any();
+                    match signal_any {
                         s if s.is::<FactoryEnergyDemand>() => {
-                            if let Some(demand) = signal.as_any().downcast_ref::<FactoryEnergyDemand>() {
+                            if let Some(demand) = signal_any.downcast_ref::<FactoryEnergyDemand>() {
                                 if demand.factory_id != my_id {
                                     //TODO
                                     me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
