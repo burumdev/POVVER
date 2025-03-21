@@ -15,7 +15,7 @@ use crate::{
         products::Product,
     },
     simulation::{
-        hub_types::*,
+        hub_jobs::*,
         hub_constants::*,
         hub_comms::*,
         StateAction,
@@ -52,7 +52,7 @@ impl TheHub {
 
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: PP_INIT_FUEL,
-            fuel_capacity: PP_INIT_FUEL_CAP,
+            fuel_capacity: PP_INIT_FUEL_CAPACITY,
             production_capacity: PP_INIT_PRODUCTION_CAP,
             balance: PP_INIT_MONEY,
             is_awaiting_fuel: false,
@@ -105,7 +105,8 @@ impl TheHub {
             ui_log_sender.clone(),
             comms.clone_broadcast_state_receiver(),
             comms.clone_pp_hub_sender(),
-            comms.clone_hub_pp_receiver()
+            comms.clone_hub_pp_receiver(),
+            comms.clone_broadcast_signal_receiver(),
         )));
 
         (
@@ -164,6 +165,9 @@ impl TheHub {
                         },
                         PPHubSignal::IncreaseFuelCapacity => {
                             me.lock().unwrap().pp_increases_fuel_capacity();
+                        },
+                        PPHubSignal::EnergyOfferToFactory(offer) => {
+                            //TODO
                         }
                     }
                 }

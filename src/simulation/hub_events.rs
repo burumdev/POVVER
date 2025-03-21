@@ -7,7 +7,7 @@ use crate::{
         SimFlo,
         hub::TheHub,
         hub_constants::*,
-        hub_types::*,
+        hub_jobs::*,
         hub_comms::*
     }
 };
@@ -22,14 +22,15 @@ impl TheHub {
                 .balance.dec(fee);
 
         if transaction_successful {
-            let delay = (amount as SimFlo / 5.0).floor() as SimInt;
+            let delay = (amount as SimFlo / 15.0).floor() as SimInt;
+            let receipt = FuelReceipt { amount, price_per_unit: price.val() };
             if delay == 0 {
-                self.transfer_fuel_to_pp(amount);
+                self.transfer_fuel_to_pp(receipt);
             } else {
                 let hour_created = self.timer_state_ro.read().unwrap().date.hour;
                 self.hourly_jobs.push(
                     HourlyJob {
-                        kind: HourlyJobKind::PPBoughtFuel(amount),
+                        kind: HourlyJobKind::PPBoughtFuel(receipt),
                         delay,
                         hour_created,
                     }

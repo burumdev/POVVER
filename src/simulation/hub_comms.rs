@@ -15,6 +15,8 @@ use crate::{
     },
     economy::economy_types::EnergyUnit,
 };
+use crate::economy::economy_types::Money;
+use crate::simulation::SimFlo;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MessageEntity {
@@ -27,12 +29,26 @@ pub enum MessageEntity {
 pub enum PPHubSignal {
     BuyFuel(SimInt),
     IncreaseFuelCapacity,
+    EnergyOfferToFactory(PPEnergyOffer),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FuelReceipt {
+    pub amount: SimInt,
+    pub price_per_unit: SimFlo,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum HubPPSignal {
-    FuelTransfered,
+    FuelTransfered(FuelReceipt),
     FuelCapacityIncreased,
+}
+
+#[derive(Debug)]
+pub struct PPEnergyOffer {
+    pub price_per_unit: Money,
+    pub units: EnergyUnit,
+    pub to_factory_id: usize,
 }
 
 #[derive(Debug, Clone, PartialEq)]

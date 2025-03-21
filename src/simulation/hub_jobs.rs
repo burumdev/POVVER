@@ -4,10 +4,33 @@ use crate::{
         SimInt,
         hub::TheHub,
         hub_constants::*,
-        hub_types::*,
         hub_comms::*
-    }
+    },
 };
+
+#[derive(Debug, Clone)]
+pub enum HourlyJobKind {
+    PPBoughtFuel(FuelReceipt),
+}
+
+#[derive(Debug, Clone)]
+pub struct HourlyJob {
+    pub kind: HourlyJobKind,
+    pub delay: SimInt,
+    pub hour_created: SimInt,
+}
+
+#[derive(Debug, Clone)]
+pub enum DailyJobKind {
+    PPFuelCapIncrease,
+}
+
+#[derive(Debug, Clone)]
+pub struct DailyJob {
+    pub kind: DailyJobKind,
+    pub delay: SimInt,
+    pub day_created: SimInt,
+}
 
 impl TheHub {
     pub fn do_hourly_jobs(&mut self) {
@@ -27,8 +50,8 @@ impl TheHub {
 
         for job in due_jobs.drain(..) {
             match job.kind {
-                HourlyJobKind::PPBoughtFuel(amount) => {
-                    self.transfer_fuel_to_pp(amount);
+                HourlyJobKind::PPBoughtFuel(receipt) => {
+                    self.transfer_fuel_to_pp(receipt);
                 }
             }
         }
@@ -58,13 +81,13 @@ impl TheHub {
         }
     }
 
-    pub fn transfer_fuel_to_pp(&self, amount: SimInt) {
-        self.log_ui_console(format!("Transfering {amount} fuel to Povver Plant."), Info);
+    pub fn transfer_fuel_to_pp(&self, receipt: FuelReceipt) {
+        self.log_ui_console(format!("Transfering {} fuel to Povver Plant.", receipt.amount), Info);
 
         let mut pp = self.povver_plant_state.write().unwrap();
-        pp.fuel += amount;
+        pp.fuel += receipt.amount;
         pp.is_awaiting_fuel = false;
-        self.comms.hub_to_pp(HubPPSignal::FuelTransfered);
+        self.comms.hub_to_pp(HubPPSignal::FuelTransfered(receipt));
     }
 
     pub fn increase_pp_fuel_cap(&self) {

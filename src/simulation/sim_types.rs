@@ -18,8 +18,12 @@ impl Percentage {
     pub fn new(val: SimFlo) -> Self {
         Self(val)
     }
-}
+    pub fn dec(&mut self, val: SimFlo) -> Self {
+        self.0 = (self.0 - val).max(0.0);
 
+        *self
+    }
+}
 impl AsFactor for Percentage {
     fn val(&self) -> SimFlo {
         self.0

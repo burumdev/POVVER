@@ -27,7 +27,7 @@ pub struct Factory {
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     factory_hub_sender: Sender<FactoryHubSignal>,
-    hub_factory_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>
+    hub_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>
 }
 
 impl Factory {
@@ -37,7 +37,7 @@ impl Factory {
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         factory_hub_sender: Sender<FactoryHubSignal>,
-        hub_factory_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>,
+        hub_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>,
     ) -> Self {
         Self {
             state_ro,
@@ -45,7 +45,7 @@ impl Factory {
             ui_log_sender,
             wakeup_receiver,
             factory_hub_sender,
-            hub_factory_broadcast_receiver,
+            hub_broadcast_receiver,
         }
     }
 }
@@ -109,7 +109,7 @@ impl Factory {
                 ReadOnlyRwLock::clone(&me_lock.state_ro),
                 ReadOnlyRwLock::clone(&me_lock.econ_state_ro),
                 me_lock.wakeup_receiver.resubscribe(),
-                me_lock.hub_factory_broadcast_receiver.resubscribe(),
+                me_lock.hub_broadcast_receiver.resubscribe(),
             )
         };
 
@@ -123,11 +123,11 @@ impl Factory {
                             if let Some(demand) = signal_any.downcast_ref::<FactoryEnergyDemand>() {
                                 if demand.factory_id != my_id {
                                     //TODO
-                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
+                                    //me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
                                     // MAYBE SELL SOME LEFTOVER ENERGY TO THE FACTORY IN NEED
                                 } else {
                                     //TODO
-                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
+                                    //me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
                                 }
                             } else {
                                 me.lock().unwrap().log_console("Could not downcast broadcast signal from hub!".to_string(), Error);

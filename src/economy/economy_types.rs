@@ -1,3 +1,4 @@
+use std::ops::{Div, Sub};
 use slint::ToSharedString;
 use crate::{
     economy::products::Product,
@@ -12,7 +13,7 @@ pub const FUEL_PRICE_MIN: SimFlo = 100.0;
 pub const FUEL_PRICE_MAX: SimFlo = 1000.0;
 pub const FUEL_PRICE_MODIFIER: SimFlo = 20.00;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Money(SimFlo);
 
 impl Money {
@@ -20,7 +21,11 @@ impl Money {
         Self(amount)
     }
 }
-
+impl Default for Money {
+    fn default() -> Self {
+        Self(0.0)
+    }
+}
 impl Money {
     pub fn val(&self) -> SimFlo {
         self.0
@@ -45,7 +50,7 @@ impl Money {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum UpDown {
     Up,
     Down,
@@ -85,6 +90,33 @@ impl EnergyUnit {
 impl EnergyUnit {
     pub fn val(&self) -> SimInt {
         self.0
+    }
+}
+impl Div for EnergyUnit {
+    type Output = Self;
+    fn div(self, other: Self) -> Self {
+        Self(self.0 / other.0)
+    }
+}
+impl Sub for EnergyUnit {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        Self(self.0 - other.0)
+    }
+}
+impl PartialOrd for EnergyUnit {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+impl From<EnergyUnit> for SimInt {
+    fn from(other: EnergyUnit) -> Self {
+        other.0
+    }
+}
+impl From<EnergyUnit> for SimFlo {
+    fn from(other: EnergyUnit) -> Self {
+        other.0 as SimFlo
     }
 }
 

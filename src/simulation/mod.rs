@@ -12,7 +12,6 @@ use hub::TheHub;
 pub mod hub_comms;
 mod hub_events;
 mod hub_jobs;
-pub mod hub_types;
 pub mod hub_constants;
 
 pub mod timer;
@@ -139,7 +138,7 @@ impl Simulation {
 
         let broadcast_action = |action: StateAction| {
             if let Err(e) = wakeup_sender.send(action.clone()) {
-                eprintln!("SIM: Could not deliver message to recipient: {e}");
+                eprintln!("SIM: Could not deliver wakeup message to recipient: {e}");
             };
         };
 
