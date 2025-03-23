@@ -28,6 +28,7 @@ use crate::{
         LogMessage,
     },
 };
+use crate::simulation::SimFlo;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -48,23 +49,23 @@ impl TheHub {
         timer_state_ro: ReadOnlyRwLock<TimerStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
-        let comms = HubComms::new();
+        let comms = HubComms::new(1);
 
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
-            fuel: PP_INIT_FUEL,
+            fuel: PP_INIT_FUEL_CAPACITY,
             fuel_capacity: PP_INIT_FUEL_CAPACITY,
             production_capacity: PP_INIT_PRODUCTION_CAP,
-            balance: PP_INIT_MONEY,
+            balance: Money::new(PP_INIT_MONEY.val() - (econ_state_ro.read().unwrap().fuel_price.val() * PP_INIT_FUEL_CAPACITY as SimFlo)),
             is_awaiting_fuel: false,
             is_bankrupt: false,
         }));
 
         let industry_products = Product::by_industry(&Industry::SEMICONDUCTORS);
-        let cheapest_rnd_product = industry_products
+        let cheapest_rnd_product = *industry_products
             .iter()
             .min_by(|prod_a, prod_b| prod_a.rnd_cost.val().total_cmp(&prod_b.rnd_cost.val())).unwrap();
 
-        let product_portfolio = vec![*cheapest_rnd_product];
+        let product_portfolio = vec![cheapest_rnd_product];
 
         let factories_state = vec![
             Arc::new(
@@ -91,7 +92,8 @@ impl TheHub {
                             ui_log_sender.clone(),
                             comms.clone_broadcast_state_receiver(),
                             comms.clone_factory_hub_sender(),
-                            comms.clone_broadcast_signal_receiver()
+                            comms.clone_broadcast_signal_receiver(),
+                            comms.clone_hub_factory_receiver(1)
                         )
                     ))
                 ).collect()
@@ -167,7 +169,8 @@ impl TheHub {
                             me.lock().unwrap().pp_increases_fuel_capacity();
                         },
                         PPHubSignal::EnergyOfferToFactory(offer) => {
-                            //TODO
+                            let fid = offer.to_factory_id;
+                            me.lock().unwrap().comms.hub_to_factory(Arc::new(offer), fid);
                         }
                     }
                 }

@@ -10,7 +10,7 @@ use crate::{
     app_state::{FactoryStateData, EconomyStateData},
     simulation::{
         StateAction,
-        hub_comms::{MessageEntity, FactoryHubSignal, FactoryEnergyDemand},
+        hub_comms::{MessageEntity, FactoryHubSignal, FactoryEnergyDemand, PPEnergyOffer, DynamicSignal},
         SimInt,
         speed::Speed,
     },
@@ -19,7 +19,6 @@ use crate::{
     utils_traits::AsFactor,
     utils_data::ReadOnlyRwLock,
 };
-use crate::simulation::hub_comms::Broadcastable;
 
 pub struct Factory {
     state_ro: ReadOnlyRwLock<FactoryStateData>,
@@ -27,7 +26,8 @@ pub struct Factory {
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     factory_hub_sender: Sender<FactoryHubSignal>,
-    hub_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>
+    hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
+    hub_signal_receiver: crossbeam_channel::Receiver<DynamicSignal>,
 }
 
 impl Factory {
@@ -37,7 +37,8 @@ impl Factory {
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         factory_hub_sender: Sender<FactoryHubSignal>,
-        hub_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>,
+        hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
+        hub_signal_receiver: crossbeam_channel::Receiver<DynamicSignal>,
     ) -> Self {
         Self {
             state_ro,
@@ -46,6 +47,7 @@ impl Factory {
             wakeup_receiver,
             factory_hub_sender,
             hub_broadcast_receiver,
+            hub_signal_receiver
         }
     }
 }
@@ -75,12 +77,6 @@ impl Factory {
                 let units = demand_info.unit_per_percent * (demand.percent.val() as SimInt);
                 let energy_needed = product.unit_production_cost.energy.val() * units;
 
-                self.log_console(
-                    format!(
-                        "Demand for {} needs {} energy for {} items",
-                        product.name, energy_needed, units
-                    ), Info);
-
                 self.factory_hub_sender.send(
                     FactoryHubSignal::EnergyDemand(
                         FactoryEnergyDemand {
@@ -102,7 +98,7 @@ impl Factory {
 
 impl Factory {
     pub fn start(me: Arc<Mutex<Self>>) -> thread::JoinHandle<()> {
-        let (my_id, state_ro, econ_state_ro, mut wakeup_receiver, mut hub_broadcast_receiver) = {
+        let (my_id, state_ro, econ_state_ro, mut wakeup_receiver, mut hub_broadcast_receiver, hub_signal_receiver) = {
             let me_lock = me.lock().unwrap();
             (
                 me_lock.state_ro.read().unwrap().id,
@@ -110,6 +106,7 @@ impl Factory {
                 ReadOnlyRwLock::clone(&me_lock.econ_state_ro),
                 me_lock.wakeup_receiver.resubscribe(),
                 me_lock.hub_broadcast_receiver.resubscribe(),
+                me_lock.hub_signal_receiver.clone(),
             )
         };
 
@@ -129,6 +126,23 @@ impl Factory {
                                     //TODO
                                     //me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
                                 }
+                            } else {
+                                me.lock().unwrap().log_console("Could not downcast broadcast signal from hub!".to_string(), Error);
+                            }
+                        },
+                        _ => {
+                            //TODO
+                            me.lock().unwrap().log_console(format!("Got message: {:?}. But is not an energy demand?", signal), Critical);
+                        }
+                    }
+                }
+
+                if let Ok(signal) = hub_signal_receiver.try_recv() {
+                    let signal_any = signal.as_any();
+                    match signal_any {
+                        s if s.is::<PPEnergyOffer>() => {
+                            if let Some(offer) = signal_any.downcast_ref::<PPEnergyOffer>() {
+                                me.lock().unwrap().log_console(format!("Got energy offer from PP: {:?}.", offer), Info);
                             } else {
                                 me.lock().unwrap().log_console("Could not downcast broadcast signal from hub!".to_string(), Error);
                             }

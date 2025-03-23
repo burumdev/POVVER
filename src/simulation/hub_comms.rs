@@ -62,14 +62,14 @@ pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand)
 }
 
-pub trait Broadcastable: Send + Sync + Debug {
+pub trait DynSignalable: Send + Sync + Debug {
     fn as_any(&self) -> &dyn Any;
 }
 
-macro_rules! impl_broadcastable {
+macro_rules! impl_dynsignalable {
     ($($structname:ident),+) => {
         $(
-            impl Broadcastable for $structname {
+            impl DynSignalable for $structname {
                 fn as_any(&self) -> &dyn Any {
                     self
                 }
@@ -77,24 +77,34 @@ macro_rules! impl_broadcastable {
         )+
     };
 }
-impl_broadcastable!(FactoryEnergyDemand);
+impl_dynsignalable!(
+    FactoryEnergyDemand,
+    PPEnergyOffer
+);
 
+pub type DynamicSignal = Arc<dyn DynSignalable>;
 pub struct HubComms {
     broadcast_state_channel: (tokio_broadcast::Sender<StateAction>, tokio_broadcast::Receiver<StateAction>),
-    broadcast_signal_channel: (tokio_broadcast::Sender<Arc<dyn Broadcastable>>, tokio_broadcast::Receiver<Arc<dyn Broadcastable>>),
+    broadcast_signal_channel: (tokio_broadcast::Sender<DynamicSignal>, tokio_broadcast::Receiver<DynamicSignal>),
     hub_pp_channel: (Sender<HubPPSignal>, Receiver<HubPPSignal>),
     pp_hub_channel: (Sender<PPHubSignal>, Receiver<PPHubSignal>),
-    factory_hub_channel: (Sender<FactoryHubSignal>, Receiver<FactoryHubSignal>)
+    factory_hub_channel: (Sender<FactoryHubSignal>, Receiver<FactoryHubSignal>),
+    hub_factory_channels: Vec<(Sender<DynamicSignal>, Receiver<DynamicSignal>)>,
 }
 
 impl HubComms {
-    pub fn new() -> Self {
+    pub fn new(factory_count: usize) -> Self {
+        let hub_factory_channels = (0..factory_count)
+                .map(|_| crossbeam_channel::bounded(4)
+            ).collect();
+
         Self {
             broadcast_state_channel: tokio_broadcast::channel(64),
             broadcast_signal_channel: tokio_broadcast::channel(64),
             hub_pp_channel: bounded(4),
             pp_hub_channel: bounded(4),
             factory_hub_channel: bounded(128),
+            hub_factory_channels,
         }
     }
 }
@@ -104,7 +114,7 @@ impl HubComms {
         &self.broadcast_state_channel.0
     }
 
-    fn broadcast_signal_sender(&self) -> &tokio_broadcast::Sender<Arc<dyn Broadcastable>> {
+    fn broadcast_signal_sender(&self) -> &tokio_broadcast::Sender<DynamicSignal> {
         &self.broadcast_signal_channel.0
     }
 
@@ -118,7 +128,7 @@ impl HubComms {
         self.broadcast_state_channel.1.resubscribe()
     }
 
-    pub fn clone_broadcast_signal_receiver(&self) -> tokio_broadcast::Receiver<Arc<dyn Broadcastable>> {
+    pub fn clone_broadcast_signal_receiver(&self) -> tokio_broadcast::Receiver<DynamicSignal> {
         self.broadcast_signal_channel.1.resubscribe()
     }
 
@@ -128,6 +138,10 @@ impl HubComms {
 
     pub fn clone_factory_hub_sender(&self) -> Sender<FactoryHubSignal> {
         self.factory_hub_channel.0.clone()
+    }
+
+    pub fn clone_hub_factory_receiver(&self, factory_id: usize) -> Receiver<DynamicSignal> {
+        self.hub_factory_channels[factory_id - 1].1.clone()
     }
 
     pub fn clone_pp_hub_receiver(&self) -> Receiver<PPHubSignal> {
@@ -148,7 +162,7 @@ impl HubComms {
         }
     }
 
-    pub fn send_signal_broadcast(&self, signal: Arc<dyn Broadcastable>) {
+    pub fn send_signal_broadcast(&self, signal: DynamicSignal) {
         if let Err(e) = self.broadcast_signal_sender().send(signal) {
             eprintln!("HUB COMMS: Could not send broadcast signal to one recipient: {e}");
         }
@@ -156,5 +170,11 @@ impl HubComms {
 
     pub fn hub_to_pp(&self, signal: HubPPSignal) {
         self.hub_pp_sender().send(signal).unwrap();
+    }
+
+    pub fn hub_to_factory(&self, signal: DynamicSignal, factory_id: usize) {
+        if let Err(e) = self.hub_factory_channels[factory_id - 1].0.send(signal) {
+            eprintln!("HUB COMMS: Could not send signal to factory No. {factory_id}: {e}");
+        }
     }
 }

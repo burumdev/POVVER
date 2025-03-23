@@ -14,7 +14,14 @@ use crate::{
     simulation::{
         StateAction,
         timer::TimerEvent,
-        hub_comms::{PPHubSignal, HubPPSignal, MessageEntity, Broadcastable, FactoryEnergyDemand, PPEnergyOffer},
+        hub_comms::{
+            PPHubSignal,
+            HubPPSignal,
+            MessageEntity,
+            FactoryEnergyDemand,
+            PPEnergyOffer,
+            DynamicSignal
+        },
         SimInt,
         SimFlo,
         hub_constants::{PP_FUEL_CAPACITY_INCREASE_COST, PP_INIT_FUEL_BUY_THRESHOLD, PP_ENERGY_PER_FUEL},
@@ -28,7 +35,6 @@ use crate::{
 };
 use crate::economy::economy_types::EnergyUnit;
 use crate::simulation::hub_comms::FuelReceipt;
-use crate::simulation::hub_comms::MessageEntity::PP;
 use crate::simulation::hub_comms::PPHubSignal::EnergyOfferToFactory;
 use crate::simulation::Percentage;
 
@@ -44,7 +50,7 @@ pub struct PovverPlant {
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     pp_hub_sender: Sender<PPHubSignal>,
     hub_pp_receiver: Receiver<HubPPSignal>,
-    hub_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>
+    hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>
 }
 
 impl PovverPlant {
@@ -55,13 +61,17 @@ impl PovverPlant {
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         pp_hub_sender: Sender<PPHubSignal>,
         hub_pp_receiver: Receiver<HubPPSignal>,
-        hub_broadcast_receiver: tokio_broadcast::Receiver<Arc<dyn Broadcastable>>
+        hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>
     ) -> Self {
+        let fuel_price = econ_state_ro.read().unwrap().fuel_price;
+        let fuel_price_paid_per_unit_average = fuel_price.val();
+        let total_fuel_expenditure = fuel_price.val() * state_ro.read().unwrap().fuel as SimFlo;
+
         Self {
             profit_margin: Percentage::new(50.0),
             fuel_buy_threshold: PP_INIT_FUEL_BUY_THRESHOLD,
-            fuel_price_paid_per_unit_average: 0.0,
-            total_fuel_expenditure: 0.0,
+            fuel_price_paid_per_unit_average,
+            total_fuel_expenditure,
             last_ten_sales: SlidingWindow::new(10),
             state_ro,
             econ_state_ro,
@@ -130,13 +140,13 @@ impl PovverPlant {
         }
     }
 
-    fn maybe_new_energy_offer(&mut self, demand: &FactoryEnergyDemand) -> Option<PPEnergyOffer> {
+    fn maybe_new_energy_offer(&mut self, demand: &FactoryEnergyDemand) {
         let energy_per_fuel = PP_ENERGY_PER_FUEL;
 
         let (fuel, production_capacity) = {
             let state = self.state_ro.read().unwrap();
             (
-                state.fuel_capacity,
+                state.fuel,
                 state.production_capacity,
             )
         };
@@ -147,10 +157,10 @@ impl PovverPlant {
         if producable.val() == 0 {
             self.fuel_buy_threshold = fuel_needed;
             self.check_buy_fuel();
-            return None;
+            return;
         }
 
-        let mut price_per_unit = Money::new(self.fuel_price_paid_per_unit_average);
+        let mut price_per_unit = Money::new(self.fuel_price_paid_per_unit_average / PP_ENERGY_PER_FUEL.val() as SimFlo);
 
         // We have both the production capacity and the fuel required
         // So we can produce all the demanded energy in one go and
@@ -158,14 +168,24 @@ impl PovverPlant {
         if producable >= demand.energy {
             price_per_unit.inc(price_per_unit.val() * self.profit_margin.as_factor());
 
-            Some(PPEnergyOffer {
+            self.log_ui_console(
+                format!("Sending FULL energy offer to factory no: {}, amount: {} and price per EU: {}",
+                    demand.factory_id,
+                    demand.energy.val(),
+                    price_per_unit.val(),
+                ), Info
+            );
+
+            self.pp_hub_sender.send(EnergyOfferToFactory(PPEnergyOffer {
                 price_per_unit,
                 units: demand.energy,
                 to_factory_id: demand.factory_id
-            })
+            })).unwrap();
         } else {
-            self.fuel_buy_threshold = fuel_needed;
-            self.check_buy_fuel();
+            if fuel < fuel_needed {
+                self.fuel_buy_threshold = fuel_needed;
+                self.check_buy_fuel();
+            }
             // If we have production capacity shortcomings, this might be good time to try upgrading
             // production capacity and to a less extent fuel capacity to match it if we have the money.
             if production_capacity < demand.energy {
@@ -174,18 +194,26 @@ impl PovverPlant {
 
             // If our production falls short of demand, we can offer a lesser amount of energy to the
             // factory. With a discount in profit margin proportional to the deficit.
-            let deficit = (producable - demand.energy).val().abs();
-            let deficit_percent = Percentage::new((deficit / demand.energy.val()) as SimFlo * 100.0);
+            let deficit = (demand.energy - producable).val();
+            let deficit_percent = Percentage::new((deficit as SimFlo / demand.energy.val() as SimFlo) * 100.0);
 
             let discounted_percent = self.profit_margin.val() - self.profit_margin.val() * deficit_percent.as_factor();
 
-            price_per_unit.dec(price_per_unit.val() * discounted_percent.as_factor());
+            price_per_unit.inc(price_per_unit.val() * discounted_percent.as_factor());
 
-            Some(PPEnergyOffer {
+            self.log_ui_console(
+                format!("Sending partial energy offer to factory no: {}, amount: {} and price per EU: {}",
+                        demand.factory_id,
+                        producable.val(),
+                        price_per_unit.val(),
+                ), Info
+            );
+
+            self.pp_hub_sender.send(EnergyOfferToFactory(PPEnergyOffer {
                 price_per_unit,
                 units: producable,
                 to_factory_id: demand.factory_id,
-            })
+            })).unwrap();
         }
     }
 
@@ -216,18 +244,7 @@ impl PovverPlant {
                     match signal_any {
                         s if s.is::<FactoryEnergyDemand>() => {
                             if let Some(demand) = signal_any.downcast_ref::<FactoryEnergyDemand>() {
-                                if let Some(offer) = me.lock().unwrap().maybe_new_energy_offer(&demand) {
-                                    let me_lock = me.lock().unwrap();
-
-                                    me_lock.log_ui_console(
-                                        format!("Sending energy offer to factory no: {}, amount: {} and price per EU: {}",
-                                                offer.to_factory_id,
-                                                offer.units.val(),
-                                                offer.price_per_unit.val()
-                                        ), Info
-                                    );
-                                    me_lock.pp_hub_sender.send(EnergyOfferToFactory(offer)).unwrap();
-                                }
+                                me.lock().unwrap().maybe_new_energy_offer(&demand);
                             }
                         }
                         _ => ()
