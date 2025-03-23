@@ -1,4 +1,4 @@
-use std::ops::{Div, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 use slint::ToSharedString;
 use crate::{
     economy::products::Product,
@@ -26,6 +26,36 @@ impl Default for Money {
         Self(0.0)
     }
 }
+impl PartialOrd for Money {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+impl Add for Money {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+impl Sub for Money {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+impl Add<SimFlo> for Money {
+    type Output = Self;
+    fn add(self, rhs: SimFlo) -> Self::Output {
+        Self(self.0 + rhs)
+    }
+}
+impl Mul<SimFlo> for Money {
+    type Output = Self;
+    fn mul(self, rhs: SimFlo) -> Self::Output {
+        Self(self.0 * rhs)
+    }
+}
+
 impl Money {
     pub fn val(&self) -> SimFlo {
         self.0
@@ -85,6 +115,11 @@ pub struct EnergyUnit(SimInt);
 impl EnergyUnit {
     pub const fn new(unit: SimInt) -> Self {
         Self(unit)
+    }
+}
+impl Default for EnergyUnit {
+    fn default() -> Self {
+        Self(0)
     }
 }
 impl EnergyUnit {

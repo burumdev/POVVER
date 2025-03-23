@@ -61,7 +61,7 @@ impl TheHub {
         }
     }
 
-    pub fn factory_needs_energy(&mut self, demand: FactoryEnergyDemand) {
-        self.comms.send_signal_broadcast(Arc::new(demand))
+    pub fn factory_needs_energy(&mut self, demand: &FactoryEnergyDemand) {
+        self.comms.send_signal_broadcast(Arc::new(demand.clone()))
     }
 }

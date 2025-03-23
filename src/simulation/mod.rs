@@ -157,7 +157,9 @@ impl Simulation {
                 broadcast_action(StateAction::Quit);
                 // Join all handles
                 for handle in join_handles {
-                    handle.join().unwrap();
+                    if let Err(e) = handle.join() {
+                        eprintln!("SIM: Could not join thread: {:?}", e);
+                    }
                 }
                 // Break out of main loop
                 break;

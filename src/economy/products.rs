@@ -52,10 +52,10 @@ impl Product {
         name: "Integrated Circuit",
         description: "A keep it simple and stupid (KISS) type of chip with a single purpose and sleigh-of-hand capabilities.",
         unit_production_cost: UnitProductionCost {
-            energy: EnergyUnit::new(6),
+            energy: EnergyUnit::new(3),
             labor: Money::new(11.4),
             raw_materials: Money::new(3.1),
-            equipment_maintenance: Money::new(8.85),
+            equipment_maintenance: Money::new(0.4),
             packaging: Money::new(0.8),
         },
         rnd_cost: Money::new(7569.56),
@@ -63,7 +63,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 45.0,
             max_percentage: 80.0,
-            unit_per_percent: 100,
+            unit_per_percent: 25,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
                 dec_quarter: 6,
@@ -77,10 +77,10 @@ impl Product {
         name: "Microchip",
         description: "A complex electrical organism that knows only two numbers but is so fast that you ignore it's illiteracy in math.",
         unit_production_cost: UnitProductionCost {
-            energy: EnergyUnit::new(15),
+            energy: EnergyUnit::new(12),
             labor: Money::new(26.45),
             raw_materials: Money::new(9.14),
-            equipment_maintenance: Money::new(62.78),
+            equipment_maintenance: Money::new(6.78),
             packaging: Money::new(9.23),
         },
         rnd_cost: Money::new(69376.12),
@@ -88,7 +88,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 65.0,
             max_percentage: 95.0,
-            unit_per_percent: 50,
+            unit_per_percent: 10,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
                 dec_quarter: 4,
@@ -105,7 +105,7 @@ impl Product {
             energy: EnergyUnit::new(1),
             labor: Money::new(18.10),
             raw_materials: Money::new(0.4),
-            equipment_maintenance: Money::new(11.63),
+            equipment_maintenance: Money::new(1.63),
             packaging: Money::new(0.2),
         },
         rnd_cost: Money::new(3670.45),
@@ -113,7 +113,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 15.0,
             max_percentage: 75.0,
-            unit_per_percent: 50,
+            unit_per_percent: 32,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 6,
@@ -130,7 +130,7 @@ impl Product {
             energy: EnergyUnit::new(3),
             labor: Money::new(44.10),
             raw_materials: Money::new(0.4),
-            equipment_maintenance: Money::new(9.12),
+            equipment_maintenance: Money::new(2.12),
             packaging: Money::new(0.1),
         },
         rnd_cost: Money::new(87450.23),
@@ -138,7 +138,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 60.0,
             max_percentage: 70.0,
-            unit_per_percent: 5,
+            unit_per_percent: 3,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
                 dec_quarter: 10,
@@ -155,7 +155,7 @@ impl Product {
             energy: EnergyUnit::new(5),
             labor: Money::new(10.45),
             raw_materials: Money::new(1.9),
-            equipment_maintenance: Money::new(72.31),
+            equipment_maintenance: Money::new(2.31),
             packaging: Money::new(4.5),
         },
         rnd_cost: Money::new(9100.49),
@@ -163,7 +163,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 90.0,
             max_percentage: 100.0,
-            unit_per_percent: 1000,
+            unit_per_percent: 42,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
                 dec_quarter: 16,
@@ -180,7 +180,7 @@ impl Product {
             energy: EnergyUnit::new(3),
             labor: Money::new(89.54),
             raw_materials: Money::new(0.2),
-            equipment_maintenance: Money::new(8.23),
+            equipment_maintenance: Money::new(0.23),
             packaging: Money::new(1.2),
         },
         rnd_cost: Money::new(105234.8),
@@ -188,7 +188,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 70.0,
             max_percentage: 100.0,
-            unit_per_percent: 175,
+            unit_per_percent: 21,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
                 dec_quarter: 8,
@@ -205,7 +205,7 @@ impl Product {
             energy: EnergyUnit::new(7),
             labor: Money::new(6.43),
             raw_materials: Money::new(0.6),
-            equipment_maintenance: Money::new(6.23),
+            equipment_maintenance: Money::new(0.33),
             packaging: Money::new(42.32),
         },
         rnd_cost: Money::new(3467.76),
@@ -213,7 +213,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 10.0,
             max_percentage: 50.0,
-            unit_per_percent: 1780,
+            unit_per_percent: 50,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 8,
                 dec_quarter: 10,
@@ -230,7 +230,7 @@ impl Product {
             energy: EnergyUnit::new(4),
             labor: Money::new(8.34),
             raw_materials: Money::new(0.3),
-            equipment_maintenance: Money::new(6.12),
+            equipment_maintenance: Money::new(4.12),
             packaging: Money::new(248.54),
         },
         rnd_cost: Money::new(83456.71),
@@ -238,7 +238,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 30.0,
             max_percentage: 75.0,
-            unit_per_percent: 777,
+            unit_per_percent: 17,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 8,
@@ -255,7 +255,7 @@ impl Product {
             energy: EnergyUnit::new(12),
             labor: Money::new(17.42),
             raw_materials: Money::new(4.53),
-            equipment_maintenance: Money::new(68.34),
+            equipment_maintenance: Money::new(6.34),
             packaging: Money::new(120.40),
         },
         rnd_cost: Money::new(5698.34),
@@ -263,7 +263,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 50.0,
             max_percentage: 85.0,
-            unit_per_percent: 1600,
+            unit_per_percent: 40,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
                 dec_quarter: 10,
@@ -280,7 +280,7 @@ impl Product {
             energy: EnergyUnit::new(64),
             labor: Money::new(803.24),
             raw_materials: Money::new(84.23),
-            equipment_maintenance: Money::new(174.34),
+            equipment_maintenance: Money::new(17.34),
             packaging: Money::new(642.39),
         },
         rnd_cost: Money::new(253875.5),
@@ -288,7 +288,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 40.0,
             max_percentage: 100.0,
-            unit_per_percent: 250,
+            unit_per_percent: 5,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 3,
                 dec_quarter: 14,
@@ -305,7 +305,7 @@ impl Product {
             energy: EnergyUnit::new(24),
             labor: Money::new(83.72),
             raw_materials: Money::new(14.78),
-            equipment_maintenance: Money::new(376.48),
+            equipment_maintenance: Money::new(1.48),
             packaging: Money::new(0.3),
         },
         rnd_cost: Money::new(1874.32),
@@ -313,7 +313,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 90.0,
             max_percentage: 100.0,
-            unit_per_percent: 30000,
+            unit_per_percent: 100,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
                 dec_quarter: 16,
@@ -328,9 +328,9 @@ impl Product {
         description: "All armies around the world, government, private or the mafia love our guns. They sleep with them. They oil their inner tubes for the smooth operation of.. ammo.",
         unit_production_cost: UnitProductionCost {
             energy: EnergyUnit::new(640),
-            labor: Money::new(784.19),
-            raw_materials: Money::new(758.34),
-            equipment_maintenance: Money::new(984.35),
+            labor: Money::new(78.19),
+            raw_materials: Money::new(75.34),
+            equipment_maintenance: Money::new(9.35),
             packaging: Money::new(92.12),
         },
         rnd_cost: Money::new(47849.28),
@@ -338,7 +338,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 60.0,
             max_percentage: 85.0,
-            unit_per_percent: 2200,
+            unit_per_percent: 24,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 8,
@@ -355,7 +355,7 @@ impl Product {
             energy: EnergyUnit::new(3),
             labor: Money::new(1.5),
             raw_materials: Money::new(17.43),
-            equipment_maintenance: Money::new(420.34),
+            equipment_maintenance: Money::new(0.34),
             packaging: Money::new(42.78),
         },
         rnd_cost: Money::new(538.29),
@@ -363,7 +363,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 30.0,
             max_percentage: 70.0,
-            unit_per_percent: 12655,
+            unit_per_percent: 100,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 8,
@@ -380,7 +380,7 @@ impl Product {
             energy: EnergyUnit::new(8),
             labor: Money::new(79.43),
             raw_materials: Money::new(920.54),
-            equipment_maintenance: Money::new(1845.34),
+            equipment_maintenance: Money::new(18.34),
             packaging: Money::new(82.55),
         },
         rnd_cost: Money::new(136592.0),
@@ -388,7 +388,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 30.0,
             max_percentage: 70.0,
-            unit_per_percent: 5000,
+            unit_per_percent: 75,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
                 dec_quarter: 8,
@@ -405,7 +405,7 @@ impl Product {
             energy: EnergyUnit::new(6),
             labor: Money::new(138.41),
             raw_materials: Money::new(256.68),
-            equipment_maintenance: Money::new(3659.1),
+            equipment_maintenance: Money::new(6.1),
             packaging: Money::new(163.58),
         },
         rnd_cost: Money::new(8735.39),
@@ -413,7 +413,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 75.0,
             max_percentage: 100.0,
-            unit_per_percent: 6800,
+            unit_per_percent: 60,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
                 dec_quarter: 12,
@@ -430,7 +430,7 @@ impl Product {
             energy: EnergyUnit::new(3),
             labor: Money::new(674.23),
             raw_materials: Money::new(192.24),
-            equipment_maintenance: Money::new(6984.11),
+            equipment_maintenance: Money::new(16.11),
             packaging: Money::new(56.34),
         },
         rnd_cost: Money::new(826658.3),
@@ -438,7 +438,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 55.0,
             max_percentage: 82.0,
-            unit_per_percent: 3428,
+            unit_per_percent: 13,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 3,
                 dec_quarter: 12,
@@ -455,7 +455,7 @@ impl Product {
             energy: EnergyUnit::new(12),
             labor: Money::new(421.60),
             raw_materials: Money::new(29.49),
-            equipment_maintenance: Money::new(3184.32),
+            equipment_maintenance: Money::new(3.32),
             packaging: Money::new(0.7),
         },
         rnd_cost: Money::new(8285.2),
@@ -463,7 +463,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 12.0,
             max_percentage: 45.0,
-            unit_per_percent: 128670,
+            unit_per_percent: 110,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 8,
                 dec_quarter: 12,
@@ -480,7 +480,7 @@ impl Product {
             energy: EnergyUnit::new(88),
             labor: Money::new(1920.54),
             raw_materials: Money::new(4110.32),
-            equipment_maintenance: Money::new(52456.4),
+            equipment_maintenance: Money::new(52.4),
             packaging: Money::new(894.31),
         },
         rnd_cost: Money::new(748293.22),
@@ -488,7 +488,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 45.0,
             max_percentage: 70.0,
-            unit_per_percent: 100,
+            unit_per_percent: 12,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 8,
@@ -505,7 +505,7 @@ impl Product {
             energy: EnergyUnit::new(66),
             labor: Money::new(3256.43),
             raw_materials: Money::new(1246.33),
-            equipment_maintenance: Money::new(2156.98),
+            equipment_maintenance: Money::new(21.98),
             packaging: Money::new(35.6),
         },
         rnd_cost: Money::new(102.30),
@@ -513,7 +513,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 50.0,
             max_percentage: 80.0,
-            unit_per_percent: 1500,
+            unit_per_percent: 25,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
                 dec_quarter: 6,
@@ -530,7 +530,7 @@ impl Product {
             energy: EnergyUnit::new(11),
             labor: Money::new(320.45),
             raw_materials: Money::new(321.21),
-            equipment_maintenance: Money::new(10.23),
+            equipment_maintenance: Money::new(18.23),
             packaging: Money::new(0.0),
         },
         rnd_cost: Money::new(984_054.7),
@@ -538,7 +538,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 20.0,
             max_percentage: 60.0,
-            unit_per_percent: 2500,
+            unit_per_percent: 22,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 8,
@@ -553,6 +553,12 @@ impl Product {
 impl Product {
     pub fn by_industry(industry: &Industry) -> Vec<&Self> {
         Vec::from(PRODUCTS.iter().filter(|&product| &product.industry == industry).collect::<Vec<_>>())
+    }
+
+    pub fn get_unit_cost_excl_energy(&self) -> Money {
+        let unit_pc = &self.unit_production_cost;
+
+        unit_pc.packaging + unit_pc.labor + unit_pc.raw_materials + unit_pc.equipment_maintenance
     }
 }
 

@@ -59,7 +59,7 @@ impl From<LogMessage> for UILogMessage {
 pub trait Logger {
     fn get_log_prefix(&self) -> String;
     fn get_message_source(&self) -> MessageEntity;
-    fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage>;
+    fn get_log_sender(&self) -> &tokio_broadcast::Sender<LogMessage>;
     fn log_console(&self, message: String, level: LogLevel) {
         let level_prefix = match level {
             LogLevel::Info => "",

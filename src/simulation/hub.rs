@@ -15,6 +15,7 @@ use crate::{
         products::Product,
     },
     simulation::{
+        SimFlo,
         hub_jobs::*,
         hub_constants::*,
         hub_comms::*,
@@ -28,7 +29,6 @@ use crate::{
         LogMessage,
     },
 };
-use crate::simulation::SimFlo;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -74,30 +74,34 @@ impl TheHub {
                         balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
                         industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
-                        id: 1,
+                        id: 0,
                         is_bankrupt: false,
                     }
                 )
             )
         ];
 
-        let factories = Arc::new(Mutex::new(
-            factories_state
-                .iter()
-                .map(|f|
-                    Arc::new(Mutex::new(
-                        Factory::new(
-                            ReadOnlyRwLock::from(Arc::clone(f)),
-                            ReadOnlyRwLock::clone(&econ_state_ro),
-                            ui_log_sender.clone(),
-                            comms.clone_broadcast_state_receiver(),
-                            comms.clone_factory_hub_sender(),
-                            comms.clone_broadcast_signal_receiver(),
-                            comms.clone_hub_factory_receiver(1)
-                        )
-                    ))
-                ).collect()
-        ));
+        let (factories, factory_senders) = {
+            let mut fsenders = Vec::new();
+            let factories = Arc::new(Mutex::new(
+                factories_state
+                    .iter()
+                    .map(|f| {
+                        fsenders.push(comms.clone_factory_dyn_sender(0));
+                        Arc::new(Mutex::new(
+                            Factory::new(
+                                ReadOnlyRwLock::from(Arc::clone(f)),
+                                ReadOnlyRwLock::clone(&econ_state_ro),
+                                ui_log_sender.clone(),
+                                comms.clone_broadcast_state_receiver(),
+                                comms.clone_broadcast_signal_receiver(),
+                                comms.clone_factory_dyn_channel(0)
+                            )
+                        ))
+                    }).collect()
+            ));
+            (factories, fsenders)
+        };
 
         let factories_state = Arc::new(RwLock::new(factories_state));
 
@@ -106,9 +110,9 @@ impl TheHub {
             ReadOnlyRwLock::clone(&econ_state_ro),
             ui_log_sender.clone(),
             comms.clone_broadcast_state_receiver(),
-            comms.clone_pp_hub_sender(),
-            comms.clone_hub_pp_receiver(),
+            comms.clone_pp_dyn_channel(),
             comms.clone_broadcast_signal_receiver(),
+            factory_senders
         )));
 
         (
@@ -155,33 +159,52 @@ impl TheHub {
             handles
         };
 
-        let pp_hub_receiver = me.lock().unwrap().comms.clone_pp_hub_receiver();
-        let factory_hub_receiver = me.lock().unwrap().comms.clone_factory_hub_receiver();
+        let (pp_dyn_receiver, factory_dyn_receivers) = {
+            let me_lock = me.lock().unwrap();
+            (
+                me_lock.comms.clone_pp_dyn_receiver(),
+                me_lock.comms.clone_factory_dyn_receivers(),
+            )
+        };
+
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
-                if let Ok(signal) = pp_hub_receiver.try_recv() {
-                    match signal {
-                        PPHubSignal::BuyFuel(amount) => {
-                            me.lock().unwrap().pp_buys_fuel(amount);
+                if let Ok(signal) = pp_dyn_receiver.try_recv() {
+                    let signal_any = signal.as_any();
+                    match signal_any {
+                        s if s.is::<PPHubSignal>() => {
+                            let signal_from_pp = signal_any.downcast_ref::<PPHubSignal>().unwrap();
+                            match signal_from_pp {
+                                PPHubSignal::BuyFuel(amount) => {
+                                    me.lock().unwrap().pp_buys_fuel(*amount);
+                                },
+                                PPHubSignal::IncreaseFuelCapacity => {
+                                    me.lock().unwrap().pp_increases_fuel_capacity();
+                                },
+                            }
                         },
-                        PPHubSignal::IncreaseFuelCapacity => {
-                            me.lock().unwrap().pp_increases_fuel_capacity();
-                        },
-                        PPHubSignal::EnergyOfferToFactory(offer) => {
-                            let fid = offer.to_factory_id;
-                            me.lock().unwrap().comms.hub_to_factory(Arc::new(offer), fid);
-                        }
+                        _ => ()
                     }
                 }
 
-                if let Ok(signal) = factory_hub_receiver.try_recv() {
-                    match signal {
-                        FactoryHubSignal::EnergyDemand(energy_demand) => {
-                            me.lock().unwrap().factory_needs_energy(energy_demand);
-                        },
+                factory_dyn_receivers.iter().for_each(|receiver| {
+                    if let Ok(signal) = receiver.try_recv() {
+                        let signal_any = signal.as_any();
+                        match signal_any {
+                            s if s.is::<FactoryHubSignal>() => {
+                                if let Some(signal_from_factory) = signal_any.downcast_ref::<FactoryHubSignal>() {
+                                    match signal_from_factory {
+                                        FactoryHubSignal::EnergyDemand(demand) => {
+                                            me.lock().unwrap().factory_needs_energy(demand);
+                                        }
+                                    }
+                                }
+                            },
+                            _ => ()
+                        }
                     }
-                }
+                });
 
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     me.lock().unwrap().comms.send_state_broadcast(action.clone());
@@ -207,7 +230,9 @@ impl TheHub {
                         StateAction::Quit => {
                             me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                             for handle in join_handles {
-                                handle.join().unwrap();
+                                if let Err(e) = handle.join() {
+                                    me.lock().unwrap().log_console(format!("Failed to join thread: {:?}", e), Warning);
+                                }
                             }
                             break;
                         },
@@ -228,7 +253,7 @@ impl Logger for TheHub {
     fn get_message_source(&self) -> MessageEntity {
         MessageEntity::Hub
     }
-    fn get_log_sender(&self) -> tokio_broadcast::Sender<LogMessage> {
-        self.ui_log_sender.clone()
+    fn get_log_sender(&self) -> &tokio_broadcast::Sender<LogMessage> {
+        &self.ui_log_sender
     }
 }

@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::{
     logger::{Logger, LogLevel::*},
     simulation::{
@@ -87,12 +88,12 @@ impl TheHub {
         let mut pp = self.povver_plant_state.write().unwrap();
         pp.fuel += receipt.amount;
         pp.is_awaiting_fuel = false;
-        self.comms.hub_to_pp(HubPPSignal::FuelTransfered(receipt));
+        self.comms.hub_to_pp(Arc::new(HubPPSignal::FuelTransfered(receipt)));
     }
 
     pub fn increase_pp_fuel_cap(&self) {
         self.log_ui_console(format!("Increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}."), Info);
         self.povver_plant_state.write().unwrap().fuel_capacity += PP_FUEL_CAPACITY_INCREASE;
-        self.comms.hub_to_pp(HubPPSignal::FuelCapacityIncreased);
+        self.comms.hub_to_pp(Arc::new(HubPPSignal::FuelCapacityIncreased));
     }
 }
