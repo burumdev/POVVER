@@ -3,9 +3,8 @@ use super::WINDSPEED_MAX;
 use crate::{
     simulation::{SimFlo, SimInt},
     ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel},
-    utils_traits::Flippable,
+    utils_traits::{Flippable, AsFactor, Percentable},
 };
-use crate::utils_traits::{AsFactor, Percentable};
 
 pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
 

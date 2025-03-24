@@ -8,9 +8,9 @@ use crossbeam_channel::{tick, Receiver};
 use crate::{
     app_state::TimerStateData,
     simulation::{SimInt, TickDuration},
-    ui_controller::Date
+    ui_controller::Date,
+    environment::months::get_month_data,
 };
-use crate::environment::months::get_month_data;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TimerEvent {

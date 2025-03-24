@@ -11,7 +11,7 @@ use crate::{
         povver_plant::PovverPlant,
         factory::Factory,
         industries::Industry,
-        economy_types::Money,
+        economy_types::{Money, EnergyUnit},
         products::Product,
     },
     simulation::{
@@ -29,7 +29,6 @@ use crate::{
         LogMessage,
     },
 };
-use crate::economy::economy_types::EnergyUnit;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -83,13 +82,13 @@ impl TheHub {
             )
         ];
 
-        let (factories, factory_senders) = {
-            let mut fsenders = Vec::new();
+        let (factories, to_factory_senders) = {
+            let mut to_factory_senders = Vec::new();
             let factories = Arc::new(Mutex::new(
                 factories_state
                     .iter()
                     .map(|f| {
-                        fsenders.push(comms.clone_factory_dyn_sender(0));
+                        to_factory_senders.push(comms.clone_to_factory_dyn_sender(0));
                         Arc::new(Mutex::new(
                             Factory::new(
                                 ReadOnlyRwLock::from(Arc::clone(f)),
@@ -97,12 +96,13 @@ impl TheHub {
                                 ui_log_sender.clone(),
                                 comms.clone_broadcast_state_receiver(),
                                 comms.clone_broadcast_signal_receiver(),
-                                comms.clone_factory_dyn_channel(0)
+                                comms.clone_from_factory_dyn_sender(0),
+                                comms.clone_to_factory_dyn_receiver(0),
                             )
                         ))
                     }).collect()
             ));
-            (factories, fsenders)
+            (factories, to_factory_senders)
         };
 
         let factories_state = Arc::new(RwLock::new(factories_state));
@@ -114,7 +114,8 @@ impl TheHub {
             comms.clone_broadcast_state_receiver(),
             comms.clone_pp_dyn_channel(),
             comms.clone_broadcast_signal_receiver(),
-            factory_senders
+            to_factory_senders,
+            comms.clone_from_factory_dyn_receivers()
         )));
 
         (
@@ -161,18 +162,18 @@ impl TheHub {
             handles
         };
 
-        let (pp_dyn_receiver, factory_dyn_receivers) = {
+        let (pp_dyn_receiver, mut from_factory_dyn_receivers) = {
             let me_lock = me.lock().unwrap();
             (
                 me_lock.comms.clone_pp_dyn_receiver(),
-                me_lock.comms.clone_factory_dyn_receivers(),
+                me_lock.comms.clone_from_factory_dyn_receivers(),
             )
         };
 
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
-                if let Ok(signal) = pp_dyn_receiver.try_recv() {
+                while let Ok(signal) = pp_dyn_receiver.try_recv() {
                     let signal_any = signal.as_any();
                     match signal_any {
                         s if s.is::<PPHubSignal>() => {
@@ -193,8 +194,8 @@ impl TheHub {
                     }
                 }
 
-                factory_dyn_receivers.iter().for_each(|receiver| {
-                    if let Ok(signal) = receiver.try_recv() {
+                from_factory_dyn_receivers.iter_mut().for_each(|receiver| {
+                    while let Ok(signal) = receiver.try_recv() {
                         let signal_any = signal.as_any();
                         match signal_any {
                             s if s.is::<FactoryHubSignal>() => {
@@ -213,6 +214,7 @@ impl TheHub {
 
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     me.lock().unwrap().comms.send_state_broadcast(action.clone());
+
                     match action {
                         StateAction::Timer(event) => {
                             let mut me_lock = me.lock().unwrap();

@@ -1,5 +1,6 @@
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use slint::ToSharedString;
+
 use crate::{
     economy::products::Product,
     simulation::{SimFlo, SimInt, Percentage},

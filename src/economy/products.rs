@@ -46,6 +46,11 @@ impl PartialEq for Product {
         self.name == other.name
     }
 }
+impl PartialEq<&Product> for Product {
+    fn eq(&self, other: &&Product) -> bool {
+        self.name == other.name
+    }
+}
 
 impl Product {
     pub const INTEGRATED_CIRCUIT: Self = Self {

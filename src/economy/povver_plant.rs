@@ -25,6 +25,8 @@ use crate::{
             DynamicChannel,
             DynamicReceiver,
             DynamicSender,
+            BroadcastDynReceiver,
+            FactorySignal
         },
         SimInt,
         SimFlo,
@@ -33,12 +35,10 @@ use crate::{
     },
     logger::{
         Logger,
-        LogLevel::{Info, Warning, Critical},
+        LogLevel::{Info, Warning, Critical, Error},
         LogMessage,
     },
 };
-use crate::logger::LogLevel::Error;
-use crate::simulation::hub_comms::FactorySignal;
 
 pub struct PovverPlant {
     profit_margin: Percentage,
@@ -52,8 +52,9 @@ pub struct PovverPlant {
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     dynamic_channel: DynamicChannel,
-    hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
-    factory_senders: Vec<DynamicSender>,
+    hub_broadcast_receiver: BroadcastDynReceiver,
+    to_factory_senders: Vec<DynamicSender>,
+    from_factory_receivers: Vec<BroadcastDynReceiver>,
 }
 
 impl PovverPlant {
@@ -64,7 +65,8 @@ impl PovverPlant {
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         dynamic_channel: DynamicChannel,
         hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
-        factory_senders: Vec<DynamicSender>,
+        to_factory_senders: Vec<DynamicSender>,
+        from_factory_receivers: Vec<BroadcastDynReceiver>,
     ) -> Self {
         let fuel_price = econ_state_ro.read().unwrap().fuel_price;
         let fuel_price_paid_per_unit_average = fuel_price.val();
@@ -83,7 +85,8 @@ impl PovverPlant {
             wakeup_receiver,
             dynamic_channel,
             hub_broadcast_receiver,
-            factory_senders,
+            to_factory_senders,
+            from_factory_receivers,
         }
     }
 }
@@ -97,8 +100,8 @@ impl PovverPlant {
         &self.dynamic_channel.1
     }
 
-    fn get_factory_sender_by_id(&self, factory_id: usize) -> &DynamicSender {
-        &self.factory_senders[factory_id]
+    fn get_to_factory_sender_by_id(&self, factory_id: usize) -> &DynamicSender {
+        &self.to_factory_senders[factory_id]
     }
 
     fn check_buy_fuel(&mut self) {
@@ -158,6 +161,7 @@ impl PovverPlant {
 
     fn maybe_new_energy_offer(&mut self, demand: &FactoryEnergyDemand) {
         if let Some(_) = self.pending_energy_offers.iter().position(|of| of.to_factory_id == demand.factory_id) {
+            self.log_console(format!("Energy demand from factory No. {} is already pending.", demand.factory_id), Info);
             return;
         }
         let energy_per_fuel = PP_ENERGY_PER_FUEL;
@@ -238,7 +242,7 @@ impl PovverPlant {
         offer.price_per_unit = price_per_unit;
 
         self.pending_energy_offers.push(offer);
-        self.get_factory_sender_by_id(offer.to_factory_id).send(Arc::new(offer)).unwrap();
+        self.get_to_factory_sender_by_id(offer.to_factory_id).send(Arc::new(offer)).unwrap();
     }
 
     fn maybe_upgrade_production_capacity(&self) {
@@ -250,12 +254,14 @@ impl PovverPlant {
         if let Some(index) = index {
             let plucked_offer = self.pending_energy_offers.remove(index);
             self.get_dynamic_sender().send(Arc::new(PPHubSignal::EnergyToFactory(plucked_offer))).unwrap();
+            self.log_ui_console(format!("Energy to factory No. {} is coming right up!", offer.to_factory_id), Info);
         } else {
             self.log_console(format!("Energy offer to process: {:?} could not be found in pending offers: {:?}", offer, self.pending_energy_offers), Error);
         }
     }
 
     fn remove_pending_offer(&mut self, offer: &PPEnergyOffer) {
+        self.log_ui_console(format!("Removing energy offer. Factory No. {} can burn horse chesnut shells for energy.", offer.to_factory_id), Warning);
         self.pending_energy_offers.retain(|of| of.to_factory_id != offer.to_factory_id);
     }
 }
@@ -264,19 +270,26 @@ impl PovverPlant {
     pub fn start(
         me: Arc<Mutex<Self>>,
     ) -> thread::JoinHandle<()> {
-        let (state_ro, mut wakeup_receiver, dynamic_receiver, mut hub_broadcast_receiver) = {
+        let (
+            state_ro,
+            mut wakeup_receiver,
+            dynamic_receiver,
+            mut hub_broadcast_receiver,
+            mut from_factory_dyn_receivers
+        ) = {
             let me_lock = me.lock().unwrap();
             (
                 ReadOnlyRwLock::clone(&me_lock.state_ro),
                 me_lock.wakeup_receiver.resubscribe(),
                 me_lock.get_dynamic_receiver().clone(),
                 me_lock.hub_broadcast_receiver.resubscribe(),
+                me_lock.from_factory_receivers.iter().map(|r| r.resubscribe()).collect::<Vec<BroadcastDynReceiver>>(),
             )
         };
 
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
-            loop {
+            'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
                     let signal_any = signal.as_any();
                     match signal_any {
@@ -298,26 +311,35 @@ impl PovverPlant {
                                         me.lock().unwrap().update_price_paid_per_fuel_average(receipt);
                                     }
                                     HubPPSignal::FuelCapacityIncreased => {
+                                        //TODO
                                         // Fuel capacity increased. Let's do something about it!
                                     },
-                                }
-                            }
-                        }
-                        s if s.is::<FactorySignal>() => {
-                            if let Some(signal_from_factory) = signal_any.downcast_ref::<FactorySignal>() {
-                                match signal_from_factory {
-                                    FactorySignal::AcceptPPEnergyOffer(offer) => {
-                                        me.lock().unwrap().process_factory_order(offer);
-                                    }
-                                    FactorySignal::RejectPPEnergyOffer(offer) => {
-                                        me.lock().unwrap().remove_pending_offer(offer);
-                                    }
                                 }
                             }
                         }
                         _ => ()
                     }
                 }
+                from_factory_dyn_receivers.iter_mut().for_each(|receiver| {
+                    while let Ok(signal) = receiver.try_recv() {
+                        let signal_any = signal.as_any();
+                        match signal_any {
+                            s if s.is::<FactorySignal>() => {
+                                if let Some(signal_from_factory) = signal_any.downcast_ref::<FactorySignal>() {
+                                    match signal_from_factory {
+                                        FactorySignal::AcceptPPEnergyOffer(offer) => {
+                                            me.lock().unwrap().process_factory_order(offer);
+                                        }
+                                        FactorySignal::RejectPPEnergyOffer(offer) => {
+                                            me.lock().unwrap().remove_pending_offer(offer);
+                                        }
+                                    }
+                                }
+                            }
+                            _ => ()
+                        }
+                    }
+                });
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     thread::sleep(Duration::from_micros(500));
                     if !state_ro.read().unwrap().is_bankrupt {
@@ -330,13 +352,13 @@ impl PovverPlant {
                             }
                             StateAction::Quit => {
                                 me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
-                                break;
+                                break 'outer;
                             }
                             _ => ()
                         }
                     } else { // PP is BANKRUPT!
+                        //TODO
                         me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
-                        break;
                     }
                 }
                 thread::sleep(Duration::from_millis(sleeptime));

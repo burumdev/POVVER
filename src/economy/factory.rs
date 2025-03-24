@@ -18,9 +18,10 @@ use crate::{
             FactoryEnergyDemand,
             PPEnergyOffer,
             DynamicSignal,
-            DynamicChannel,
             DynamicReceiver,
-            DynamicSender,
+            BroadcastDynReceiver,
+            BroadcastDynSender,
+            HubFactorySignal
         },
         speed::Speed,
     },
@@ -45,8 +46,9 @@ pub struct Factory {
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
-    hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
-    dynamic_channel: DynamicChannel,
+    hub_broadcast_receiver: BroadcastDynReceiver,
+    dynamic_sender: BroadcastDynSender,
+    dynamic_receiver: DynamicReceiver,
     production_runs: Vec<ProductionRun>,
 }
 
@@ -57,7 +59,8 @@ impl Factory {
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
-        dynamic_channel: DynamicChannel,
+        dynamic_sender: BroadcastDynSender,
+        dynamic_receiver: DynamicReceiver,
     ) -> Self {
         Self {
             state_ro,
@@ -65,21 +68,14 @@ impl Factory {
             ui_log_sender,
             wakeup_receiver,
             hub_broadcast_receiver,
-            dynamic_channel,
+            dynamic_sender,
+            dynamic_receiver,
             production_runs: Vec::new(),
         }
     }
 }
 
 impl Factory {
-    fn get_dyn_sender(&self) -> &DynamicSender {
-        &self.dynamic_channel.0
-    }
-
-    fn get_dyn_receiver(&self) -> &DynamicReceiver {
-        &self.dynamic_channel.1
-    }
-
     fn maybe_produce_goods(&mut self) {
         let (factory_id, balance, producable_demands) = {
             let econ_state_ro = self.econ_state_ro.read().unwrap();
@@ -99,6 +95,9 @@ impl Factory {
         if producable_demands.len() > 0 {
             for demand in producable_demands {
                 let product = &demand.product;
+                if self.production_runs.iter().position(|run| { run.product == product }).is_some() {
+                    continue;
+                }
                 let unit_cost_ex_energy = product.get_unit_cost_excl_energy();
                 let demand_info = &product.demand_info;
 
@@ -107,12 +106,14 @@ impl Factory {
                 let energy_needed = EnergyUnit::new(product.unit_production_cost.energy.val() * units);
 
                 if total_cost_ex_energy <= balance * 0.75 {
-                    self.get_dyn_sender().send(Arc::new(
+                    let energy_demand = FactoryEnergyDemand {
+                        factory_id,
+                        energy_needed,
+                    };
+
+                    self.dynamic_sender.send(Arc::new(
                         FactoryHubSignal::EnergyDemand(
-                            FactoryEnergyDemand {
-                                factory_id,
-                                energy_needed,
-                            }
+                            energy_demand,
                         ))
                     ).unwrap();
 
@@ -139,11 +140,16 @@ impl Factory {
             if remaining_budget.val() > 0.0 {
                 prun.cost.inc(energy_cost.val());
 
-                self.get_dyn_sender().send(Arc::new(FactorySignal::AcceptPPEnergyOffer(*offer))).unwrap();
+                self.dynamic_sender.send(Arc::new(FactorySignal::AcceptPPEnergyOffer(*offer))).unwrap();
             } else {
-                self.get_dyn_sender().send(Arc::new(FactorySignal::RejectPPEnergyOffer(*offer))).unwrap();
+                self.dynamic_sender.send(Arc::new(FactorySignal::RejectPPEnergyOffer(*offer))).unwrap();
             }
         }
+    }
+
+    fn energy_received(&self, units: &EnergyUnit) {
+        //TODO
+        println!("TODO: ENERGY RECEIVED FACTORY FUNCTION. {} units", units.val());
     }
 
     fn maybe_sell_goods(&self) {
@@ -153,20 +159,26 @@ impl Factory {
 
 impl Factory {
     pub fn start(me: Arc<Mutex<Self>>) -> thread::JoinHandle<()> {
-        let (my_id, state_ro, mut wakeup_receiver, mut hub_broadcast_receiver, dynamic_receiver) = {
+        let (
+            my_id,
+            state_ro,
+            mut wakeup_receiver,
+            mut hub_broadcast_receiver,
+            dynamic_receiver
+        ) = {
             let me_lock = me.lock().unwrap();
             (
                 me_lock.state_ro.read().unwrap().id,
                 ReadOnlyRwLock::clone(&me_lock.state_ro),
                 me_lock.wakeup_receiver.resubscribe(),
                 me_lock.hub_broadcast_receiver.resubscribe(),
-                me_lock.get_dyn_receiver().clone(),
+                me_lock.dynamic_receiver.clone(),
             )
         };
 
         thread::spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
-            loop {
+            'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
                     let signal_any = signal.as_any();
                     match signal_any {
@@ -174,14 +186,12 @@ impl Factory {
                             if let Some(demand) = signal_any.downcast_ref::<FactoryEnergyDemand>() {
                                 if demand.factory_id != my_id {
                                     //TODO
-                                    //me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
+                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
                                     // MAYBE SELL SOME LEFTOVER ENERGY TO THE FACTORY IN NEED
                                 } else {
                                     //TODO
-                                    //me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
+                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
                                 }
-                            } else {
-                                me.lock().unwrap().log_console("Could not downcast broadcast signal from hub!".to_string(), Error);
                             }
                         },
                         _ => {
@@ -199,6 +209,17 @@ impl Factory {
                                 let mut me_lock = me.lock().unwrap();
                                 me_lock.log_ui_console(format!("Got energy offer from PP: {:?}.", offer), Info);
                                 me_lock.evaluate_pp_energy_offer(offer);
+                            }
+                        },
+                        s if s.is::<HubFactorySignal>() => {
+                            if let Some(signal_from_hub) = signal_any.downcast_ref::<HubFactorySignal>() {
+                                match signal_from_hub {
+                                    HubFactorySignal::EnergyTransfered(units) => {
+                                        let mut me_lock = me.lock().unwrap();
+                                        me_lock.log_ui_console(format!("{} units of energy received.", units.val()), Info);
+                                        me_lock.energy_received(units);
+                                    }
+                                }
                             }
                         },
                         _ => {
@@ -226,13 +247,13 @@ impl Factory {
                             }
                             StateAction::Quit => {
                                 me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
-                                break;
+                                break 'outer;
                             }
                             _ => ()
                         }
                     } else { // Factory is BANKRUPT!
+                        //TODO
                         me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
-                        break;
                     }
                 }
                 thread::sleep(Duration::from_millis(sleeptime));

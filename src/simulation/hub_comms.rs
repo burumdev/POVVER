@@ -37,7 +37,7 @@ pub struct PPEnergyOffer {
     pub to_factory_id: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FactoryEnergyDemand {
     pub factory_id: usize,
     pub energy_needed: EnergyUnit,
@@ -47,6 +47,11 @@ pub struct FactoryEnergyDemand {
 pub enum HubPPSignal {
     FuelTransfered(FuelReceipt),
     FuelCapacityIncreased,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum HubFactorySignal {
+    EnergyTransfered(EnergyUnit),
 }
 
 #[derive(Debug)]
@@ -87,6 +92,7 @@ impl_dynsignalable!(
     PPHubSignal,
     PPEnergyOffer,
     HubPPSignal,
+    HubFactorySignal,
     FactoryEnergyDemand,
     FactorySignal,
     FactoryHubSignal
@@ -96,23 +102,29 @@ pub type DynamicSignal = Arc<dyn DynSignalable>;
 pub type DynamicSender = CrossbeamSender<DynamicSignal>;
 pub type DynamicReceiver = CrossbeamReceiver<DynamicSignal>;
 pub type DynamicChannel = (CrossbeamSender<DynamicSignal>, CrossbeamReceiver<DynamicSignal>);
+pub type BroadcastDynSender = tokio_broadcast::Sender<DynamicSignal>;
+pub type BroadcastDynReceiver = tokio_broadcast::Receiver<DynamicSignal>;
+pub type BroadcastDynChannel = (BroadcastDynSender, BroadcastDynReceiver);
 
 pub struct HubComms {
     broadcast_state_channel: (tokio_broadcast::Sender<StateAction>, tokio_broadcast::Receiver<StateAction>),
-    broadcast_signal_channel: (tokio_broadcast::Sender<DynamicSignal>, tokio_broadcast::Receiver<DynamicSignal>),
+    broadcast_signal_channel: BroadcastDynChannel,
     pp_dyn_channel: DynamicChannel,
-    pub factory_dyn_channels: Vec<DynamicChannel>,
+    pub from_factory_dyn_channels: Vec<BroadcastDynChannel>,
+    pub to_factory_dyn_channels: Vec<DynamicChannel>,
 }
 
 impl HubComms {
     pub fn new(factory_count: usize) -> Self {
-        let factory_dyn_channels = (0..factory_count).map(|_| bounded(64)).collect();
+        let from_factory_dyn_channels = (0..factory_count).map(|_| tokio_broadcast::channel(64)).collect();
+        let to_factory_dyn_channels = (0..factory_count).map(|_| bounded(64)).collect();
 
         Self {
             broadcast_state_channel: tokio_broadcast::channel(64),
             broadcast_signal_channel: tokio_broadcast::channel(64),
             pp_dyn_channel: bounded(64),
-            factory_dyn_channels,
+            from_factory_dyn_channels,
+            to_factory_dyn_channels,
         }
     }
 }
@@ -130,8 +142,8 @@ impl HubComms {
         &self.pp_dyn_channel.0
     }
 
-    fn factory_dyn_sender(&self, factory_id: usize) -> &CrossbeamSender<DynamicSignal> {
-        &self.factory_dyn_channels[factory_id].0
+    fn to_factory_dyn_sender(&self, factory_id: usize) -> &CrossbeamSender<DynamicSignal> {
+        &self.to_factory_dyn_channels[factory_id].0
     }
 }
 
@@ -144,24 +156,24 @@ impl HubComms {
         self.broadcast_signal_channel.1.resubscribe()
     }
 
-    pub fn clone_factory_dyn_receiver(&self, factory_id: usize) -> DynamicReceiver {
-        self.factory_dyn_channels[factory_id].1.clone()
+    pub fn clone_to_factory_dyn_sender(&self, factory_id: usize) -> DynamicSender {
+        self.to_factory_dyn_channels[factory_id].0.clone()
     }
 
-    pub fn clone_factory_dyn_sender(&self, factory_id: usize) -> DynamicSender {
-        self.factory_dyn_channels[factory_id].0.clone()
+    pub fn clone_to_factory_dyn_receiver(&self, factory_id: usize) -> DynamicReceiver {
+        self.to_factory_dyn_channels[factory_id].1.clone()
+    }
+
+    pub fn clone_from_factory_dyn_sender(&self, factory_id: usize) -> BroadcastDynSender {
+        self.from_factory_dyn_channels[factory_id].0.clone()
+    }
+
+    pub fn clone_from_factory_dyn_receivers(&self) -> Vec<BroadcastDynReceiver> {
+        self.from_factory_dyn_channels.iter().map(|(_, r)| r.resubscribe()).collect()
     }
 
     pub fn clone_pp_dyn_receiver(&self) -> DynamicReceiver {
         self.pp_dyn_channel.1.clone()
-    }
-
-    pub fn clone_factory_dyn_receivers(&self) -> Vec<DynamicReceiver> {
-        self.factory_dyn_channels.iter().map(|(_, r)| r.clone()).collect()
-    }
-
-    pub fn clone_factory_dyn_channel(&self, factory_id: usize) -> DynamicChannel {
-        self.factory_dyn_channels[factory_id].clone()
     }
 
     pub fn clone_pp_dyn_channel(&self) -> DynamicChannel {
@@ -187,7 +199,7 @@ impl HubComms {
     }
 
     pub fn hub_to_factory(&self, signal: DynamicSignal, factory_id: usize) {
-        if let Err(e) = self.factory_dyn_sender(factory_id).send(signal) {
+        if let Err(e) = self.to_factory_dyn_sender(factory_id).send(signal) {
             eprintln!("HUB COMMS: Could not send signal to factory No. {factory_id}: {e}");
         }
     }

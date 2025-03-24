@@ -102,22 +102,23 @@ impl TheHub {
         let fid = offer.to_factory_id;
         let factories_state = self.factories_state.write().unwrap();
         let found_factory = factories_state.iter().find(|fac| fac.read().unwrap().id == fid);
-        if let Some(fac) = found_factory {
+        if let Some(factory) = found_factory {
             let fee = offer.price_per_unit * offer.units.val() as SimFlo;
-            if !fac.write().unwrap().balance.dec(fee.val()) {
-                fac.write().unwrap().is_bankrupt = true;
+            if !factory.write().unwrap().balance.dec(fee.val()) {
+                factory.write().unwrap().is_bankrupt = true;
 
                 self.log_ui_console(format!("Factory No. {} has gone bankrupt. I'm the hub. I don't go bankrupt.", fid), Critical);
 
                 return;
             }
 
-            fac.write().unwrap().available_energy.inc(offer.units);
+            factory.write().unwrap().available_energy.inc(offer.units);
             self.povver_plant_state.write().unwrap().balance.inc(fee.val());
-            let fuel_needed = (offer.units * PP_ENERGY_PER_FUEL).val();
+            let fuel_needed = (offer.units / PP_ENERGY_PER_FUEL).val();
             self.povver_plant_state.write().unwrap().fuel -= fuel_needed;
 
-            self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", offer.units.val(), fid), Critical);
+            self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", offer.units.val(), fid), Info);
+            self.comms.hub_to_factory(Arc::new(HubFactorySignal::EnergyTransfered(offer.units)), fid);
         } else {
             self.log_console(format!("Factory No. {} is not found. Energy transfer canceled.", fid), Error);
         }
