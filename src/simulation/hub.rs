@@ -29,6 +29,7 @@ use crate::{
         LogMessage,
     },
 };
+use crate::economy::economy_types::EnergyUnit;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -72,6 +73,7 @@ impl TheHub {
                 RwLock::new(
                     FactoryStateData {
                         balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
+                        available_energy: EnergyUnit::default(),
                         industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
                         id: 0,
@@ -181,6 +183,9 @@ impl TheHub {
                                 },
                                 PPHubSignal::IncreaseFuelCapacity => {
                                     me.lock().unwrap().pp_increases_fuel_capacity();
+                                },
+                                PPHubSignal::EnergyToFactory(offer) => {
+                                    me.lock().unwrap().pp_energy_to_factory(offer);
                                 },
                             }
                         },

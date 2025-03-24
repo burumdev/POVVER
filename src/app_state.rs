@@ -50,6 +50,7 @@ pub struct PovverPlantStateData {
 #[derive(Debug)]
 pub struct FactoryStateData {
     pub balance: Money,
+    pub available_energy: EnergyUnit,
     pub industry: Industry,
     pub product_portfolio: Vec<&'static Product>,
     pub id: usize,

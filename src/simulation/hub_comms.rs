@@ -12,11 +12,10 @@ use crate::{
     simulation::{
         StateAction,
         SimInt,
+        SimFlo,
     },
-    economy::economy_types::EnergyUnit,
+    economy::economy_types::{EnergyUnit, Money},
 };
-use crate::economy::economy_types::Money;
-use crate::simulation::SimFlo;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MessageEntity {
@@ -25,25 +24,13 @@ pub enum MessageEntity {
     Factory(SimInt),
 }
 
-#[derive(Debug)]
-pub enum PPHubSignal {
-    BuyFuel(SimInt),
-    IncreaseFuelCapacity,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuelReceipt {
     pub amount: SimInt,
     pub price_per_unit: SimFlo,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum HubPPSignal {
-    FuelTransfered(FuelReceipt),
-    FuelCapacityIncreased,
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct PPEnergyOffer {
     pub price_per_unit: Money,
     pub units: EnergyUnit,
@@ -57,13 +44,27 @@ pub struct FactoryEnergyDemand {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum HubPPSignal {
+    FuelTransfered(FuelReceipt),
+    FuelCapacityIncreased,
+}
+
+#[derive(Debug)]
+pub enum PPHubSignal {
+    BuyFuel(SimInt),
+    IncreaseFuelCapacity,
+    EnergyToFactory(PPEnergyOffer),
+}
+
+#[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
 }
 
 #[derive(Debug, PartialEq)]
 pub enum FactorySignal {
-    AcceptPPEnergyOffer(usize),
+    AcceptPPEnergyOffer(PPEnergyOffer),
+    RejectPPEnergyOffer(PPEnergyOffer),
 }
 
 pub trait DynSignalable: Send + Sync + Debug {
@@ -155,6 +156,20 @@ impl HubComms {
         self.pp_dyn_channel.1.clone()
     }
 
+    pub fn clone_factory_dyn_receivers(&self) -> Vec<DynamicReceiver> {
+        self.factory_dyn_channels.iter().map(|(_, r)| r.clone()).collect()
+    }
+
+    pub fn clone_factory_dyn_channel(&self, factory_id: usize) -> DynamicChannel {
+        self.factory_dyn_channels[factory_id].clone()
+    }
+
+    pub fn clone_pp_dyn_channel(&self) -> DynamicChannel {
+        self.pp_dyn_channel.clone()
+    }
+}
+
+impl HubComms {
     pub fn send_state_broadcast(&self, action: StateAction) {
         if let Err(e) = self.broadcast_state_sender().send(action) {
             eprintln!("HUB COMMS: Could not send state broadcast to one recipient: {e}");
@@ -175,17 +190,5 @@ impl HubComms {
         if let Err(e) = self.factory_dyn_sender(factory_id).send(signal) {
             eprintln!("HUB COMMS: Could not send signal to factory No. {factory_id}: {e}");
         }
-    }
-
-    pub fn clone_factory_dyn_receivers(&self) -> Vec<DynamicReceiver> {
-        self.factory_dyn_channels.iter().map(|(_, r)| r.clone()).collect()
-    }
-
-    pub fn clone_factory_dyn_channel(&self, factory_id: usize) -> DynamicChannel {
-        self.factory_dyn_channels[factory_id].clone()
-    }
-
-    pub fn clone_pp_dyn_channel(&self) -> DynamicChannel {
-        self.pp_dyn_channel.clone()
     }
 }

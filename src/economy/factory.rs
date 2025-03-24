@@ -130,13 +130,7 @@ impl Factory {
     }
 
     fn evaluate_pp_energy_offer(&mut self, offer: &PPEnergyOffer) {
-        let (id, balance) = {
-            let state_lock = self.state_ro.read().unwrap();
-            (
-                state_lock.id,
-                state_lock.balance,
-            )
-        };
+        let balance = self.state_ro.read().unwrap().balance;
 
         if !self.production_runs.is_empty() {
             let prun = self.production_runs.last_mut().unwrap();
@@ -145,7 +139,9 @@ impl Factory {
             if remaining_budget.val() > 0.0 {
                 prun.cost.inc(energy_cost.val());
 
-                self.get_dyn_sender().send(Arc::new(FactorySignal::AcceptPPEnergyOffer(id))).unwrap();
+                self.get_dyn_sender().send(Arc::new(FactorySignal::AcceptPPEnergyOffer(*offer))).unwrap();
+            } else {
+                self.get_dyn_sender().send(Arc::new(FactorySignal::RejectPPEnergyOffer(*offer))).unwrap();
             }
         }
     }
@@ -203,8 +199,6 @@ impl Factory {
                                 let mut me_lock = me.lock().unwrap();
                                 me_lock.log_ui_console(format!("Got energy offer from PP: {:?}.", offer), Info);
                                 me_lock.evaluate_pp_energy_offer(offer);
-                            } else {
-                                me.lock().unwrap().log_console("Could not downcast broadcast signal from hub!".to_string(), Error);
                             }
                         },
                         _ => {

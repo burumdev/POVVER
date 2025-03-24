@@ -37,6 +37,8 @@ use crate::{
         LogMessage,
     },
 };
+use crate::logger::LogLevel::Error;
+use crate::simulation::hub_comms::FactorySignal;
 
 pub struct PovverPlant {
     profit_margin: Percentage,
@@ -155,6 +157,9 @@ impl PovverPlant {
     }
 
     fn maybe_new_energy_offer(&mut self, demand: &FactoryEnergyDemand) {
+        if let Some(_) = self.pending_energy_offers.iter().position(|of| of.to_factory_id == demand.factory_id) {
+            return;
+        }
         let energy_per_fuel = PP_ENERGY_PER_FUEL;
         let energy_needed = demand.energy_needed;
         let (fuel, production_capacity) = {
@@ -231,11 +236,27 @@ impl PovverPlant {
         }
 
         offer.price_per_unit = price_per_unit;
+
+        self.pending_energy_offers.push(offer);
         self.get_factory_sender_by_id(offer.to_factory_id).send(Arc::new(offer)).unwrap();
     }
 
     fn maybe_upgrade_production_capacity(&self) {
         //TODO
+    }
+
+    fn process_factory_order(&mut self, offer: &PPEnergyOffer) {
+        let index = self.pending_energy_offers.iter().position(|of| of.to_factory_id == offer.to_factory_id);
+        if let Some(index) = index {
+            let plucked_offer = self.pending_energy_offers.remove(index);
+            self.get_dynamic_sender().send(Arc::new(PPHubSignal::EnergyToFactory(plucked_offer))).unwrap();
+        } else {
+            self.log_console(format!("Energy offer to process: {:?} could not be found in pending offers: {:?}", offer, self.pending_energy_offers), Error);
+        }
+    }
+
+    fn remove_pending_offer(&mut self, offer: &PPEnergyOffer) {
+        self.pending_energy_offers.retain(|of| of.to_factory_id != offer.to_factory_id);
     }
 }
 
@@ -278,10 +299,22 @@ impl PovverPlant {
                                     }
                                     HubPPSignal::FuelCapacityIncreased => {
                                         // Fuel capacity increased. Let's do something about it!
+                                    },
+                                }
+                            }
+                        }
+                        s if s.is::<FactorySignal>() => {
+                            if let Some(signal_from_factory) = signal_any.downcast_ref::<FactorySignal>() {
+                                match signal_from_factory {
+                                    FactorySignal::AcceptPPEnergyOffer(offer) => {
+                                        me.lock().unwrap().process_factory_order(offer);
+                                    }
+                                    FactorySignal::RejectPPEnergyOffer(offer) => {
+                                        me.lock().unwrap().remove_pending_offer(offer);
                                     }
                                 }
                             }
-                        },
+                        }
                         _ => ()
                     }
                 }

@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use slint::ToSharedString;
 use crate::{
     economy::products::Product,
@@ -76,7 +76,7 @@ impl Money {
     }
 
     pub fn inc(&mut self, amount: SimFlo) {
-        self.0 += amount.clamp(0.0, SimFlo::MAX);
+        self.0 = (self.0 + amount).min(SimFlo::MAX);
     }
 }
 
@@ -125,6 +125,26 @@ impl Default for EnergyUnit {
 impl EnergyUnit {
     pub fn val(&self) -> SimInt {
         self.0
+    }
+    pub fn set(&mut self, amount: SimInt) {
+        self.0 = amount.clamp(0, SimInt::MAX);
+    }
+    pub fn dec(&mut self, unit: SimInt) {
+        self.0 = (self.0 - unit).max(0);
+    }
+    pub fn inc(&mut self, unit: EnergyUnit) {
+        self.0 = (self.0 + unit.0).min(SimInt::MAX);
+    }
+}
+impl AddAssign for EnergyUnit {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0
+    }
+}
+impl Mul for EnergyUnit {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self(self.0 * rhs.0)
     }
 }
 impl Div for EnergyUnit {
