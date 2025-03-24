@@ -176,7 +176,7 @@ impl Factory {
             )
         };
 
-        thread::spawn(move || {
+        thread::Builder::new().name("POVVER_F".to_string() + &my_id.to_string()).spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
@@ -258,7 +258,7 @@ impl Factory {
                 }
                 thread::sleep(Duration::from_millis(sleeptime));
             }
-        })
+        }).unwrap()
     }
 }
 

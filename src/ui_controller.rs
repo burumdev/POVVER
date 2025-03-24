@@ -41,7 +41,7 @@ impl UIController {
         let flag_sender_close = flag_sender.clone();
         let flag_sender_speed = flag_sender.clone();
 
-        thread::spawn(move || {
+        thread::Builder::new().name("POVVER_UI".to_string()).spawn(move || {
             let app = PovverMain::new().unwrap();
 
             // Event handlers
@@ -174,6 +174,6 @@ impl UIController {
 
             // Run the UI
             app.run().unwrap();
-        })
+        }).unwrap()
     }
 }

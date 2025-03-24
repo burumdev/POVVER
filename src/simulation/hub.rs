@@ -170,7 +170,7 @@ impl TheHub {
             )
         };
 
-        thread::spawn(move || {
+        thread::Builder::new().name("POVVER_HUB".to_string()).spawn(move || {
             let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
                 while let Ok(signal) = pp_dyn_receiver.try_recv() {
@@ -249,7 +249,7 @@ impl TheHub {
 
                 thread::sleep(Duration::from_millis(sleeptime));
             }
-        })
+        }).unwrap()
     }
 }
 
