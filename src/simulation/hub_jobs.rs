@@ -1,4 +1,4 @@
-use std::ops::{Add, Index};
+use std::ops::Index;
 use std::sync::Arc;
 use crate::{
     logger::{Logger, LogLevel::*},
@@ -86,10 +86,10 @@ impl TheHub {
     }
 
     pub fn transfer_fuel_to_pp(&self, receipt: FuelReceipt) {
-        self.log_ui_console(format!("Transfering {} fuel to Povver Plant.", receipt.amount), Info);
+        self.log_ui_console(format!("Transfering {} fuel to Povver Plant.", receipt.units), Info);
 
         let mut pp = self.povver_plant_state.write().unwrap();
-        pp.fuel += receipt.amount;
+        pp.fuel += receipt.units;
         pp.is_awaiting_fuel = false;
         self.comms.hub_to_pp(Arc::new(HubPPSignal::FuelTransfered(receipt)));
     }
@@ -120,7 +120,18 @@ impl TheHub {
             self.povver_plant_state.write().unwrap().fuel -= fuel_needed;
 
             self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", offer.units.val(), fid), Info);
-            self.comms.hub_to_factory(Arc::new(HubFactorySignal::EnergyTransfered(offer.units)), fid);
+
+            let date = self.timer_state_ro.read().unwrap().date.clone();
+            let receipt = EnergyReceipt {
+                units: offer.units,
+                price_per_unit: offer.price_per_unit.val(),
+                date,
+                factory_id: fid,
+                total_price: fee.val(),
+            };
+
+            self.comms.hub_to_factory(Arc::new(HubFactorySignal::EnergyTransfered(receipt.clone())), fid);
+            self.comms.hub_to_pp(Arc::new(HubPPSignal::EnergyTransfered(receipt)));
         } else {
             self.log_console(format!("Factory No. {} is not found. Energy transfer canceled.", fid), Error);
         }

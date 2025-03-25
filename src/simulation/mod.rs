@@ -15,7 +15,7 @@ mod hub_jobs;
 pub mod hub_constants;
 
 pub mod timer;
-mod sim_types;
+pub mod sim_types;
 pub use sim_types::*;
 
 use timer::{Timer, TimerEvent};

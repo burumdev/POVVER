@@ -11,19 +11,7 @@ use crate::{
         SimInt,
         SimFlo,
         StateAction,
-        hub_comms::{
-            MessageEntity,
-            FactorySignal,
-            FactoryHubSignal,
-            FactoryEnergyDemand,
-            PPEnergyOffer,
-            DynamicSignal,
-            DynamicReceiver,
-            BroadcastDynReceiver,
-            BroadcastDynSender,
-            HubFactorySignal,
-            FactoryProduction
-        },
+        hub_comms::*,
         speed::Speed,
     },
     economy::{
@@ -50,6 +38,7 @@ pub struct Factory {
     dynamic_sender: BroadcastDynSender,
     dynamic_receiver: DynamicReceiver,
     production_runs: Vec<ProductionRun>,
+    last_hundred_energy_purchases: Vec<EnergyReceipt>
 }
 
 impl Factory {
@@ -71,6 +60,7 @@ impl Factory {
             dynamic_sender,
             dynamic_receiver,
             production_runs: Vec::new(),
+            last_hundred_energy_purchases: Vec::new(),
         }
     }
 }
@@ -245,9 +235,10 @@ impl Factory {
                         s if s.is::<HubFactorySignal>() => {
                             if let Some(signal_from_hub) = signal_any.downcast_ref::<HubFactorySignal>() {
                                 match signal_from_hub {
-                                    HubFactorySignal::EnergyTransfered(units) => {
+                                    HubFactorySignal::EnergyTransfered(receipt) => {
                                         let mut me_lock = me.lock().unwrap();
-                                        me_lock.log_ui_console(format!("{} units of energy received.", units.val()), Info);
+                                        me_lock.log_ui_console(format!("{} units of energy received.", receipt.units.val()), Info);
+                                        me_lock.last_hundred_energy_purchases.push(receipt.clone());
                                         me_lock.energy_received();
                                     }
                                 }
@@ -284,7 +275,7 @@ impl Factory {
                         }
                     } else { // Factory is BANKRUPT!
                         //TODO
-                        me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
+                        me.lock().unwrap().log_ui_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
                     }
                 }
                 thread::sleep(Duration::from_millis(sleeptime));

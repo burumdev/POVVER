@@ -14,20 +14,7 @@ use crate::{
         StateAction,
         Percentage,
         timer::TimerEvent,
-        hub_comms::{
-            PPHubSignal,
-            HubPPSignal,
-            MessageEntity,
-            FactoryEnergyDemand,
-            PPEnergyOffer,
-            FuelReceipt,
-            DynamicSignal,
-            DynamicChannel,
-            DynamicReceiver,
-            DynamicSender,
-            BroadcastDynReceiver,
-            FactorySignal
-        },
+        hub_comms::*,
         SimInt,
         SimFlo,
         hub_constants::{PP_FUEL_CAPACITY_INCREASE_COST, PP_INIT_FUEL_BUY_THRESHOLD, PP_ENERGY_PER_FUEL},
@@ -46,7 +33,7 @@ pub struct PovverPlant {
     fuel_price_paid_per_unit_average: SimFlo,
     total_fuel_expenditure: SimFlo,
     pending_energy_offers: Vec<PPEnergyOffer>,
-    last_ten_sales: SlidingWindow<Money>,
+    last_hundred_sales: SlidingWindow<EnergyReceipt>,
     state_ro: ReadOnlyRwLock<PovverPlantStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
@@ -78,7 +65,7 @@ impl PovverPlant {
             fuel_price_paid_per_unit_average,
             total_fuel_expenditure,
             pending_energy_offers: Vec::new(),
-            last_ten_sales: SlidingWindow::new(10),
+            last_hundred_sales: SlidingWindow::new(100),
             state_ro,
             econ_state_ro,
             ui_log_sender,
@@ -149,7 +136,7 @@ impl PovverPlant {
     }
 
     fn update_price_paid_per_fuel_average(&mut self, receipt: &FuelReceipt) {
-        self.total_fuel_expenditure += receipt.amount as SimFlo * receipt.price_per_unit;
+        self.total_fuel_expenditure += receipt.units as SimFlo * receipt.price_per_unit;
         self.fuel_price_paid_per_unit_average = self.total_fuel_expenditure / self.state_ro.read().unwrap().fuel as SimFlo;
     }
 
@@ -310,6 +297,11 @@ impl PovverPlant {
                                     HubPPSignal::FuelTransfered(receipt) => {
                                         me.lock().unwrap().update_price_paid_per_fuel_average(receipt);
                                     }
+                                    HubPPSignal::EnergyTransfered(receipt) => {
+                                        me.lock().unwrap().last_hundred_sales.add(receipt.clone());
+                                        //TODO
+                                        // Energy transfered. Let's do something about it!
+                                    },
                                     HubPPSignal::FuelCapacityIncreased => {
                                         //TODO
                                         // Fuel capacity increased. Let's do something about it!

@@ -11,7 +11,7 @@ use crate::{
         hub_comms::*
     }
 };
-use crate::economy::economy_types::ProductDemand;
+use crate::utils_traits::AsFactor;
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
@@ -24,7 +24,13 @@ impl TheHub {
 
         if transaction_successful {
             let delay = (amount as SimFlo / 15.0).floor() as SimInt;
-            let receipt = FuelReceipt { amount, price_per_unit: price.val() };
+            let date = self.timer_state_ro.read().unwrap().date.clone();
+            let receipt = FuelReceipt {
+                units: amount, price_per_unit: price.val(),
+                date,
+                total_price: fee.val(),
+            };
+
             if delay == 0 {
                 self.transfer_fuel_to_pp(receipt);
             } else {

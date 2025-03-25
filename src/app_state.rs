@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex, RwLock};
+
 use crate::{
     environment::{TheSun, WindSpeed, months::Month},
     simulation::{SimFlo, SimInt},

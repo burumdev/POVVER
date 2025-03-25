@@ -15,6 +15,7 @@ use crate::{
         SimFlo,
     },
     economy::economy_types::{EnergyUnit, Money, ProductDemand},
+    ui_controller::Date,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,8 +27,19 @@ pub enum MessageEntity {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuelReceipt {
-    pub amount: SimInt,
+    pub units: SimInt,
     pub price_per_unit: SimFlo,
+    pub date: Date,
+    pub total_price: SimFlo,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EnergyReceipt {
+    pub units: EnergyUnit,
+    pub price_per_unit: SimFlo,
+    pub date: Date,
+    pub factory_id: usize,
+    pub total_price: SimFlo,
 }
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -46,12 +58,13 @@ pub struct FactoryEnergyDemand {
 #[derive(Debug, PartialEq)]
 pub enum HubPPSignal {
     FuelTransfered(FuelReceipt),
+    EnergyTransfered(EnergyReceipt),
     FuelCapacityIncreased,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum HubFactorySignal {
-    EnergyTransfered(EnergyUnit),
+    EnergyTransfered(EnergyReceipt),
 }
 
 #[derive(Debug)]
