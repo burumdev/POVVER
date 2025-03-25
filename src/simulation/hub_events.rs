@@ -66,7 +66,9 @@ impl TheHub {
         self.comms.send_signal_broadcast(Arc::new(*demand))
     }
 
-    pub fn factory_produces(&mut self, fid: usize, demand: &ProductDemand) {
-        println!("Factory No. {} produces {:?}", fid, demand);
+    pub fn factory_will_produce(&mut self, fid: usize, production: &FactoryProduction) {
+        //TODO: This should be a timed job
+        println!("Factory No. {} produces {} units for demand {:?}", fid, production.units, production.demand);
+        self.factory_produce(fid, production);
     }
 }

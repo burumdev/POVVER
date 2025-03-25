@@ -62,9 +62,15 @@ pub enum PPHubSignal {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct FactoryProduction {
+    pub demand: ProductDemand,
+    pub units: SimInt,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
-    ProducingProductDemand(ProductDemand)
+    ProducingProductDemand(FactoryProduction)
 }
 
 #[derive(Debug, PartialEq)]

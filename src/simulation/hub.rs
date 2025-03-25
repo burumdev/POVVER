@@ -73,6 +73,7 @@ impl TheHub {
                     FactoryStateData {
                         balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
                         available_energy: EnergyUnit::default(),
+                        product_stocks: Vec::new(),
                         industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
                         id: 0,
@@ -207,8 +208,8 @@ impl TheHub {
                                         FactoryHubSignal::EnergyDemand(demand) => {
                                             me.lock().unwrap().factory_needs_energy(demand);
                                         },
-                                        FactoryHubSignal::ProducingProductDemand(demand) => {
-                                            me.lock().unwrap().factory_produces(fid, demand);
+                                        FactoryHubSignal::ProducingProductDemand(production) => {
+                                            me.lock().unwrap().factory_will_produce(fid, production);
                                         }
                                     }
                                 }

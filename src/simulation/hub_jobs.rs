@@ -1,3 +1,4 @@
+use std::ops::{Add, Index};
 use std::sync::Arc;
 use crate::{
     logger::{Logger, LogLevel::*},
@@ -9,6 +10,7 @@ use crate::{
         hub_comms::*
     },
 };
+use crate::economy::products::ProductStock;
 
 #[derive(Debug, Clone)]
 pub enum HourlyJobKind {
@@ -121,6 +123,35 @@ impl TheHub {
             self.comms.hub_to_factory(Arc::new(HubFactorySignal::EnergyTransfered(offer.units)), fid);
         } else {
             self.log_console(format!("Factory No. {} is not found. Energy transfer canceled.", fid), Error);
+        }
+    }
+
+    pub fn factory_produce(&mut self, fid: usize, production: &FactoryProduction) {
+        let demand = production.demand;
+        let units = demand.as_units();
+        let unit_cost_ex_energy = demand.as_units() * demand.product.get_unit_cost_excl_energy();
+        let factories_state = self.factories_state.read().unwrap();
+        let factory_state = factories_state.index(fid);
+        let total_cost_ex_energy = unit_cost_ex_energy + units;
+
+        let transaction_successful = factory_state.write().unwrap().balance.dec(total_cost_ex_energy.val());
+        if transaction_successful {
+            let energy_needed = production.demand.calculate_energy_need();
+            let available_energy = factory_state.read().unwrap().available_energy;
+
+            if available_energy >= energy_needed {
+                factory_state.write().unwrap().product_stocks.push(ProductStock {
+                    product: demand.product,
+                    units
+                });
+            } else {
+                self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
+            }
+
+            self.log_ui_console(format!("Factory No. {} produced {} {}", fid, units, demand.product.name), Info);
+        } else {
+            factory_state.write().unwrap().is_bankrupt = true;
+            self.log_ui_console(format!("Factory No. {} has not enough money to produce {} {}. It's gone bankrupt.", fid, units, demand.product.name), Critical);
         }
     }
 }

@@ -32,22 +32,16 @@ impl PartialOrd for Money {
         self.0.partial_cmp(&other.0)
     }
 }
-impl Add for Money {
+impl Mul<SimInt> for Money {
     type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
+    fn mul(self, rhs: SimInt) -> Self::Output {
+        Self(self.0 * rhs as SimFlo)
     }
 }
-impl Sub for Money {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-impl Add<SimFlo> for Money {
-    type Output = Self;
-    fn add(self, rhs: SimFlo) -> Self::Output {
-        Self(self.0 + rhs)
+impl Mul<Money> for SimInt {
+    type Output = Money;
+    fn mul(self, rhs: Money) -> Self::Output {
+        Money(self as SimFlo * rhs.0)
     }
 }
 impl Mul<SimFlo> for Money {
@@ -56,6 +50,37 @@ impl Mul<SimFlo> for Money {
         Self(self.0 * rhs)
     }
 }
+impl Mul<Money> for SimFlo {
+    type Output = Money;
+    fn mul(self, rhs: Money) -> Self::Output {
+        Money(self * rhs.0)
+    }
+}
+impl Add for Money {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+impl Add<SimFlo> for Money {
+    type Output = Self;
+    fn add(self, rhs: SimFlo) -> Self::Output {
+        Self(self.0 + rhs)
+    }
+}
+impl Add<SimInt> for Money {
+    type Output = Self;
+    fn add(self, rhs: SimInt) -> Self::Output {
+        Self(self.0 + rhs as SimFlo)
+    }
+}
+impl Sub for Money {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+
 
 impl Money {
     pub fn val(&self) -> SimFlo {
@@ -148,6 +173,18 @@ impl Mul for EnergyUnit {
         Self(self.0 * rhs.0)
     }
 }
+impl Mul<SimInt> for EnergyUnit {
+    type Output = Self;
+    fn mul(self, rhs: SimInt) -> Self::Output {
+        Self(self.0 * rhs)
+    }
+}
+impl Mul<EnergyUnit> for SimInt {
+    type Output = EnergyUnit;
+    fn mul(self, rhs: EnergyUnit) -> Self::Output {
+        EnergyUnit(self * rhs.0)
+    }
+}
 impl Div for EnergyUnit {
     type Output = Self;
     fn div(self, other: Self) -> Self {
@@ -183,6 +220,7 @@ pub struct ProductDemand {
     pub age: SimInt,
     pub demand_meet_percent: Percentage,
 }
+
 impl ProductDemand {
     pub fn new(product: &'static Product, percent: Percentage) -> Self {
         Self {
@@ -191,6 +229,12 @@ impl ProductDemand {
             age: 0,
             demand_meet_percent: Percentage::default()
         }
+    }
+    pub fn as_units(&self) -> SimInt {
+        (self.percent.val() * self.product.demand_info.unit_per_percent as SimFlo) as SimInt
+    }
+    pub fn calculate_energy_need(&self) -> EnergyUnit {
+        self.as_units() * self.product.unit_production_cost.energy
     }
 }
 impl From<&ProductDemand> for UIProductDemand {

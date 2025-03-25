@@ -4,7 +4,7 @@ use crate::{
     simulation::{SimFlo, SimInt},
     ui_controller::{Cloud, Date, WindDirection},
     economy::{
-        products::Product,
+        products::{Product, ProductStock},
         industries::Industry,
         economy_types::{Money, EnergyUnit, UpDown, ProductDemand}
     },
@@ -51,6 +51,7 @@ pub struct PovverPlantStateData {
 pub struct FactoryStateData {
     pub balance: Money,
     pub available_energy: EnergyUnit,
+    pub product_stocks: Vec<ProductStock>,
     pub industry: Industry,
     pub product_portfolio: Vec<&'static Product>,
     pub id: usize,

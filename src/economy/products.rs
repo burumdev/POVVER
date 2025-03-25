@@ -567,6 +567,12 @@ impl Product {
     }
 }
 
+#[derive(Debug)]
+pub struct ProductStock {
+    pub product: &'static Product,
+    pub units: SimInt,
+}
+
 pub const PRODUCTS: &[Product] = &[
     Product::INTEGRATED_CIRCUIT,
     Product::MICROCHIP,
