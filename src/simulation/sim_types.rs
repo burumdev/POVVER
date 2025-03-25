@@ -7,7 +7,7 @@ pub type SimFlo = f32;
 pub type TickDuration = u64;
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Percentage(SimFlo);
 impl Default for Percentage {
     fn default() -> Self {

@@ -11,6 +11,7 @@ use crate::{
         hub_comms::*
     }
 };
+use crate::economy::economy_types::ProductDemand;
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
@@ -63,5 +64,9 @@ impl TheHub {
 
     pub fn factory_needs_energy(&mut self, demand: &FactoryEnergyDemand) {
         self.comms.send_signal_broadcast(Arc::new(*demand))
+    }
+
+    pub fn factory_produces(&mut self, fid: usize, demand: &ProductDemand) {
+        println!("Factory No. {} produces {:?}", fid, demand);
     }
 }

@@ -176,7 +176,7 @@ impl From<EnergyUnit> for SimFlo {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct ProductDemand {
     pub product: &'static Product,
     pub percent: Percentage,

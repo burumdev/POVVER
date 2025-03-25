@@ -26,7 +26,7 @@ use crate::{
         speed::Speed,
     },
     economy::{
-        economy_types::{EnergyUnit, Money},
+        economy_types::{EnergyUnit, Money, ProductDemand},
         products::Product,
     },
     logger::{LogMessage, Logger, LogLevel::*},
@@ -35,8 +35,8 @@ use crate::{
 };
 
 struct ProductionRun {
-    product: &'static Product,
-    units: usize,
+    demand: ProductDemand,
+    units: SimInt,
     cost: Money,
     energy_needed: EnergyUnit,
 }
@@ -95,34 +95,41 @@ impl Factory {
         if producable_demands.len() > 0 {
             for demand in producable_demands {
                 let product = &demand.product;
-                if self.production_runs.iter().position(|run| { run.product == product }).is_some() {
+
+                if self.production_runs.iter().position(|run| { run.demand.product == product }).is_some() {
                     continue;
                 }
+
                 let unit_cost_ex_energy = product.get_unit_cost_excl_energy();
                 let demand_info = &product.demand_info;
 
                 let units = demand_info.unit_per_percent * (demand.percent.val() as SimInt);
                 let total_cost_ex_energy = unit_cost_ex_energy * units as SimFlo;
-                let energy_needed = EnergyUnit::new(product.unit_production_cost.energy.val() * units);
 
                 if total_cost_ex_energy <= balance * 0.75 {
-                    let energy_demand = FactoryEnergyDemand {
-                        factory_id,
-                        energy_needed,
-                    };
+                    let energy_needed = EnergyUnit::new(product.unit_production_cost.energy.val() * units);
+                    let energy_we_have = self.state_ro.read().unwrap().available_energy;
+                    if energy_we_have >= energy_needed {
+                        self.produce_product_demand(demand);
+                    } else {
+                        let energy_demand = FactoryEnergyDemand {
+                            factory_id,
+                            energy_needed,
+                        };
 
-                    self.dynamic_sender.send(Arc::new(
-                        FactoryHubSignal::EnergyDemand(
-                            energy_demand,
-                        ))
-                    ).unwrap();
+                        self.dynamic_sender.send(Arc::new(
+                            FactoryHubSignal::EnergyDemand(
+                                energy_demand,
+                            ))
+                        ).unwrap();
 
-                    self.production_runs.push(ProductionRun {
-                        product,
-                        units: units as usize,
-                        cost: total_cost_ex_energy,
-                        energy_needed
-                    })
+                        self.production_runs.push(ProductionRun {
+                            demand,
+                            units,
+                            cost: total_cost_ex_energy,
+                            energy_needed
+                        })
+                    }
                 }
             }
         } else {
@@ -147,9 +154,25 @@ impl Factory {
         }
     }
 
-    fn energy_received(&self, units: &EnergyUnit) {
-        //TODO
-        println!("TODO: ENERGY RECEIVED FACTORY FUNCTION. {} units", units.val());
+    fn energy_received(&mut self) {
+        let (balance, energy_available) = {
+            let state_ro = self.state_ro.read().unwrap();
+            (state_ro.balance, state_ro.available_energy)
+        };
+
+        if let Some(index) = self.production_runs.iter().rposition(|run| {
+            run.energy_needed <= energy_available && run.cost <= balance
+        }) {
+            self.produce_product_demand(self.production_runs[index].demand);
+            self.production_runs.remove(index);
+        }
+    }
+
+    fn produce_product_demand(&mut self, demand: ProductDemand) {
+        self.dynamic_sender
+            .send(
+                Arc::new(FactoryHubSignal::ProducingProductDemand(demand))
+            ).unwrap();
     }
 
     fn maybe_sell_goods(&self) {
@@ -207,7 +230,7 @@ impl Factory {
                         s if s.is::<PPEnergyOffer>() => {
                             if let Some(offer) = signal_any.downcast_ref::<PPEnergyOffer>() {
                                 let mut me_lock = me.lock().unwrap();
-                                me_lock.log_ui_console(format!("Got energy offer from PP: {:?}.", offer), Info);
+                                me_lock.log_ui_console(format!("Got energy offer from PP: {} units.", offer.units.val()), Info);
                                 me_lock.evaluate_pp_energy_offer(offer);
                             }
                         },
@@ -217,7 +240,7 @@ impl Factory {
                                     HubFactorySignal::EnergyTransfered(units) => {
                                         let mut me_lock = me.lock().unwrap();
                                         me_lock.log_ui_console(format!("{} units of energy received.", units.val()), Info);
-                                        me_lock.energy_received(units);
+                                        me_lock.energy_received();
                                     }
                                 }
                             }

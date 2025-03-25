@@ -14,7 +14,7 @@ use crate::{
         SimInt,
         SimFlo,
     },
-    economy::economy_types::{EnergyUnit, Money},
+    economy::economy_types::{EnergyUnit, Money, ProductDemand},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,6 +64,7 @@ pub enum PPHubSignal {
 #[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
+    ProducingProductDemand(ProductDemand)
 }
 
 #[derive(Debug, PartialEq)]

@@ -194,7 +194,10 @@ impl TheHub {
                     }
                 }
 
-                from_factory_dyn_receivers.iter_mut().for_each(|receiver| {
+                from_factory_dyn_receivers
+                    .iter_mut()
+                    .enumerate()
+                    .for_each(|(fid, receiver)| {
                     while let Ok(signal) = receiver.try_recv() {
                         let signal_any = signal.as_any();
                         match signal_any {
@@ -203,6 +206,9 @@ impl TheHub {
                                     match signal_from_factory {
                                         FactoryHubSignal::EnergyDemand(demand) => {
                                             me.lock().unwrap().factory_needs_energy(demand);
+                                        },
+                                        FactoryHubSignal::ProducingProductDemand(demand) => {
+                                            me.lock().unwrap().factory_produces(fid, demand);
                                         }
                                     }
                                 }
