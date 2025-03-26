@@ -9,8 +9,8 @@ use crate::{
         hub_constants::*,
         hub_comms::*
     },
+    economy::products::ProductStock,
 };
-use crate::economy::products::ProductStock;
 
 #[derive(Debug, Clone)]
 pub enum HourlyJobKind {
@@ -27,6 +27,7 @@ pub struct HourlyJob {
 #[derive(Debug, Clone)]
 pub enum DailyJobKind {
     PPFuelCapIncrease,
+    PPProductionCapIncrease,
 }
 
 #[derive(Debug, Clone)]
@@ -81,6 +82,9 @@ impl TheHub {
                 DailyJobKind::PPFuelCapIncrease => {
                     self.increase_pp_fuel_cap();
                 }
+                DailyJobKind::PPProductionCapIncrease => {
+                    self.increase_pp_prod_cap();
+                }
             }
         }
     }
@@ -98,6 +102,12 @@ impl TheHub {
         self.log_ui_console(format!("Increasing povver plant fuel capacity by {PP_FUEL_CAPACITY_INCREASE}."), Info);
         self.povver_plant_state.write().unwrap().fuel_capacity += PP_FUEL_CAPACITY_INCREASE;
         self.comms.hub_to_pp(Arc::new(HubPPSignal::FuelCapacityIncreased));
+    }
+
+    pub fn increase_pp_prod_cap(&self) {
+        self.log_ui_console(format!("Increasing povver plant production capacity by {}.", PP_PRODUCTION_CAPACITY_INCREASE.val()), Info);
+        self.povver_plant_state.write().unwrap().production_capacity += PP_PRODUCTION_CAPACITY_INCREASE;
+        self.comms.hub_to_pp(Arc::new(HubPPSignal::ProductionCapacityIncreased));
     }
 
     pub fn pp_energy_to_factory(&self, offer: &PPEnergyOffer) {

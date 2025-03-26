@@ -234,6 +234,10 @@ impl PovverPlant {
     }
 
     fn maybe_upgrade_production_capacity(&self) {
+        let balance = self.state_ro.read().unwrap().balance;
+        if balance.val() <= PP_PRODUCTION_CAPACITY_INCREASE_COST.val() / 2.0 {
+            self.get_dynamic_sender().send(Arc::new(PPHubSignal::IncreaseProductionCapacity)).unwrap();
+        }
     }
 
     fn process_factory_order(&mut self, offer: &PPEnergyOffer) {
@@ -248,7 +252,7 @@ impl PovverPlant {
     }
 
     fn remove_pending_offer(&mut self, offer: &PPEnergyOffer) {
-        self.log_ui_console(format!("Removing energy offer. Factory No. {} can burn horse chesnut shells for energy.", offer.to_factory_id), Warning);
+        self.log_ui_console(format!("Removing energy offer. Factory No. {} can burn horse chestnut shells for energy.", offer.to_factory_id), Warning);
         self.pending_energy_offers.retain(|of| of.to_factory_id != offer.to_factory_id);
     }
 }
@@ -305,6 +309,10 @@ impl PovverPlant {
                                     HubPPSignal::FuelCapacityIncreased => {
                                         //TODO
                                         // Fuel capacity increased. Let's do something about it!
+                                    },
+                                    HubPPSignal::ProductionCapacityIncreased => {
+                                        //TODO
+                                        // Production capacity increased. Let's do something about it!
                                     },
                                 }
                             }

@@ -257,7 +257,7 @@ impl Factory {
                         match action {
                             StateAction::Timer(event) => {
                                 if event.at_least_hour() {
-                                    me.lock().unwrap().log_console("Hour change from factory".to_string(), Info);
+                                    //TODO: Hourly factory errands
                                 }
                                 if event.at_least_minute() {
                                     me.lock().unwrap().maybe_produce_goods();

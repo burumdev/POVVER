@@ -60,6 +60,7 @@ pub enum HubPPSignal {
     FuelTransfered(FuelReceipt),
     EnergyTransfered(EnergyReceipt),
     FuelCapacityIncreased,
+    ProductionCapacityIncreased,
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,8 +71,9 @@ pub enum HubFactorySignal {
 #[derive(Debug)]
 pub enum PPHubSignal {
     BuyFuel(SimInt),
-    IncreaseFuelCapacity,
     EnergyToFactory(PPEnergyOffer),
+    IncreaseFuelCapacity,
+    IncreaseProductionCapacity,
 }
 
 #[derive(Debug, PartialEq)]
@@ -130,8 +132,8 @@ pub struct HubComms {
     broadcast_state_channel: (tokio_broadcast::Sender<StateAction>, tokio_broadcast::Receiver<StateAction>),
     broadcast_signal_channel: BroadcastDynChannel,
     pp_dyn_channel: DynamicChannel,
-    pub from_factory_dyn_channels: Vec<BroadcastDynChannel>,
-    pub to_factory_dyn_channels: Vec<DynamicChannel>,
+    from_factory_dyn_channels: Vec<BroadcastDynChannel>,
+    to_factory_dyn_channels: Vec<DynamicChannel>,
 }
 
 impl HubComms {

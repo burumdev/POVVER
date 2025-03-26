@@ -183,11 +183,14 @@ impl TheHub {
                                 PPHubSignal::BuyFuel(amount) => {
                                     me.lock().unwrap().pp_buys_fuel(*amount);
                                 },
+                                PPHubSignal::EnergyToFactory(offer) => {
+                                    me.lock().unwrap().pp_energy_to_factory(offer);
+                                },
                                 PPHubSignal::IncreaseFuelCapacity => {
                                     me.lock().unwrap().pp_increases_fuel_capacity();
                                 },
-                                PPHubSignal::EnergyToFactory(offer) => {
-                                    me.lock().unwrap().pp_energy_to_factory(offer);
+                                PPHubSignal::IncreaseProductionCapacity => {
+                                    me.lock().unwrap().pp_increases_production_capacity();
                                 },
                             }
                         },

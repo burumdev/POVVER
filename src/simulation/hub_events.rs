@@ -56,15 +56,35 @@ impl TheHub {
                 .balance.dec(PP_FUEL_CAPACITY_INCREASE_COST.val());
 
         if transaction_successful {
+            let delay = 5;
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPFuelCapIncrease,
-                delay: 5,
+                delay,
                 day_created: self.timer_state_ro.read().unwrap().date.day,
             });
-            self.log_ui_console("PP is upgrading it's fuel capacity. ETA is 5 days.".to_string(), Info);
+            self.log_ui_console(format!("PP is upgrading it's fuel capacity. ETA is {delay} days."), Info);
             println!();
         } else {
             self.log_ui_console("PP couldn't pay for fuel capacity increase. Upgrade canceled.".to_string(), Critical);
+        }
+    }
+
+    pub fn pp_increases_production_capacity(&mut self) {
+        let transaction_successful =
+            self.povver_plant_state.write().unwrap()
+                .balance.dec(PP_PRODUCTION_CAPACITY_INCREASE_COST.val());
+
+        if transaction_successful {
+            let delay = 7;
+            self.daily_jobs.push(DailyJob {
+                kind: DailyJobKind::PPProductionCapIncrease,
+                delay,
+                day_created: self.timer_state_ro.read().unwrap().date.day,
+            });
+            self.log_ui_console(format!("PP is upgrading it's production capacity. ETA is {delay} days."), Info);
+            println!();
+        } else {
+            self.log_ui_console("PP couldn't pay for production capacity increase. Upgrade canceled.".to_string(), Critical);
         }
     }
 
