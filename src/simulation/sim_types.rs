@@ -1,6 +1,6 @@
 use std::ops::{Add, MulAssign};
 use num_traits::FromPrimitive;
-use crate::utils_traits::{AsFactor, Percentable};
+use crate::utils_traits::{AsFactor, HundredPercentable};
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
@@ -24,11 +24,14 @@ impl Percentage {
         *self
     }
 }
+
 impl AsFactor for Percentage {
     fn val(&self) -> SimFlo {
         self.0
     }
 }
+impl HundredPercentable for Percentage {}
+
 impl FromPrimitive for Percentage {
     fn from_i64(val: i64) -> Option<Self> {
         Some(Self(val as SimFlo))
@@ -40,7 +43,6 @@ impl FromPrimitive for Percentage {
         Some(Self(val))
     }
 }
-impl Percentable for Percentage {}
 impl PartialEq<SimFlo> for Percentage {
     fn eq(&self, other: &SimFlo) -> bool {
         self.0.eq(other)

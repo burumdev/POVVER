@@ -26,6 +26,7 @@ use crate::{
         LogMessage,
     },
 };
+use crate::simulation::hub_constants::PP_PRODUCTION_CAPACITY_INCREASE_COST;
 
 pub struct PovverPlant {
     profit_margin: Percentage,
@@ -233,7 +234,6 @@ impl PovverPlant {
     }
 
     fn maybe_upgrade_production_capacity(&self) {
-        //TODO
     }
 
     fn process_factory_order(&mut self, offer: &PPEnergyOffer) {

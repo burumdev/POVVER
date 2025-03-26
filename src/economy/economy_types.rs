@@ -81,7 +81,6 @@ impl Sub for Money {
     }
 }
 
-
 impl Money {
     pub fn val(&self) -> SimFlo {
         self.0
@@ -220,7 +219,6 @@ pub struct ProductDemand {
     pub age: SimInt,
     pub demand_meet_percent: Percentage,
 }
-
 impl ProductDemand {
     pub fn new(product: &'static Product, percent: Percentage) -> Self {
         Self {

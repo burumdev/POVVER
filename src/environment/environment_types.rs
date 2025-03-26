@@ -3,7 +3,7 @@ use super::WINDSPEED_MAX;
 use crate::{
     simulation::{SimFlo, SimInt},
     ui_controller::{CloudSize, SunData, SunStage, WindDirection, WindSpeedLevel},
-    utils_traits::{Flippable, AsFactor, Percentable},
+    utils_traits::{Flippable, AsFactor, HundredPercentable},
 };
 
 pub const CLOUD_SIZES: &[CloudSize] = &[CloudSize::Small, CloudSize::Medium, CloudSize::Big];
@@ -56,7 +56,7 @@ impl FromPrimitive for SunBrightness {
         Some(Self(val))
     }
 }
-impl Percentable for SunBrightness {}
+impl HundredPercentable for SunBrightness {}
 impl PartialEq<SimFlo> for SunBrightness {
     fn eq(&self, other: &SimFlo) -> bool {
         self.0.eq(other)
