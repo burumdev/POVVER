@@ -19,13 +19,13 @@ use crate::{
         products::Product,
     },
     logger::{LogMessage, Logger, LogLevel::*},
-    utils_traits::AsFactor,
     utils_data::ReadOnlyRwLock,
 };
+use crate::simulation::Percentage;
+use crate::utils_traits::AsFactor;
 
 struct ProductionRun {
     demand: ProductDemand,
-    units: SimInt,
     cost: Money,
     energy_needed: EnergyUnit,
 }
@@ -39,7 +39,8 @@ pub struct Factory {
     dynamic_sender: BroadcastDynSender,
     dynamic_receiver: DynamicReceiver,
     production_runs: Vec<ProductionRun>,
-    last_hundred_energy_purchases: Vec<EnergyReceipt>
+    last_hundred_energy_purchases: Vec<EnergyReceipt>,
+    product_demand_sell_threshold: Percentage,
 }
 
 impl Factory {
@@ -62,6 +63,7 @@ impl Factory {
             dynamic_receiver,
             production_runs: Vec::new(),
             last_hundred_energy_purchases: Vec::new(),
+            product_demand_sell_threshold: Percentage::new(0.0),
         }
     }
 }
@@ -73,10 +75,6 @@ impl Factory {
 
     fn product_index_in_stock(&self, product: &Product) -> Option<usize> {
         self.state_ro.read().unwrap().product_stocks.iter().position(|stock| stock.product == product)
-    }
-
-    fn running_demands_iter(&self) -> impl Iterator<Item=ProductDemand> {
-        self.production_runs.iter().map(|run| run.demand)
     }
 
     fn maybe_produce_goods(&mut self) {
@@ -105,49 +103,28 @@ impl Factory {
             for demand in producable_demands {
                 let product = &demand.product;
 
-                // Product is already in a production run, awaiting fuel or something else to finish.
-                // We skip this demand.
-                // TODO: If production run units is below demand, we might want to update the production run and increase the amount.
-                if self.production_runs.iter().position(|run| { run.demand.product == product }).is_some() {
-                    continue;
-                }
-
-                // If product is in stock, we should try to sell it first instead of producing new ones.else
-                // Sell function runs after this one, so we just skip this demand.
-                // TODO: If stock number is below demand, we might want to continue production with the difference.
-                if self.state_ro.read().unwrap().product_stocks.iter().position(|sto| sto.product == product).is_some() {
-                    continue;
-                }
-
                 let unit_cost_ex_energy = product.get_unit_cost_excl_energy();
-
                 let units = demand.as_units();
                 let total_cost_ex_energy = unit_cost_ex_energy * units as SimFlo;
 
                 if total_cost_ex_energy <= balance * 0.75 {
                     let energy_needed = demand.calculate_energy_need();
-                    let energy_we_have = self.state_ro.read().unwrap().available_energy;
-                    if energy_we_have >= energy_needed {
-                        self.produce_product_demand(units, demand);
-                    } else {
-                        let energy_demand = FactoryEnergyDemand {
-                            factory_id,
-                            energy_needed,
-                        };
+                    let energy_demand = FactoryEnergyDemand {
+                        factory_id,
+                        energy_needed,
+                    };
 
-                        self.dynamic_sender.send(Arc::new(
-                            FactoryHubSignal::EnergyDemand(
-                                energy_demand,
-                            ))
-                        ).unwrap();
+                    self.dynamic_sender.send(Arc::new(
+                        FactoryHubSignal::EnergyDemand(
+                            energy_demand,
+                        ))
+                    ).unwrap();
 
-                        self.production_runs.push(ProductionRun {
-                            demand,
-                            units,
-                            cost: total_cost_ex_energy,
-                            energy_needed
-                        })
-                    }
+                    self.production_runs.push(ProductionRun {
+                        demand,
+                        cost: total_cost_ex_energy,
+                        energy_needed
+                    })
                 }
             }
         } else {
@@ -183,23 +160,36 @@ impl Factory {
             run.energy_needed <= energy_available && run.cost <= balance
         }) {
             let run = &self.production_runs[index];
-            self.produce_product_demand(run.units, run.demand);
-            self.production_runs.remove(index);
+            let unit_cost = Money::new(run.cost.val() / run.demand.units as SimFlo);
+            self.produce_product_demand(run.demand, unit_cost);
         }
     }
 
-    fn produce_product_demand(&mut self, units: SimInt, demand: ProductDemand) {
-        self.dynamic_sender
-            .send(
-                Arc::new(FactoryHubSignal::ProducingProductDemand(FactoryProduction {
-                    demand,
-                    units,
-                }))
-            ).unwrap();
+    fn produce_product_demand(&mut self, demand: ProductDemand, unit_cost: Money) {
+        self.dynamic_sender.send(
+            Arc::new(FactoryHubSignal::ProducingProductDemand(demand, unit_cost))
+        ).unwrap();
     }
 
     fn maybe_sell_goods(&self) {
-        //TODO
+        let state_ro = self.state_ro.read().unwrap();
+        let econ_state_ro = self.econ_state_ro.read().unwrap();
+        state_ro.product_stocks.iter().enumerate().for_each(|(i, stock)| {
+            if econ_state_ro.product_demands.iter()
+                .find(|demand|
+                    demand.product == stock.product && demand.percent.val() > self.product_demand_sell_threshold.val()
+                ).is_some() {
+                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(i))).unwrap();
+                }
+        })
+    }
+
+    fn production_complete(&mut self, demand: &ProductDemand) {
+        let demand_index = self.production_runs.iter().position(|run| run.demand == *demand);
+        if let Some(remove_index) = demand_index {
+            self.production_runs.remove(remove_index);
+            self.maybe_sell_goods();
+        }
     }
 }
 
@@ -259,12 +249,15 @@ impl Factory {
                         },
                         s if s.is::<HubFactorySignal>() => {
                             if let Some(signal_from_hub) = signal_any.downcast_ref::<HubFactorySignal>() {
+                                let mut me_lock = me.lock().unwrap();
                                 match signal_from_hub {
                                     HubFactorySignal::EnergyTransfered(receipt) => {
-                                        let mut me_lock = me.lock().unwrap();
                                         me_lock.log_ui_console(format!("{} units of energy received.", receipt.units.val()), Info);
                                         me_lock.last_hundred_energy_purchases.push(receipt.clone());
                                         me_lock.energy_received();
+                                    }
+                                    HubFactorySignal::ProductionComplete(demand) => {
+                                        me_lock.production_complete(demand);
                                     }
                                 }
                             }
@@ -277,7 +270,6 @@ impl Factory {
                 }
 
                 if let Ok(action) = wakeup_receiver.try_recv() {
-                    thread::sleep(Duration::from_micros(500));
                     if !state_ro.read().unwrap().is_bankrupt {
                         match action {
                             StateAction::Timer(event) => {

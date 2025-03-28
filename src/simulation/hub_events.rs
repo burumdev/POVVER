@@ -10,12 +10,16 @@ use crate::{
         hub_jobs::*,
         hub_comms::*
     },
+    economy::{
+        products::ProductStock,
+        economy_types::{Money, ProductDemand},
+    },
     utils_traits::AsFactor,
 };
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
-        let price = self.econ_state_ro.read().unwrap().fuel_price;
+        let price = self.econ_state.read().unwrap().fuel_price;
         let fee = price.val() * amount as SimFlo;
 
         let transaction_successful =
@@ -100,8 +104,6 @@ impl TheHub {
                 return;
             }
 
-            factory.write().unwrap().is_awaiting_energy = true;
-
             let date = self.timer_state_ro.read().unwrap().date.clone();
             let receipt = EnergyReceipt {
                 units: offer.units,
@@ -129,9 +131,12 @@ impl TheHub {
         self.comms.send_signal_broadcast(Arc::new(*demand))
     }
 
-    pub fn factory_will_produce(&mut self, fid: usize, production: &FactoryProduction) {
+    pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: &Money) {
         //TODO: This should be a timed job
-        println!("Factory No. {} produces {} units for demand {:?}", fid, production.units, production.demand);
-        self.factory_produce(fid, production);
+        println!("Factory No. {} produces {} units for demand {:?}", fid, demand.units, demand);
+        self.factory_produce(fid, demand, unit_cost);
+    }
+
+    pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize) {
     }
 }

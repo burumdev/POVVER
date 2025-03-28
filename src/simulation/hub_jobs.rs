@@ -10,6 +10,7 @@ use crate::{
     },
     economy::products::ProductStock,
 };
+use crate::economy::economy_types::{Money, ProductDemand};
 
 #[derive(Debug, Clone)]
 pub enum MinutelyJobKind {
@@ -156,31 +157,33 @@ impl TheHub {
 
             self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", receipt.units.val(), fid), Info);
 
-            self.comms.hub_to_factory(Arc::new(HubFactorySignal::EnergyTransfered(receipt.clone())), fid);
+            self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::EnergyTransfered(receipt.clone())));
             self.comms.hub_to_pp(Arc::new(HubPPSignal::EnergyTransfered(receipt)));
         } else {
             self.log_console(format!("Factory No. {} is not found. PP energy transfer canceled.", fid), Error);
         }
     }
 
-    pub fn factory_produce(&mut self, fid: usize, production: &FactoryProduction) {
-        let demand = production.demand;
+    pub fn factory_produce(&mut self, fid: usize, demand: &ProductDemand, reported_unit_cost: &Money) {
         let units = demand.as_units();
-        let unit_cost_ex_energy = demand.as_units() * demand.product.get_unit_cost_excl_energy();
+        let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
         let factories_state = self.factories_state.read().unwrap();
         let factory_state = factories_state.index(fid);
-        let total_cost_ex_energy = unit_cost_ex_energy + units;
+        let total_cost_ex_energy = unit_cost_ex_energy * units;
 
         let transaction_successful = factory_state.write().unwrap().balance.dec(total_cost_ex_energy.val());
         if transaction_successful {
-            let energy_needed = production.demand.calculate_energy_need();
+            let energy_needed = demand.calculate_energy_need();
             let available_energy = factory_state.read().unwrap().available_energy;
 
             if available_energy >= energy_needed {
                 factory_state.write().unwrap().product_stocks.push(ProductStock {
                     product: demand.product,
-                    units
+                    units,
+                    unit_price: *reported_unit_cost, // Profit to be determined by the factory
+                    total_price: *reported_unit_cost * units, // Profit to be determined by the factory
                 });
+                self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::ProductionComplete(demand.clone())));
             } else {
                 self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
             }
@@ -188,7 +191,16 @@ impl TheHub {
             self.log_ui_console(format!("Factory No. {} produced {} {}", fid, units, demand.product.name), Info);
         } else {
             factory_state.write().unwrap().is_bankrupt = true;
-            self.log_ui_console(format!("Factory No. {} has not enough money to produce {} {}. It's gone bankrupt.", fid, units, demand.product.name), Critical);
+            self.log_ui_console(
+                format!(
+                    "Factory No. {} has not enough money to produce {} {}. It's gone bankrupt.",
+                    fid, units, demand.product.name
+                ), Critical);
+            self.log_console(
+                format!(
+                    "Unit cost excluding energy is {}. Total cost excl. energy is {}. Factory budget is {}",
+                    unit_cost_ex_energy.val(), total_cost_ex_energy.val(), factory_state.read().unwrap().balance.val()
+                ), Critical);
         }
     }
 }

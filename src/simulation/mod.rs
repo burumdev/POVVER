@@ -86,7 +86,7 @@ impl Simulation {
         }));
 
         let (the_hub, hub_state) = TheHub::new(
-            ReadOnlyRwLock::from(economy_state.clone()),
+            Arc::clone(&economy_state),
             ReadOnlyRwLock::from(timer_state.clone()),
             ui_log_channel.0.clone()
         );

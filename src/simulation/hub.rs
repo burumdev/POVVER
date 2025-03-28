@@ -35,7 +35,7 @@ pub struct TheHub {
     pub povver_plant_state: Arc<RwLock<PovverPlantStateData>>,
     pub factories: Arc<Mutex<Vec<Arc<Mutex<Factory>>>>>,
     pub factories_state: Arc<RwLock<Vec<Arc<RwLock<FactoryStateData>>>>>,
-    pub econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
+    pub econ_state: Arc<RwLock<EconomyStateData>>,
     pub timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     pub minutely_jobs: Vec<MinutelyJob>,
     pub hourly_jobs: Vec<HourlyJob>,
@@ -46,7 +46,7 @@ pub struct TheHub {
 
 impl TheHub {
     pub fn new(
-        econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
+        econ_state: Arc<RwLock<EconomyStateData>>,
         timer_state_ro: ReadOnlyRwLock<TimerStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
@@ -56,7 +56,7 @@ impl TheHub {
             fuel: PP_INIT_FUEL_CAPACITY,
             fuel_capacity: PP_INIT_FUEL_CAPACITY,
             production_capacity: PP_INIT_PRODUCTION_CAP,
-            balance: Money::new(PP_INIT_MONEY.val() - (econ_state_ro.read().unwrap().fuel_price.val() * PP_INIT_FUEL_CAPACITY as SimFlo)),
+            balance: Money::new(PP_INIT_MONEY.val() - (econ_state.read().unwrap().fuel_price.val() * PP_INIT_FUEL_CAPACITY as SimFlo)),
             is_awaiting_fuel: false,
             is_bankrupt: false,
         }));
@@ -78,7 +78,6 @@ impl TheHub {
                         industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
                         id: 0,
-                        is_awaiting_energy: false,
                         is_bankrupt: false,
                     }
                 )
@@ -95,7 +94,7 @@ impl TheHub {
                         Arc::new(Mutex::new(
                             Factory::new(
                                 ReadOnlyRwLock::from(Arc::clone(f)),
-                                ReadOnlyRwLock::clone(&econ_state_ro),
+                                ReadOnlyRwLock::from(Arc::clone(&econ_state)),
                                 ui_log_sender.clone(),
                                 comms.clone_broadcast_state_receiver(),
                                 comms.clone_broadcast_signal_receiver(),
@@ -112,7 +111,7 @@ impl TheHub {
 
         let povver_plant = Arc::new(Mutex::new(PovverPlant::new(
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
-            ReadOnlyRwLock::clone(&econ_state_ro),
+            ReadOnlyRwLock::from(Arc::clone(&econ_state)),
             ui_log_sender.clone(),
             comms.clone_broadcast_state_receiver(),
             comms.clone_pp_dyn_channel(),
@@ -127,7 +126,7 @@ impl TheHub {
                 povver_plant_state: Arc::clone(&povver_plant_state),
                 factories_state: Arc::clone(&factories_state),
                 factories,
-                econ_state_ro,
+                econ_state,
                 timer_state_ro,
                 minutely_jobs: Vec::new(),
                 hourly_jobs: Vec::new(),
@@ -227,8 +226,11 @@ impl TheHub {
                                         FactoryHubSignal::EnergyDemand(demand) => {
                                             me.lock().unwrap().factory_needs_energy(demand);
                                         },
-                                        FactoryHubSignal::ProducingProductDemand(production) => {
-                                            me.lock().unwrap().factory_will_produce(fid, production);
+                                        FactoryHubSignal::ProducingProductDemand(demand, unit_cost) => {
+                                            me.lock().unwrap().factory_will_produce(fid, demand, unit_cost);
+                                        },
+                                        FactoryHubSignal::SellingProduct(stock_index) => {
+                                            me.lock().unwrap().factory_sells_product(fid, *stock_index);
                                         }
                                     }
                                 }

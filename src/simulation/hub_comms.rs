@@ -15,6 +15,7 @@ use crate::{
         SimFlo,
     },
     economy::economy_types::{EnergyUnit, Money, ProductDemand},
+    economy::products::ProductStock,
     ui_controller::Date,
 };
 
@@ -66,6 +67,7 @@ pub enum HubPPSignal {
 #[derive(Debug, PartialEq)]
 pub enum HubFactorySignal {
     EnergyTransfered(EnergyReceipt),
+    ProductionComplete(ProductDemand),
 }
 
 #[derive(Debug)]
@@ -77,15 +79,10 @@ pub enum PPHubSignal {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct FactoryProduction {
-    pub demand: ProductDemand,
-    pub units: SimInt,
-}
-
-#[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
-    ProducingProductDemand(FactoryProduction)
+    ProducingProductDemand(ProductDemand, Money),
+    SellingProduct(usize),
 }
 
 #[derive(Debug, PartialEq)]
@@ -220,9 +217,9 @@ impl HubComms {
         self.pp_dyn_sender().send(signal).unwrap();
     }
 
-    pub fn hub_to_factory(&self, signal: DynamicSignal, factory_id: usize) {
-        if let Err(e) = self.to_factory_dyn_sender(factory_id).send(signal) {
-            eprintln!("HUB COMMS: Could not send signal to factory No. {factory_id}: {e}");
+    pub fn hub_to_factory(&self, fid: usize, signal: DynamicSignal) {
+        if let Err(e) = self.to_factory_dyn_sender(fid).send(signal) {
+            eprintln!("HUB COMMS: Could not send signal to factory No. {fid}: {e}");
         }
     }
 }

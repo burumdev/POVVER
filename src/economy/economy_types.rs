@@ -218,14 +218,17 @@ pub struct ProductDemand {
     pub percent: Percentage,
     pub age: SimInt,
     pub demand_meet_percent: Percentage,
+    pub units: SimInt,
 }
 impl ProductDemand {
     pub fn new(product: &'static Product, percent: Percentage) -> Self {
+        let units = (percent.val() * product.demand_info.unit_per_percent as SimFlo) as SimInt;
         Self {
             product,
             percent,
             age: 0,
-            demand_meet_percent: Percentage::default()
+            demand_meet_percent: Percentage::default(),
+            units,
         }
     }
     pub fn as_units(&self) -> SimInt {

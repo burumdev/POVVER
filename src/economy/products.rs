@@ -567,10 +567,12 @@ impl Product {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProductStock {
     pub product: &'static Product,
     pub units: SimInt,
+    pub unit_price: Money,
+    pub total_price: Money,
 }
 
 pub const PRODUCTS: &[Product] = &[

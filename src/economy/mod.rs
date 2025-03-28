@@ -16,10 +16,9 @@ use crate::{
     utils_traits::{Flippable, AsFactor},
     utils_data::{ReadOnlyRwLock, SlidingWindow},
     app_state::{EconomyStateData, TimerStateData},
-    economy::products::PRODUCTS,
-    simulation::SimFlo,
+    economy::products::{PRODUCTS, ProductStock},
+    simulation::{SimFlo, Percentage},
 };
-use crate::simulation::Percentage;
 
 #[derive(Debug)]
 pub struct Economy {
@@ -195,5 +194,9 @@ impl Economy {
         for demand in old_demands.drain(..) {
             self.state.write().unwrap().past_25_product_demands.add(demand);
         }
+    }
+
+    pub fn buy_products(&mut self, stock: ProductStock) {
+
     }
 }
