@@ -56,6 +56,7 @@ pub struct FactoryStateData {
     pub industry: Industry,
     pub product_portfolio: Vec<&'static Product>,
     pub id: usize,
+    pub is_awaiting_energy: bool,
     pub is_bankrupt: bool,
 }
 

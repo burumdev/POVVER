@@ -37,6 +37,7 @@ pub struct TheHub {
     pub factories_state: Arc<RwLock<Vec<Arc<RwLock<FactoryStateData>>>>>,
     pub econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
     pub timer_state_ro: ReadOnlyRwLock<TimerStateData>,
+    pub minutely_jobs: Vec<MinutelyJob>,
     pub hourly_jobs: Vec<HourlyJob>,
     pub daily_jobs: Vec<DailyJob>,
     pub ui_log_sender: tokio_broadcast::Sender<LogMessage>,
@@ -77,6 +78,7 @@ impl TheHub {
                         industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
                         id: 0,
+                        is_awaiting_energy: false,
                         is_bankrupt: false,
                     }
                 )
@@ -127,6 +129,7 @@ impl TheHub {
                 factories,
                 econ_state_ro,
                 timer_state_ro,
+                minutely_jobs: Vec::new(),
                 hourly_jobs: Vec::new(),
                 daily_jobs: Vec::new(),
                 ui_log_sender,
@@ -137,6 +140,19 @@ impl TheHub {
                 factories: factories_state,
             },
         )
+    }
+}
+
+impl TheHub {
+    pub fn get_factory_state(&self, factory_id: usize) -> Option<Arc<RwLock<FactoryStateData>>> {
+        let factories_state = self.factories_state.read().unwrap();
+        let factory_state = factories_state.iter().find(|fac| fac.read().unwrap().id == factory_id);
+
+        if let Some(factory) = factory_state {
+            Some(factory.clone())
+        } else {
+            None
+        }
     }
 }
 
@@ -183,8 +199,8 @@ impl TheHub {
                                 PPHubSignal::BuyFuel(amount) => {
                                     me.lock().unwrap().pp_buys_fuel(*amount);
                                 },
-                                PPHubSignal::EnergyToFactory(offer) => {
-                                    me.lock().unwrap().pp_energy_to_factory(offer);
+                                PPHubSignal::ProduceEnergy(offer) => {
+                                    me.lock().unwrap().pp_produces_energy(offer);
                                 },
                                 PPHubSignal::IncreaseFuelCapacity => {
                                     me.lock().unwrap().pp_increases_fuel_capacity();
@@ -229,13 +245,15 @@ impl TheHub {
                         StateAction::Timer(event) => {
                             let mut me_lock = me.lock().unwrap();
                             match event {
-                                e if e.at_least_day() => {
-                                    me_lock.do_hourly_jobs();
-                                    me_lock.do_daily_jobs();
+                                e if e.at_least_minute() => {
+                                    me_lock.do_minutely_jobs();
                                 }
                                 e if e.at_least_hour() => {
                                     me_lock.do_hourly_jobs();
-                                },
+                                }
+                                e if e.at_least_day() => {
+                                    me_lock.do_daily_jobs();
+                                }
                                 _ => ()
                             }
                         },

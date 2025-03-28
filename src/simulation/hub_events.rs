@@ -9,9 +9,9 @@ use crate::{
         hub_constants::*,
         hub_jobs::*,
         hub_comms::*
-    }
+    },
+    utils_traits::AsFactor,
 };
-use crate::utils_traits::AsFactor;
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
@@ -85,6 +85,43 @@ impl TheHub {
             println!();
         } else {
             self.log_ui_console("PP couldn't pay for production capacity increase. Upgrade canceled.".to_string(), Critical);
+        }
+    }
+
+    pub fn pp_produces_energy(&mut self, offer: &PPEnergyOffer) {
+        let fid = offer.to_factory_id;
+        if let Some(factory) = self.get_factory_state(fid) {
+            let fee = offer.price_per_unit * offer.units.val() as SimFlo;
+            if !factory.write().unwrap().balance.dec(fee.val()) {
+                factory.write().unwrap().is_bankrupt = true;
+
+                self.log_ui_console(format!("Factory No. {} has gone bankrupt. I'm the hub. I don't go bankrupt.", fid), Critical);
+
+                return;
+            }
+
+            factory.write().unwrap().is_awaiting_energy = true;
+
+            let date = self.timer_state_ro.read().unwrap().date.clone();
+            let receipt = EnergyReceipt {
+                units: offer.units,
+                price_per_unit: offer.price_per_unit.val(),
+                date,
+                factory_id: fid,
+                total_price: fee.val(),
+            };
+
+            let delay = offer.units.val() / 1000;
+            let minute_created = receipt.date.minute;
+            self.minutely_jobs.push(MinutelyJob {
+                kind: MinutelyJobKind::PPProducesEnergy(receipt),
+                delay,
+                minute_created,
+            });
+            self.log_ui_console(format!("PP is producing {} units of energy for factory No. {}. ETA is {} minutes.", offer.units.val(), fid, delay), Info);
+
+        } else {
+            self.log_console(format!("Factory No. {} is not found. PP energy production canceled.", fid), Error);
         }
     }
 

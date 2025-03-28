@@ -16,6 +16,7 @@ use crate::{
     },
     economy::{
         economy_types::{EnergyUnit, Money, ProductDemand},
+        products::Product,
     },
     logger::{LogMessage, Logger, LogLevel::*},
     utils_traits::AsFactor,
@@ -66,19 +67,37 @@ impl Factory {
 }
 
 impl Factory {
+    fn product_index_in_prod_run(&self, product: &Product) -> Option<usize> {
+        self.production_runs.iter().position(|run| run.demand.product == product)
+    }
+
+    fn product_index_in_stock(&self, product: &Product) -> Option<usize> {
+        self.state_ro.read().unwrap().product_stocks.iter().position(|stock| stock.product == product)
+    }
+
+    fn running_demands_iter(&self) -> impl Iterator<Item=ProductDemand> {
+        self.production_runs.iter().map(|run| run.demand)
+    }
+
     fn maybe_produce_goods(&mut self) {
         let (factory_id, balance, producable_demands) = {
             let econ_state_ro = self.econ_state_ro.read().unwrap();
             let state_ro = self.state_ro.read().unwrap();
+            let producable_demands = econ_state_ro
+                .product_demands
+                .iter()
+                .copied()
+                .filter(
+                    |demand|
+                        demand.product.industry == state_ro.industry && state_ro.product_portfolio.contains(&demand.product) &&
+                        self.product_index_in_prod_run(demand.product).is_none() && self.product_index_in_stock(demand.product).is_none()
+                )
+                .collect::<Vec<_>>();
+
             (
                 state_ro.id,
                 state_ro.balance,
-                econ_state_ro
-                    .product_demands
-                    .iter()
-                    .copied()
-                    .filter(|demand| demand.product.industry == state_ro.industry && state_ro.product_portfolio.contains(&demand.product))
-                    .collect::<Vec<_>>(),
+                producable_demands,
             )
         };
 
@@ -86,12 +105,17 @@ impl Factory {
             for demand in producable_demands {
                 let product = &demand.product;
 
+                // Product is already in a production run, awaiting fuel or something else to finish.
+                // We skip this demand.
+                // TODO: If production run units is below demand, we might want to update the production run and increase the amount.
                 if self.production_runs.iter().position(|run| { run.demand.product == product }).is_some() {
                     continue;
                 }
 
-                if self.state_ro.read().unwrap().product_stocks.iter().find(|sto| sto.product == product).is_some() {
-                    self.maybe_sell_goods();
+                // If product is in stock, we should try to sell it first instead of producing new ones.else
+                // Sell function runs after this one, so we just skip this demand.
+                // TODO: If stock number is below demand, we might want to continue production with the difference.
+                if self.state_ro.read().unwrap().product_stocks.iter().position(|sto| sto.product == product).is_some() {
                     continue;
                 }
 
@@ -135,6 +159,7 @@ impl Factory {
         let balance = self.state_ro.read().unwrap().balance;
 
         if !self.production_runs.is_empty() {
+            // TODO: A more sophisticated algo to evaluate the price here might be better option.
             let prun = self.production_runs.last_mut().unwrap();
             let energy_cost = offer.price_per_unit * offer.units.val() as SimFlo;
             let remaining_budget = balance - (prun.cost + energy_cost);
@@ -174,7 +199,7 @@ impl Factory {
     }
 
     fn maybe_sell_goods(&self) {
-
+        //TODO
     }
 }
 

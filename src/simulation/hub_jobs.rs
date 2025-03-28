@@ -4,13 +4,24 @@ use crate::{
     logger::{Logger, LogLevel::*},
     simulation::{
         SimInt,
-        SimFlo,
         hub::TheHub,
         hub_constants::*,
         hub_comms::*
     },
     economy::products::ProductStock,
 };
+
+#[derive(Debug, Clone)]
+pub enum MinutelyJobKind {
+    PPProducesEnergy(EnergyReceipt),
+}
+
+#[derive(Debug, Clone)]
+pub struct MinutelyJob {
+    pub kind: MinutelyJobKind,
+    pub delay: SimInt,
+    pub minute_created: SimInt,
+}
 
 #[derive(Debug, Clone)]
 pub enum HourlyJobKind {
@@ -38,6 +49,30 @@ pub struct DailyJob {
 }
 
 impl TheHub {
+    pub fn do_minutely_jobs(&mut self) {
+        self.log_console(format!("processing {} minutely jobs: {:?}", self.minutely_jobs.len(), self.minutely_jobs), Info);
+        let this_minute = self.timer_state_ro.read().unwrap().date.minute;
+
+        let mut due_jobs = Vec::new();
+        self.minutely_jobs
+            .retain_mut(|job| {
+                if (job.minute_created + job.delay) % 60 == this_minute {
+                    due_jobs.push(job.clone());
+                    return false;
+                }
+
+                true
+            });
+
+        for job in due_jobs.drain(..) {
+            match job.kind {
+                MinutelyJobKind::PPProducesEnergy(receipt) => {
+                    self.pp_energy_to_factory(receipt);
+                }
+            }
+        }
+    }
+
     pub fn do_hourly_jobs(&mut self) {
         self.log_console(format!("processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs), Info);
         let this_hour = self.timer_state_ro.read().unwrap().date.hour;
@@ -110,40 +145,21 @@ impl TheHub {
         self.comms.hub_to_pp(Arc::new(HubPPSignal::ProductionCapacityIncreased));
     }
 
-    pub fn pp_energy_to_factory(&self, offer: &PPEnergyOffer) {
-        let fid = offer.to_factory_id;
-        let factories_state = self.factories_state.write().unwrap();
-        let found_factory = factories_state.iter().find(|fac| fac.read().unwrap().id == fid);
-        if let Some(factory) = found_factory {
-            let fee = offer.price_per_unit * offer.units.val() as SimFlo;
-            if !factory.write().unwrap().balance.dec(fee.val()) {
-                factory.write().unwrap().is_bankrupt = true;
+    pub fn pp_energy_to_factory(&self, receipt: EnergyReceipt) {
+        let fid = receipt.factory_id;
 
-                self.log_ui_console(format!("Factory No. {} has gone bankrupt. I'm the hub. I don't go bankrupt.", fid), Critical);
-
-                return;
-            }
-
-            factory.write().unwrap().available_energy.inc(offer.units);
-            self.povver_plant_state.write().unwrap().balance.inc(fee.val());
-            let fuel_needed = (offer.units / PP_ENERGY_PER_FUEL).val();
+        if let Some(factory) = self.get_factory_state(fid) {
+            factory.write().unwrap().available_energy.inc(receipt.units);
+            self.povver_plant_state.write().unwrap().balance.inc(receipt.total_price);
+            let fuel_needed = (receipt.units / PP_ENERGY_PER_FUEL).val();
             self.povver_plant_state.write().unwrap().fuel -= fuel_needed;
 
-            self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", offer.units.val(), fid), Info);
-
-            let date = self.timer_state_ro.read().unwrap().date.clone();
-            let receipt = EnergyReceipt {
-                units: offer.units,
-                price_per_unit: offer.price_per_unit.val(),
-                date,
-                factory_id: fid,
-                total_price: fee.val(),
-            };
+            self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", receipt.units.val(), fid), Info);
 
             self.comms.hub_to_factory(Arc::new(HubFactorySignal::EnergyTransfered(receipt.clone())), fid);
             self.comms.hub_to_pp(Arc::new(HubPPSignal::EnergyTransfered(receipt)));
         } else {
-            self.log_console(format!("Factory No. {} is not found. Energy transfer canceled.", fid), Error);
+            self.log_console(format!("Factory No. {} is not found. PP energy transfer canceled.", fid), Error);
         }
     }
 

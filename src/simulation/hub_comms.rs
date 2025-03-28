@@ -71,7 +71,7 @@ pub enum HubFactorySignal {
 #[derive(Debug)]
 pub enum PPHubSignal {
     BuyFuel(SimInt),
-    EnergyToFactory(PPEnergyOffer),
+    ProduceEnergy(PPEnergyOffer),
     IncreaseFuelCapacity,
     IncreaseProductionCapacity,
 }

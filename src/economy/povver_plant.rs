@@ -17,7 +17,7 @@ use crate::{
         hub_comms::*,
         SimInt,
         SimFlo,
-        hub_constants::{PP_FUEL_CAPACITY_INCREASE_COST, PP_INIT_FUEL_BUY_THRESHOLD, PP_ENERGY_PER_FUEL},
+        hub_constants::*,
         speed::Speed,
     },
     logger::{
@@ -26,7 +26,6 @@ use crate::{
         LogMessage,
     },
 };
-use crate::simulation::hub_constants::PP_PRODUCTION_CAPACITY_INCREASE_COST;
 
 pub struct PovverPlant {
     profit_margin: Percentage,
@@ -244,7 +243,7 @@ impl PovverPlant {
         let index = self.pending_energy_offers.iter().position(|of| of.to_factory_id == offer.to_factory_id);
         if let Some(index) = index {
             let plucked_offer = self.pending_energy_offers.remove(index);
-            self.get_dynamic_sender().send(Arc::new(PPHubSignal::EnergyToFactory(plucked_offer))).unwrap();
+            self.get_dynamic_sender().send(Arc::new(PPHubSignal::ProduceEnergy(plucked_offer))).unwrap();
             self.log_ui_console(format!("Energy to factory No. {} is coming right up!", offer.to_factory_id), Info);
         } else {
             self.log_console(format!("Energy offer to process: {:?} could not be found in pending offers: {:?}", offer, self.pending_energy_offers), Error);
