@@ -137,6 +137,6 @@ impl TheHub {
         self.factory_produce(fid, demand, unit_cost);
     }
 
-    pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize) {
+    pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize, unit_price: Money) {
     }
 }

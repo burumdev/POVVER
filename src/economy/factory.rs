@@ -13,6 +13,7 @@ use crate::{
         StateAction,
         hub_comms::*,
         speed::Speed,
+        Percentage
     },
     economy::{
         economy_types::{EnergyUnit, Money, ProductDemand},
@@ -20,9 +21,8 @@ use crate::{
     },
     logger::{LogMessage, Logger, LogLevel::*},
     utils_data::ReadOnlyRwLock,
+    utils_traits::AsFactor,
 };
-use crate::simulation::Percentage;
-use crate::utils_traits::AsFactor;
 
 struct ProductionRun {
     demand: ProductDemand,
@@ -41,6 +41,7 @@ pub struct Factory {
     production_runs: Vec<ProductionRun>,
     last_hundred_energy_purchases: Vec<EnergyReceipt>,
     product_demand_sell_threshold: Percentage,
+    profit_margin: Percentage,
 }
 
 impl Factory {
@@ -64,6 +65,7 @@ impl Factory {
             production_runs: Vec::new(),
             last_hundred_energy_purchases: Vec::new(),
             product_demand_sell_threshold: Percentage::new(0.0),
+            profit_margin: Percentage::new(20.0),
         }
     }
 }
@@ -179,7 +181,8 @@ impl Factory {
                 .find(|demand|
                     demand.product == stock.product && demand.percent.val() > self.product_demand_sell_threshold.val()
                 ).is_some() {
-                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(i))).unwrap();
+                    let unit_price = stock.unit_production_cost + stock.unit_production_cost * self.profit_margin.as_factor();
+                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(i, unit_price))).unwrap();
                 }
         })
     }

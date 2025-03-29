@@ -571,8 +571,7 @@ impl Product {
 pub struct ProductStock {
     pub product: &'static Product,
     pub units: SimInt,
-    pub unit_price: Money,
-    pub total_price: Money,
+    pub unit_production_cost: Money,
 }
 
 pub const PRODUCTS: &[Product] = &[

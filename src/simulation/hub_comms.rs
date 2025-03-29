@@ -82,7 +82,7 @@ pub enum PPHubSignal {
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
     ProducingProductDemand(ProductDemand, Money),
-    SellingProduct(usize),
+    SellingProduct(usize, Money),
 }
 
 #[derive(Debug, PartialEq)]

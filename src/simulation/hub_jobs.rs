@@ -180,8 +180,7 @@ impl TheHub {
                 factory_state.write().unwrap().product_stocks.push(ProductStock {
                     product: demand.product,
                     units,
-                    unit_price: *reported_unit_cost, // Profit to be determined by the factory
-                    total_price: *reported_unit_cost * units, // Profit to be determined by the factory
+                    unit_production_cost: *reported_unit_cost, // Profit to be determined by the factory
                 });
                 self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::ProductionComplete(demand.clone())));
             } else {
