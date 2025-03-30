@@ -167,39 +167,41 @@ impl TheHub {
     pub fn factory_produce(&mut self, fid: usize, demand: &ProductDemand, reported_unit_cost: &Money) {
         let units = demand.as_units();
         let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
-        let factories_state = self.factories_state.read().unwrap();
-        let factory_state = factories_state.index(fid);
         let total_cost_ex_energy = unit_cost_ex_energy * units;
 
-        let transaction_successful = factory_state.write().unwrap().balance.dec(total_cost_ex_energy.val());
-        if transaction_successful {
-            let energy_needed = demand.calculate_energy_need();
-            let available_energy = factory_state.read().unwrap().available_energy;
+        if let Some(factory) = self.get_factory_state(fid) {
+            let transaction_successful = factory.write().unwrap().balance.dec(total_cost_ex_energy.val());
+            if transaction_successful {
+                let energy_needed = demand.calculate_energy_need();
+                let available_energy = factory.read().unwrap().available_energy;
 
-            if available_energy >= energy_needed {
-                factory_state.write().unwrap().product_stocks.push(ProductStock {
-                    product: demand.product,
-                    units,
-                    unit_production_cost: *reported_unit_cost, // Profit to be determined by the factory
-                });
-                self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::ProductionComplete(demand.clone())));
+                if available_energy >= energy_needed {
+                    factory.write().unwrap().product_stocks.push(ProductStock {
+                        product: demand.product,
+                        units,
+                        unit_production_cost: *reported_unit_cost, // Profit to be determined by the factory
+                    });
+                    self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::ProductionComplete(demand.clone())));
+                } else {
+                    self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
+                }
+
+                self.log_ui_console(format!("Factory No. {} produced {} {}", fid, units, demand.product.name), Info);
             } else {
-                self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
+                factory.write().unwrap().is_bankrupt = true;
+                self.log_ui_console(
+                    format!(
+                        "Factory No. {} has not enough money to produce {} {}. It's gone bankrupt.",
+                        fid, units, demand.product.name
+                    ), Critical);
+                self.log_console(
+                    format!(
+                        "Unit cost excluding energy is {}. Total cost excl. energy is {}. Factory budget is {}",
+                        unit_cost_ex_energy.val(), total_cost_ex_energy.val(), factory.read().unwrap().balance.val()
+                    ), Critical);
             }
-
-            self.log_ui_console(format!("Factory No. {} produced {} {}", fid, units, demand.product.name), Info);
         } else {
-            factory_state.write().unwrap().is_bankrupt = true;
-            self.log_ui_console(
-                format!(
-                    "Factory No. {} has not enough money to produce {} {}. It's gone bankrupt.",
-                    fid, units, demand.product.name
-                ), Critical);
-            self.log_console(
-                format!(
-                    "Unit cost excluding energy is {}. Total cost excl. energy is {}. Factory budget is {}",
-                    unit_cost_ex_energy.val(), total_cost_ex_energy.val(), factory_state.read().unwrap().balance.val()
-                ), Critical);
+            self.log_console(format!("Factory No. {} is not found. {} production canceled.", fid, demand.product.name), Error);
         }
     }
 }

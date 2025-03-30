@@ -62,7 +62,7 @@ impl Simulation {
         let ui_log_channel = tokio_broadcast::channel(128);
         let ui_controller = UIController::new();
 
-        let speed_index = 3;
+        let speed_index = 0;
         let init_date = Date {
             minute: 0,
             hour: 12,
@@ -91,7 +91,6 @@ impl Simulation {
             ui_log_channel.0.clone()
         );
         let the_hub = Arc::new(Mutex::new(the_hub));
-
 
         let app_state = AppState::new(timer_state, env_state, economy_state, hub_state, misc_state);
 

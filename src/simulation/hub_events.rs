@@ -138,5 +138,21 @@ impl TheHub {
     }
 
     pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize, unit_price: Money) {
+        if let Some(factory) = self.get_factory_state(fid) {
+            if factory.read().unwrap().product_stocks.get(stock_index).is_some() {
+                let mut fac = factory.write().unwrap();
+                let stock = fac.product_stocks.remove(stock_index);
+                //TODO: A more complicated code to determine how many to buy would be better.
+                // For now all units are bought at the price set by the factory.
+                let total_price = stock.units * unit_price;
+                fac.balance.inc(total_price.val());
+
+                self.log_ui_console(format!("Factory No. {} sold {} units of {} for a total price of {}.", fid, stock.units, stock.product.name, total_price.val()), Info);
+            } else {
+                self.log_ui_console(format!("factory_sells_product called with illegal stock index {}. Stock is: {:?}", stock_index, factory.read().unwrap().product_stocks), Error);
+            }
+        } else {
+            self.log_console(format!("Factory No. {} is not found. Sale of product canceled.", fid), Error);
+        }
     }
 }

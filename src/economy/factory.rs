@@ -176,13 +176,13 @@ impl Factory {
     fn maybe_sell_goods(&self) {
         let state_ro = self.state_ro.read().unwrap();
         let econ_state_ro = self.econ_state_ro.read().unwrap();
-        state_ro.product_stocks.iter().enumerate().for_each(|(i, stock)| {
-            if econ_state_ro.product_demands.iter()
-                .find(|demand|
+        state_ro.product_stocks.iter().for_each(|stock| {
+            if let Some(index) = econ_state_ro.product_demands.iter()
+                .position(|demand|
                     demand.product == stock.product && demand.percent.val() > self.product_demand_sell_threshold.val()
-                ).is_some() {
+                ) {
                     let unit_price = stock.unit_production_cost + stock.unit_production_cost * self.profit_margin.as_factor();
-                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(i, unit_price))).unwrap();
+                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(index, unit_price))).unwrap();
                 }
         })
     }
