@@ -6,7 +6,7 @@ use std::{
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
-    app_state::{FactoryStateData, EconomyStateData},
+    app_state::{FactoryStateData, EconomyStateData, TimerStateData},
     simulation::{
         SimInt,
         SimFlo,
@@ -33,6 +33,7 @@ struct ProductionRun {
 pub struct Factory {
     state_ro: ReadOnlyRwLock<FactoryStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
+    timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     hub_broadcast_receiver: BroadcastDynReceiver,
@@ -48,6 +49,7 @@ impl Factory {
     pub fn new(
         state_ro: ReadOnlyRwLock<FactoryStateData>,
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
+        timer_state_ro: ReadOnlyRwLock<TimerStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         hub_broadcast_receiver: tokio_broadcast::Receiver<DynamicSignal>,
@@ -57,6 +59,7 @@ impl Factory {
         Self {
             state_ro,
             econ_state_ro,
+            timer_state_ro,
             ui_log_sender,
             wakeup_receiver,
             hub_broadcast_receiver,
@@ -129,8 +132,6 @@ impl Factory {
                     })
                 }
             }
-        } else {
-            self.log_console("No demands are producable".to_string(), Info);
         }
     }
 
@@ -176,14 +177,13 @@ impl Factory {
     fn maybe_sell_goods(&self) {
         let state_ro = self.state_ro.read().unwrap();
         let econ_state_ro = self.econ_state_ro.read().unwrap();
-        state_ro.product_stocks.iter().for_each(|stock| {
-            if let Some(index) = econ_state_ro.product_demands.iter()
-                .position(|demand|
-                    demand.product == stock.product && demand.percent.val() > self.product_demand_sell_threshold.val()
-                ) {
-                    let unit_price = stock.unit_production_cost + stock.unit_production_cost * self.profit_margin.as_factor();
-                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(index, unit_price))).unwrap();
-                }
+        state_ro.product_stocks.iter().enumerate().for_each(|(stock_index, stock)| {
+            if econ_state_ro.product_demands.iter().position(|demand|
+                demand.product == stock.product && demand.percent.val() > self.product_demand_sell_threshold.val()
+            ).is_some() {
+                let unit_price = stock.unit_production_cost + stock.unit_production_cost * self.profit_margin.as_factor();
+                self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(stock_index, unit_price))).unwrap();
+            }
         })
     }
 
@@ -274,14 +274,19 @@ impl Factory {
 
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     if !state_ro.read().unwrap().is_bankrupt {
+                        let mut me_lock = me.lock().unwrap();
                         match action {
                             StateAction::Timer(event) => {
                                 if event.at_least_hour() {
                                     //TODO: Hourly factory errands
                                 }
                                 if event.at_least_minute() {
-                                    me.lock().unwrap().maybe_produce_goods();
-                                    me.lock().unwrap().maybe_sell_goods();
+                                    let minute = me_lock.timer_state_ro.read().unwrap().date.minute;
+                                    if minute % 5 == 0 {
+                                        me_lock.maybe_produce_goods();
+                                    } else if minute % 6 == 0 {
+                                        me_lock.maybe_sell_goods();
+                                    }
                                 }
                             }
                             StateAction::SpeedChange(td) => {

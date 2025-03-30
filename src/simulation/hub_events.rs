@@ -16,6 +16,8 @@ use crate::{
     },
     utils_traits::AsFactor,
 };
+use crate::simulation::Percentage;
+use crate::utils_traits::HundredPercentable;
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
@@ -142,12 +144,17 @@ impl TheHub {
             if factory.read().unwrap().product_stocks.get(stock_index).is_some() {
                 let mut fac = factory.write().unwrap();
                 let stock = fac.product_stocks.remove(stock_index);
-                //TODO: A more complicated code to determine how many to buy would be better.
-                // For now all units are bought at the price set by the factory.
-                let total_price = stock.units * unit_price;
-                fac.balance.inc(total_price.val());
+                if let Some(demand) = self.econ_state.write().unwrap().product_demands.iter_mut().find(|demand| demand.product == stock.product) {
+                    //TODO: A more complicated code to determine how many to buy would be better.
+                    // For now all units are bought at the price set by the factory.
+                    let met_percent = Percentage::new((stock.units / demand.units) as SimFlo * 100.0);
+                    demand.demand_meet_percent = met_percent;
+                    demand.percent.set(met_percent.val() / demand.percent.val() * 100.0);
+                    let total_price = stock.units * unit_price;
+                    fac.balance.inc(total_price.val());
 
-                self.log_ui_console(format!("Factory No. {} sold {} units of {} for a total price of {}.", fid, stock.units, stock.product.name, total_price.val()), Info);
+                    self.log_ui_console(format!("Factory No. {} sold {} units of {} for a total price of {}.", fid, stock.units, stock.product.name, total_price.val()), Info);
+                }
             } else {
                 self.log_ui_console(format!("factory_sells_product called with illegal stock index {}. Stock is: {:?}", stock_index, factory.read().unwrap().product_stocks), Error);
             }

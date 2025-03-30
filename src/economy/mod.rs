@@ -109,7 +109,7 @@ impl Economy {
                     .for_each(|demand| {
                         match demand.demand_meet_percent.val() {
                             // If demand is overly met in the past. There's a negative bonus
-                            mp if mp < 100.0 && mp >= 90.0 => bonus += -6.0,
+                            mp if mp <= 100.0 && mp >= 90.0 => bonus += -6.0,
                             mp if mp < 90.0 && mp >= 80.0 => bonus += 0.0,
                             // If demand was met just right in the past, we get a nice bonus,
                             // This means the consumers are eager to get more of the products
@@ -122,7 +122,7 @@ impl Economy {
                             mp if mp < 50.0 && mp >= 30.0 => bonus += 0.0,
                             mp if mp < 30.0 && mp >= 10.0 => bonus += -6.0,
                             mp if mp < 10.0 => bonus += -12.0,
-                            // This should be unreachable.
+                            // This should be unreachable because Percentage should be clamped between 0.0 and 100.0
                             _ => unreachable!()
 
                         }
@@ -163,6 +163,11 @@ impl Economy {
         let mut old_demands = Vec::new();
         let mut demands = self.state.read().unwrap().product_demands.clone();
         demands.retain_mut(|demand| {
+            if demand.demand_meet_percent.val() == 100.0 {
+                old_demands.push(demand.clone());
+
+                return false;
+            }
             demand.age += 1;
             let demand_timeline = &demand.product.demand_info.demand_timeline;
             match demand.age {
@@ -194,9 +199,5 @@ impl Economy {
         for demand in old_demands.drain(..) {
             self.state.write().unwrap().past_25_product_demands.add(demand);
         }
-    }
-
-    pub fn buy_products(&mut self, stock: ProductStock) {
-
     }
 }

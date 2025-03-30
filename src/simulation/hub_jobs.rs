@@ -1,4 +1,3 @@
-use std::ops::Index;
 use std::sync::Arc;
 use crate::{
     logger::{Logger, LogLevel::*},
@@ -51,7 +50,6 @@ pub struct DailyJob {
 
 impl TheHub {
     pub fn do_minutely_jobs(&mut self) {
-        self.log_console(format!("processing {} minutely jobs: {:?}", self.minutely_jobs.len(), self.minutely_jobs), Info);
         let this_minute = self.timer_state_ro.read().unwrap().date.minute;
 
         let mut due_jobs = Vec::new();
@@ -75,7 +73,6 @@ impl TheHub {
     }
 
     pub fn do_hourly_jobs(&mut self) {
-        self.log_console(format!("processing {} hourly jobs: {:?}", self.hourly_jobs.len(), self.hourly_jobs), Info);
         let this_hour = self.timer_state_ro.read().unwrap().date.hour;
 
         let mut due_jobs = Vec::new();
@@ -99,7 +96,6 @@ impl TheHub {
     }
 
     pub fn do_daily_jobs(&mut self) {
-        self.log_console(format!("processing {} daily jobs: {:?}", self.daily_jobs.len(), self.daily_jobs), Info);
         let today = self.timer_state_ro.read().unwrap().date.day;
 
         let mut due_jobs = Vec::new();
