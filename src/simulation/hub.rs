@@ -188,7 +188,7 @@ impl TheHub {
         };
 
         thread::Builder::new().name("POVVER_HUB".to_string()).spawn(move || {
-            let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
+            //let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
             loop {
                 while let Ok(signal) = pp_dyn_receiver.try_recv() {
                     let signal_any = signal.as_any();
@@ -247,21 +247,18 @@ impl TheHub {
                     match action {
                         StateAction::Timer(event) => {
                             let mut me_lock = me.lock().unwrap();
-                            match event {
-                                e if e.at_least_minute() => {
-                                    me_lock.do_minutely_jobs();
-                                }
-                                e if e.at_least_hour() => {
-                                    me_lock.do_hourly_jobs();
-                                }
-                                e if e.at_least_day() => {
-                                    me_lock.do_daily_jobs();
-                                }
-                                _ => ()
+                            if event.at_least_minute() {
+                                me_lock.do_minutely_jobs();
+                            }
+                            if event.at_least_hour() {
+                                me_lock.do_hourly_jobs();
+                            }
+                            if event.at_least_day() {
+                                me_lock.do_daily_jobs();
                             }
                         },
                         StateAction::SpeedChange(td) => {
-                            sleeptime = td / 2;
+                            //sleeptime = td / 2;
                         }
                         StateAction::Env => {},
                         StateAction::Misc => {},
@@ -278,7 +275,7 @@ impl TheHub {
                     }
                 }
 
-                thread::sleep(Duration::from_millis(sleeptime));
+                //thread::sleep(Duration::from_millis(sleeptime));
             }
         }).unwrap()
     }

@@ -11,7 +11,6 @@ use crate::{
         hub_comms::*
     },
     economy::{
-        products::ProductStock,
         economy_types::{Money, ProductDemand},
     },
     utils_traits::AsFactor,
@@ -29,7 +28,7 @@ impl TheHub {
                 .balance.dec(fee);
 
         if transaction_successful {
-            let delay = (amount as SimFlo / 15.0).floor() as SimInt;
+            let delay = (amount as SimFlo / 5.0).floor() as SimInt;
             let date = self.timer_state_ro.read().unwrap().date.clone();
             let receipt = FuelReceipt {
                 units: amount, price_per_unit: price.val(),

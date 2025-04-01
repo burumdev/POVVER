@@ -23,13 +23,12 @@ use crate::{
 #[derive(Debug)]
 pub struct Economy {
     state: Arc<RwLock<EconomyStateData>>,
-    timer_state: ReadOnlyRwLock<TimerStateData>,
     rng: ThreadRng,
 }
 
 // Constructor
 impl Economy {
-    pub fn new(timer_state: ReadOnlyRwLock<TimerStateData>) -> (Self, Arc<RwLock<EconomyStateData>>) {
+    pub fn new() -> (Self, Arc<RwLock<EconomyStateData>>) {
         let mut rng = rand::thread_rng();
 
         let inflation_direction = if random() { UpDown::Up } else { UpDown::Down };
@@ -44,7 +43,6 @@ impl Economy {
         (
             Self {
                 state: Arc::clone(&state),
-                timer_state,
                 rng,
             },
             state,
@@ -114,14 +112,14 @@ impl Economy {
                             // If demand was met just right in the past, we get a nice bonus,
                             // This means the consumers are eager to get more of the products
                             // because there's both availability, price advantage and product is famous.
-                            mp if mp < 80.0 && mp >= 60.0 => bonus += 12.0,
-                            mp if mp < 60.0 && mp >= 50.0 => bonus += 6.0,
+                            mp if mp < 80.0 && mp >= 60.0 => bonus += 8.0,
+                            mp if mp < 60.0 && mp >= 50.0 => bonus += 5.0,
                             // If factories couldn't meet the demand or worse yet
                             // could only meet a fraction of it, then there's frustration
                             // among the consumers, who'll be cold to the product.
                             mp if mp < 50.0 && mp >= 30.0 => bonus += 0.0,
                             mp if mp < 30.0 && mp >= 10.0 => bonus += -6.0,
-                            mp if mp < 10.0 => bonus += -12.0,
+                            mp if mp < 10.0 => bonus += -10.0,
                             // This should be unreachable because Percentage should be clamped between 0.0 and 100.0
                             _ => unreachable!()
 
@@ -131,7 +129,7 @@ impl Economy {
                 // Let's create a new demand for this product
                 // With bonus added.
                 self.state.write().unwrap().product_demands.push(
-                    ProductDemand::new(product, Percentage::new((min_percent + bonus).clamp(0.0, 100.0)))
+                    ProductDemand::new(product, Percentage::new(min_percent + bonus))
                 );
             // If inflation is negative (deflation) we still have a
             // chance for a new demand with minimum percentage.

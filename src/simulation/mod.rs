@@ -29,7 +29,6 @@ use crate::{
     logger::LogMessage,
 };
 
-
 #[derive(Debug, Clone)]
 pub enum EconUpdate {
     Macro,
@@ -78,7 +77,7 @@ impl Simulation {
         let (mut env, env_state) = Environment::new(Arc::clone(&timer_state));
         env.update();
 
-        let (economy, economy_state) = Economy::new(ReadOnlyRwLock::from(timer_state.clone()));
+        let (economy, economy_state) = Economy::new();
 
         let misc_state = Arc::new(Mutex::new(MiscStateData {
             is_paused,

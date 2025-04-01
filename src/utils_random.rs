@@ -27,7 +27,7 @@ where
         value + upper_modifier
     };
 
-    rng.gen_range(lower..upper)
+    rng.gen_range(lower..=upper)
 }
 
 /// Pick a random number between `lower_modifier` and `upper_modifier` for a given value
@@ -56,7 +56,7 @@ where
         value.saturating_add(&upper_modifier)
     };
 
-    rng.gen_range(lower..upper)
+    rng.gen_range(lower..=upper)
 }
 
 /// If one in `how_many` chance happens, it will return true else returns false

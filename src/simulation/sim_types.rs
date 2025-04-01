@@ -16,7 +16,7 @@ impl Default for Percentage {
 }
 impl Percentage {
     pub fn new(val: SimFlo) -> Self {
-        Self(val)
+        Self(val.clamp(0.0, 100.0))
     }
     pub fn dec(&mut self, val: SimFlo) -> Self {
         self.0 = (self.0 - val).max(0.0);
