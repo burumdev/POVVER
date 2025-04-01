@@ -15,7 +15,6 @@ use crate::{
         SimFlo,
     },
     economy::economy_types::{EnergyUnit, Money, ProductDemand},
-    economy::products::ProductStock,
     ui_controller::Date,
 };
 

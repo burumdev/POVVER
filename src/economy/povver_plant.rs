@@ -140,12 +140,6 @@ impl PovverPlant {
         self.fuel_price_paid_per_unit_average = self.total_fuel_expenditure / self.state_ro.read().unwrap().fuel as SimFlo;
     }
 
-    fn maybe_upgrade_fuel_capacity(&mut self, balance: SimFlo) {
-        if (balance / 4.0) > PP_FUEL_CAPACITY_INCREASE_COST.val() {
-            self.get_dynamic_sender().send(Arc::new(PPHubSignal::IncreaseFuelCapacity)).unwrap();
-        }
-    }
-
     fn maybe_new_energy_offer(&mut self, demand: &FactoryEnergyDemand) {
         if let Some(_) = self.pending_energy_offers.iter().position(|of| of.to_factory_id == demand.factory_id) {
             self.log_console(format!("Energy demand from factory No. {} is already pending.", demand.factory_id), Info);
@@ -232,9 +226,19 @@ impl PovverPlant {
         self.get_to_factory_sender_by_id(offer.to_factory_id).send(Arc::new(offer)).unwrap();
     }
 
+    fn maybe_upgrade_fuel_capacity(&mut self, balance: SimFlo) {
+        if (balance / 4.0) > PP_FUEL_CAPACITY_INCREASE_COST.val() &&
+            !self.state_ro.read().unwrap().is_awaiting_fuel_capacity
+        {
+            self.get_dynamic_sender().send(Arc::new(PPHubSignal::IncreaseFuelCapacity)).unwrap();
+        }
+    }
+
     fn maybe_upgrade_production_capacity(&self) {
         let balance = self.state_ro.read().unwrap().balance;
-        if balance.val() <= PP_PRODUCTION_CAPACITY_INCREASE_COST.val() / 2.0 {
+        if balance.val() <= PP_PRODUCTION_CAPACITY_INCREASE_COST.val() / 2.0 &&
+            !self.state_ro.read().unwrap().is_awaiting_production_capacity
+        {
             self.get_dynamic_sender().send(Arc::new(PPHubSignal::IncreaseProductionCapacity)).unwrap();
         }
     }
@@ -278,7 +282,7 @@ impl PovverPlant {
         };
 
         thread::Builder::new().name("POVVER_PLANT".to_string()).spawn(move || {
-            let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
+            let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 250;
             'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
                     let signal_any = signal.as_any();
@@ -340,14 +344,13 @@ impl PovverPlant {
                     }
                 });
                 if let Ok(action) = wakeup_receiver.try_recv() {
-                    thread::sleep(Duration::from_micros(500));
                     if !state_ro.read().unwrap().is_bankrupt {
                         match action {
                             StateAction::Timer(TimerEvent::HourChange) => {
                                 me.lock().unwrap().check_buy_fuel();
                             }
                             StateAction::SpeedChange(td) => {
-                                sleeptime = td / 2;
+                                sleeptime = ((td / 2) * 1000) - 250;
                             }
                             StateAction::Quit => {
                                 me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
@@ -360,7 +363,7 @@ impl PovverPlant {
                         me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
                     }
                 }
-                thread::sleep(Duration::from_millis(sleeptime));
+                thread::sleep(Duration::from_micros(sleeptime));
             }
         }).unwrap()
     }

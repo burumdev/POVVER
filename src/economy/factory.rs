@@ -216,7 +216,7 @@ impl Factory {
         };
 
         thread::Builder::new().name("POVVER_F".to_string() + &my_id.to_string()).spawn(move || {
-            let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
+            let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 100;
             'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
                     let signal_any = signal.as_any();
@@ -290,11 +290,11 @@ impl Factory {
                                 }
                             }
                             StateAction::SpeedChange(td) => {
-                                sleeptime = td / 2;
+                                sleeptime = ((td / 2) * 1000) - 100;
                             }
                             StateAction::Quit => {
-                                me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                                 break 'outer;
+                                me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                             }
                             _ => ()
                         }
@@ -303,7 +303,7 @@ impl Factory {
                         me.lock().unwrap().log_ui_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
                     }
                 }
-                thread::sleep(Duration::from_millis(sleeptime));
+                thread::sleep(Duration::from_micros(sleeptime));
             }
         }).unwrap()
     }

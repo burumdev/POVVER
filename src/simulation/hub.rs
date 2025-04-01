@@ -58,6 +58,8 @@ impl TheHub {
             production_capacity: PP_INIT_PRODUCTION_CAP,
             balance: Money::new(PP_INIT_MONEY.val() - (econ_state.read().unwrap().fuel_price.val() * PP_INIT_FUEL_CAPACITY as SimFlo)),
             is_awaiting_fuel: false,
+            is_awaiting_fuel_capacity: false,
+            is_awaiting_production_capacity: false,
             is_bankrupt: false,
         }));
 
@@ -188,9 +190,9 @@ impl TheHub {
         };
 
         thread::Builder::new().name("POVVER_HUB".to_string()).spawn(move || {
-            //let mut sleeptime = Speed::NORMAL.get_tick_duration() / 2;
+            let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 500;
             loop {
-                while let Ok(signal) = pp_dyn_receiver.try_recv() {
+                if let Ok(signal) = pp_dyn_receiver.try_recv() {
                     let signal_any = signal.as_any();
                     match signal_any {
                         s if s.is::<PPHubSignal>() => {
@@ -218,7 +220,7 @@ impl TheHub {
                     .iter_mut()
                     .enumerate()
                     .for_each(|(fid, receiver)| {
-                    while let Ok(signal) = receiver.try_recv() {
+                    if let Ok(signal) = receiver.try_recv() {
                         let signal_any = signal.as_any();
                         match signal_any {
                             s if s.is::<FactoryHubSignal>() => {
@@ -258,7 +260,7 @@ impl TheHub {
                             }
                         },
                         StateAction::SpeedChange(td) => {
-                            //sleeptime = td / 2;
+                            sleeptime = ((td / 2) * 1000) - 500;
                         }
                         StateAction::Env => {},
                         StateAction::Misc => {},
@@ -275,7 +277,7 @@ impl TheHub {
                     }
                 }
 
-                //thread::sleep(Duration::from_millis(sleeptime));
+                thread::sleep(Duration::from_micros(sleeptime));
             }
         }).unwrap()
     }

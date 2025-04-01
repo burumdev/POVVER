@@ -2,7 +2,7 @@ use crate::economy::economy_types::{EnergyUnit, Money};
 use crate::simulation::SimInt;
 
 pub const PP_INIT_MONEY: Money = Money::new(66000.0);
-pub const PP_INIT_FUEL_CAPACITY: SimInt = 10;
+pub const PP_INIT_FUEL_CAPACITY: SimInt = 25;
 pub const PP_INIT_PRODUCTION_CAP: EnergyUnit = EnergyUnit::new(24000);
 pub const PP_INIT_FUEL_BUY_THRESHOLD: SimInt = 15;
 pub const PP_FUEL_CAPACITY_INCREASE_COST: Money = Money::new(10000.0);

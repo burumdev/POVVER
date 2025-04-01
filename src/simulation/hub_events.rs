@@ -61,6 +61,7 @@ impl TheHub {
                 .balance.dec(PP_FUEL_CAPACITY_INCREASE_COST.val());
 
         if transaction_successful {
+            self.povver_plant_state.write().unwrap().is_awaiting_fuel_capacity = true;
             let delay = 5;
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPFuelCapIncrease,
@@ -80,6 +81,7 @@ impl TheHub {
                 .balance.dec(PP_PRODUCTION_CAPACITY_INCREASE_COST.val());
 
         if transaction_successful {
+            self.povver_plant_state.write().unwrap().is_awaiting_production_capacity = true;
             let delay = 7;
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPProductionCapIncrease,
@@ -87,7 +89,6 @@ impl TheHub {
                 day_created: self.timer_state_ro.read().unwrap().date.day,
             });
             self.log_ui_console(format!("PP is upgrading it's production capacity. ETA is {delay} days."), Info);
-            println!();
         } else {
             self.log_ui_console("PP couldn't pay for production capacity increase. Upgrade canceled.".to_string(), Critical);
         }
