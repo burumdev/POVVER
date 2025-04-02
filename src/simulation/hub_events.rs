@@ -135,7 +135,6 @@ impl TheHub {
 
     pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: &Money) {
         //TODO: This should be a timed job
-        println!("Factory No. {} produces {} units for demand {:?}", fid, demand.units, demand);
         self.factory_produce(fid, demand, unit_cost);
     }
 

@@ -1,4 +1,4 @@
-import { TimerData, MonthData, EnvData, MacroEconData, UIMisc, LogMessage, CategoryMessages, ProductDemand } from "./state.slint";
+import { TimerData, MonthData, EnvData, MacroEconData, PPState, UIMisc, LogMessage, CategoryMessages, ProductDemand } from "./state.slint";
 
 export global GlobCallbacks {
     pure callback toggle_pause;
@@ -11,6 +11,7 @@ export global Globs {
 	in property <MonthData> month;
 	in property <EnvData> env;
 	in property <MacroEconData> macroecon;
+	in property <PPState> pp;
     in property <[LogMessage]> messages;
     in property <CategoryMessages> category_messages;
     in property <[ProductDemand]> product_demands;

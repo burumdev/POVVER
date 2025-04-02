@@ -88,6 +88,18 @@ export struct ProductDemand {
 	demand_met: float,
 }
 
+// PP
+export struct PPState {
+    fuel: int,
+    fuel_capacity: int,
+    production_capacity: int,
+    balance: float,
+    is_awaiting_fuel: bool,
+    is_awaiting_fuel_capacity: bool,
+    is_awaiting_production_capacity: bool,
+    is_bankrupt: bool,
+}
+
 // LOG MESSAGES
 export enum MessageSource {
 	Hub,

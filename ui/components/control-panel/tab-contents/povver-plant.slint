@@ -1,7 +1,53 @@
+import { PPState } from "../../../state.slint";
+import { Globs } from "../../../globals.slint";
+
 import { TabContent } from "./tab-content.slint";
 
+import { DataTable } from "../../common/datatable.slint";
+import { CellData } from "../../common/datacell.slint";
+
 export component PovverPlantTab inherits TabContent {
-	Rectangle {
-		background: yellow;
+	in property <PPState> pp_state: Globs.pp;
+
+	DataTable {
+		items: [
+			{
+				label: "Povver Plant",
+				is_category: true,
+			},
+			{
+				label: "Money",
+				value: pp_state.balance,
+				value_postfix: " ϟ",
+			},
+			{
+				label: "Fuel",
+				value: pp_state.fuel,
+			},
+			{
+				label: "Fuel Capacity",
+				value: pp_state.fuel_capacity,
+			},
+			{
+				label: "Production Capacity",
+				value: pp_state.production_capacity,
+			},
+			{
+				label: "Is awaiting fuel",
+				value: pp_state.is_awaiting_fuel ? "YES" : "NO",
+			},
+			{
+				label: "Is awaiting fuel cap increase",
+				value: pp_state.is_awaiting_fuel_capacity ? "YES" : "NO",
+			},
+			{
+				label: "Is awaiting production cap increase",
+				value: pp_state.is_awaiting_production_capacity ? "YES" : "NO",
+			},
+			{
+				label: "Is bankrupt",
+				value: pp_state.is_bankrupt ? "YES" : "NO",
+			}
+		];
 	}
 }

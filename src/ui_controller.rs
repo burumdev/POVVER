@@ -84,25 +84,42 @@ impl UIController {
                                 );
                             }
 
+                            if event.at_least_month() {
+                                {
+                                    let timer_lock = state.timer.read().unwrap();
+                                    appw.set_month(
+                                        MonthData {
+                                            day_start: timer_lock.month_data.day_start,
+                                            day_end: timer_lock.month_data.day_end,
+                                            name: SharedString::from(timer_lock.month_data.name),
+                                            sunshine_factor: timer_lock.month_data.sunshine_factor,
+                                            windspeed_factor: timer_lock.month_data.windspeed_factor,
+                                            cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
+                                        }
+                                    );
+                                }
+                            };
+
                             match event {
-                                te if te.at_least_month() => {
+                                TimerEvent::NothingUnusual => {
                                     {
                                         let timer_lock = state.timer.read().unwrap();
-                                        appw.set_month(
-                                            MonthData {
-                                                day_start: timer_lock.month_data.day_start,
-                                                day_end: timer_lock.month_data.day_end,
-                                                name: SharedString::from(timer_lock.month_data.name),
-                                                sunshine_factor: timer_lock.month_data.sunshine_factor,
-                                                windspeed_factor: timer_lock.month_data.windspeed_factor,
-                                                cloud_forming_factor: timer_lock.month_data.cloud_forming_factor,
-                                            }
-                                        );
+                                        if timer_lock.date.minute % 4 == 0 {
+                                            let pp_lock = state.povver_plant.read().unwrap();
+                                            appw.set_pp(PPState {
+                                                fuel: pp_lock.fuel,
+                                                fuel_capacity: pp_lock.fuel_capacity,
+                                                balance: pp_lock.balance.val(),
+                                                is_awaiting_fuel: pp_lock.is_awaiting_fuel,
+                                                is_awaiting_fuel_capacity: pp_lock.is_awaiting_fuel_capacity,
+                                                is_awaiting_production_capacity: pp_lock.is_awaiting_production_capacity,
+                                                is_bankrupt: pp_lock.is_bankrupt,
+                                                production_capacity: pp_lock.production_capacity.val(),
+                                            })
+                                        }
                                     }
-                                },
-                                TimerEvent::NothingUnusual => {
                                     if let Ok(message) = log_receiver.try_recv() {
-                                        if messages_model.iter().len() >= 50 {
+                                        if messages_model.iter().len() >= 20 {
                                             messages_model.remove(0);
                                         }
                                         messages_model.push(message.into());

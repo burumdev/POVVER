@@ -5,6 +5,7 @@ import {
 	MonthData,
 	EnvData,
 	MacroEconData,
+	PPState,
 	Date,
 	Cloud,
 	CloudSize,
@@ -51,6 +52,7 @@ export component PovverMain inherits Window {
     in property <MonthData> month <=> Globs.month;
     in property <EnvData> env <=> Globs.env;
     in property <MacroEconData> macroecon <=> Globs.macroecon;
+    in property <PPState> pp <=> Globs.pp;
     in property <UIMisc> misc <=> Globs.misc;
     in property <[LogMessage]> messages <=> Globs.messages;
     in property <CategoryMessages> category_messages <=> Globs.category_messages;
