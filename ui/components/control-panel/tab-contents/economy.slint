@@ -7,18 +7,18 @@ import { TabContent } from "./tab-content.slint";
 import { DataTable } from "../../common/datatable.slint";
 import { CellData } from "../../common/datacell.slint";
 import { PanelTitle } from "../../common/panel-title.slint";
+import { Spacer } from "../../common/spacer.slint";
 
 component DemandItem {
 	in property <ProductDemand> pd;
 
 	Rectangle {
 		background: Palette.bg_lightgray;
-		height: 50px;
 		VerticalLayout {
 			padding: 8px;
 			Text {
 				text: pd.product_name + " demand " + pd.percent + "%, since " + pd.age + " hours and " + pd.demand_met + "% is met.";
-				font-size: 10px;
+				font-size: 9px;
 				horizontal-alignment: left;
 				wrap: word-wrap;
 				font-weight: 700;
@@ -32,9 +32,8 @@ export component EconomyTab inherits TabContent {
 
 	VerticalLayout {
 		height: 100%;
-		alignment: space-between;
 		VerticalLayout {
-			height: 8%;
+			height: 10%;
 			DataTable {
 				title: "Macroeconomics";
 				items: [
@@ -55,11 +54,14 @@ export component EconomyTab inherits TabContent {
 				];
 			}
 		}
+
 		VerticalLayout {
-			height: 92%;
+			height: 90%;
 			PanelTitle {
 				txt: "Product Demands";
 			}
+
+			Spacer {}
 
 			ListView {
 				height: 100%;

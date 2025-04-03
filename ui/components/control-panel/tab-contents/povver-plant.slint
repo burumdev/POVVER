@@ -1,13 +1,18 @@
-import { PPState } from "../../../state.slint";
+import { PPState, LogMessage } from "../../../state.slint";
+import { Message } from "../../common/message.slint";
 import { Globs } from "../../../globals.slint";
+import { ListView } from "std-widgets.slint";
 
 import { TabContent } from "./tab-content.slint";
 
+import { PanelTitle } from "../../common/panel-title.slint";
 import { DataTable } from "../../common/datatable.slint";
 import { CellData } from "../../common/datacell.slint";
+import { Spacer } from "../../common/spacer.slint";
 
 export component PovverPlantTab inherits TabContent {
 	in property <PPState> pp_state: Globs.pp;
+	property <[LogMessage]> messages: Globs.category_messages.pp;
 
 	DataTable {
 		items: [
@@ -49,5 +54,18 @@ export component PovverPlantTab inherits TabContent {
 				value: pp_state.is_bankrupt ? "YES" : "NO",
 			}
 		];
+	}
+
+	PanelTitle {
+		txt: "Events";
+	}
+
+	Spacer {}
+
+	ListView {
+		height: 96%;
+		for message in messages: Message {
+			msg: message;
+		}
 	}
 }

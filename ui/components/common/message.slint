@@ -1,0 +1,33 @@
+import { LogMessage, LogLevel } from "../../state.slint";
+import { Palette } from "../../theme.slint";
+
+export component Message {
+	in property <LogMessage> msg;
+	Rectangle {
+		min-height: 50px;
+		VerticalLayout {
+			padding: 8px;
+			txt := Text {
+				text: msg.message;
+				font-size: 12px;
+				horizontal-alignment: left;
+				wrap: word-wrap;
+				font-weight: 700;
+			}
+		}
+		states [
+			info when msg.level == LogLevel.Info: {
+				txt.color: Palette.log_info;
+				background: Palette.log_info.darker(3);
+			}
+			warn when msg.level == LogLevel.Warning: {
+				txt.color: Palette.log_warn;
+				background: Palette.log_warn.darker(3);
+			}
+			critical when msg.level == LogLevel.Critical: {
+				txt.color: Palette.log_critical;
+				background: Palette.log_critical.darker(3);
+			}
+		]
+	}
+}
