@@ -2,7 +2,6 @@ use std::{
     sync::Arc,
     thread,
 };
-
 use tokio::sync::broadcast as tokio_broadcast;
 
 use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, FilterModel};
@@ -13,6 +12,7 @@ use crate::{
     logger::LogMessage as LoggerMessage,
 };
 use crate::simulation::EconUpdate;
+use crate::simulation::hub_comms::MessageEntity;
 
 pub enum UIFlag {
     Pause,
@@ -70,7 +70,8 @@ impl UIController {
 
                 let hub_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Hub));
                 let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::PP));
-                let factory_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Factory));
+
+                let mut factory_filtered: ModelRc<ModelRc<LogMessage>> = ModelRc::default();
 
                 while let Ok(action) = wakeup_receiver.recv().await {
                     match action {
@@ -119,6 +120,29 @@ impl UIController {
                                         }
                                     }
                                     if let Ok(message) = log_receiver.try_recv() {
+                                        // I'm not sure if it's the most efficient way to do this categorization of
+                                        // Factory messages based on factory id (index) and dynamic multidimensional array.
+                                        // But it seems to work fine. We had to do this gymnastics because either:
+                                        // 1. We don't have sufficient skill with the Slint internal vector types and transforming to them
+                                        // 2. Slint has no support for a) Rust types as native types and b) thread safe types so this mess is inevitable.
+                                        if let MessageEntity::Factory(fac_id) = message.source {
+                                            let row_data = factory_filtered.row_data(fac_id as usize);
+                                            if let Some(mrc) = row_data {
+                                                let dcast = mrc.as_any().downcast_ref::<VecModel<LogMessage>>();
+                                                if let Some(vec) = dcast {
+                                                    vec.push(message.clone().into());
+                                                }
+                                            } else {
+                                                factory_filtered = ModelRc::from(
+                                                    VecModel::from_slice(
+                                                        &[
+                                                            ModelRc::from(VecModel::from_slice(&[message.clone().into()]))
+                                                        ]
+                                                    )
+                                                );
+                                            }
+                                        }
+
                                         if messages_model.iter().len() >= 20 {
                                             messages_model.remove(0);
                                         }
@@ -128,7 +152,9 @@ impl UIController {
                                             CategoryMessages {
                                                 hub: ModelRc::new(VecModel::from_iter(hub_filtered.iter())),
                                                 pp: ModelRc::new(VecModel::from_iter(pp_filtered.iter())),
-                                                factory: ModelRc::new(VecModel::from_iter(factory_filtered.iter())),
+                                                // We've got to clone every time we assign the factory messages
+                                                // But this should be a cheap Rc clone.
+                                                factory: factory_filtered.clone(),
                                             }
                                         });
                                     }

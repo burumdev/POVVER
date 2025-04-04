@@ -1,0 +1,48 @@
+import { ActiveTab, SunStage, LogMessage, MessageSource, LogLevel } from "../../state.slint";
+import { Globs, GlobCallbacks } from "../../globals.slint";
+import { MapItem } from "../common/map-item.slint";
+import { TalkBaloon } from "../common/talkbaloon.slint";
+
+export component Factory inherits MapItem {
+	width: 300px;
+	height: 300px;
+
+	in property <int> id;
+
+	property <SunStage> sun_stage: Globs.env.the_sun.stage;
+
+	property <[LogMessage]> messages: Globs.category_messages.factory[id];
+	property <int> last_msg_index: messages.length - 1;
+	property <LogMessage> last_message: messages[last_msg_index];
+	property <bool> baloon_shown: false;
+
+	timer := Timer {
+		interval: 100ms;
+		running: false;
+		triggered => {
+			baloon_shown = !baloon_shown;
+			self.running = false;
+		}
+	}
+
+	changed last_msg_index => {
+		baloon_shown = false;
+		timer.running = true;
+	}
+
+	Image {
+		source: sun_stage ==
+			SunStage.Set ? @image-url("../../images/factory-night.svg") :
+			sun_stage == SunStage.Weak ?
+			@image-url("../../images/factory-dawndusk.svg") :
+			@image-url("../../images/factory.svg");
+		width: 300px;
+	}
+
+	TalkBaloon {
+		y: 30px;
+		x: 320px;
+		msg: last_message;
+		is_shown: baloon_shown;
+	}
+}

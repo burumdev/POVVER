@@ -36,9 +36,9 @@ impl From<MessageEntity> for UIMessageSource {
 
 #[derive(Debug, Clone)]
 pub struct LogMessage {
-    source: MessageEntity,
-    message: SharedString,
-    log_level: LogLevel,
+    pub source: MessageEntity,
+    pub message: SharedString,
+    pub log_level: LogLevel,
 }
 impl From<LogMessage> for UILogMessage {
     fn from(lm: LogMessage) -> Self {

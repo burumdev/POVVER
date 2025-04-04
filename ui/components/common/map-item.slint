@@ -1,0 +1,13 @@
+export component MapItem inherits Rectangle {
+	width: 300px;
+	height: 300px;
+
+	callback clicked;
+
+	TouchArea {
+		mouse-cursor: pointer;
+		clicked => {
+			clicked();
+		}
+	}
+}
