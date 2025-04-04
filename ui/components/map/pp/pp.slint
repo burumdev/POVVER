@@ -1,7 +1,7 @@
-import { SunStage, LogMessage, MessageSource, LogLevel } from "../../state.slint";
-import { Globs } from "../../globals.slint";
+import { ActiveTab, SunStage, LogMessage, MessageSource, LogLevel } from "../../../state.slint";
+import { Globs, GlobCallbacks } from "../../../globals.slint";
 
-import { TalkBaloon } from "../common/talkbaloon.slint";
+import { TalkBaloon } from "../../common/talkbaloon.slint";
 
 export component PovverPlant inherits Rectangle {
 	width: 300px;
@@ -29,12 +29,13 @@ export component PovverPlant inherits Rectangle {
 
 	Image {
 		source: sun_stage ==
-			SunStage.Set ? @image-url("../../images/pp-night.svg") :
+			SunStage.Set ? @image-url("../../../images/pp-night.svg") :
 			sun_stage == SunStage.Weak ?
-			@image-url("../../images/pp-dawndusk.svg") :
-			@image-url("../../images/pp.svg");
+			@image-url("../../../images/pp-dawndusk.svg") :
+			@image-url("../../../images/pp.svg");
 		width: 300px;
 	}
+
 	TalkBaloon {
 		y: 30px;
 		x: 320px;
@@ -47,5 +48,12 @@ export component PovverPlant inherits Rectangle {
 //		};
 		msg: last_message;
 		is_shown: baloon_shown;
+	}
+
+	TouchArea {
+		mouse-cursor: pointer;
+		clicked => {
+			Globs.active_cp_tab = ActiveTab.PP;
+		}
 	}
 }

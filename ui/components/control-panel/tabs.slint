@@ -1,4 +1,7 @@
 import { Button } from "std-widgets.slint";
+
+import { ActiveTab } from "../../state.slint";
+import { Globs } from "../../globals.slint";
 import { Palette } from "../../theme.slint";
 
 import { TabButton } from "../common/tab-button.slint";
@@ -11,36 +14,37 @@ import { EventsTab } from "./tab-contents/events.slint";
 
 export component PanelTabs inherits Rectangle {
 	background: Palette.bg_darkgray;
-    in-out property <int> active-tab;
+    in-out property <ActiveTab> active-tab <=> Globs.active_cp_tab;
+
     VerticalLayout {
         height: 100%;
         width: 100%;
         tab_bar := HorizontalLayout {
             spacing: 3px;
             TabButton {
-                is-active: root.active-tab == 0;
+                is-active: root.active-tab == ActiveTab.Events;
 				button-text: "Events";
-                clicked => { root.active-tab = 0; }
+                clicked => { root.active-tab = ActiveTab.Events; }
             }
             TabButton {
-                is-active: root.active-tab == 1;
+                is-active: root.active-tab == ActiveTab.Env;
 				button-text: "Environment";
-                clicked => { root.active-tab = 1; }
+                clicked => { root.active-tab = ActiveTab.Env; }
             }
             TabButton {
-                is-active: root.active-tab == 2;
+                is-active: root.active-tab == ActiveTab.Economy;
 				button-text: "Economy";
-                clicked => { root.active-tab = 2; }
+                clicked => { root.active-tab = ActiveTab.Economy; }
             }
             TabButton {
-                is-active: root.active-tab == 3;
+                is-active: root.active-tab == ActiveTab.Industries;
 				button-text: "Industries";
-                clicked => { root.active-tab = 3; }
+                clicked => { root.active-tab = ActiveTab.Industries; }
             }
             TabButton {
-                is-active: root.active-tab == 4;
+                is-active: root.active-tab == ActiveTab.PP;
 				button-text: "Povver Plant";
-                clicked => { root.active-tab = 4; }
+                clicked => { root.active-tab = ActiveTab.PP; }
             }
         }
 
@@ -52,19 +56,19 @@ export component PanelTabs inherits Rectangle {
 			Rectangle {
 				clip: true;
 				EventsTab {
-					x: root.active-tab == 0 ? 0 : root.active-tab < 0 ? - self.width - 1px : parent.width + 1px;
+					x: root.active-tab == ActiveTab.Events ? 0 : parent.width + 1px;
 				}
 				EnvironmentTab {
-					x: root.active-tab == 1 ? 0 : root.active-tab < 1 ? - self.width - 1px : parent.width + 1px;
+					x: root.active-tab == ActiveTab.Env ? 0 : parent.width + 1px;
 				}
 				EconomyTab {
-					x: root.active-tab == 2 ? 0 : root.active-tab < 2 ? - self.width - 1px : parent.width + 1px;
+					x: root.active-tab == ActiveTab.Economy ? 0 : parent.width + 1px;
 				}
 				IndustriesTab {
-					x: root.active-tab == 3 ? 0 : root.active-tab < 3 ? - self.width - 1px : parent.width + 1px;
+					x: root.active-tab == ActiveTab.Industries ? 0 : parent.width + 1px;
 				}
 				PovverPlantTab {
-					x: root.active-tab == 4 ? 0 : root.active-tab < 4 ? - self.width - 1px : parent.width + 1px;
+					x: root.active-tab == ActiveTab.PP ? 0 : parent.width + 1px;
 				}
 			}
         }

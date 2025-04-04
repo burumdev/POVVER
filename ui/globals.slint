@@ -1,9 +1,4 @@
-import { TimerData, MonthData, EnvData, MacroEconData, PPState, UIMisc, LogMessage, CategoryMessages, ProductDemand } from "./state.slint";
-
-export global GlobCallbacks {
-    pure callback toggle_pause;
-    pure callback speed_change(int);
-}
+import { ActiveTab, TimerData, MonthData, EnvData, MacroEconData, PPState, UIMisc, LogMessage, CategoryMessages, ProductDemand } from "./state.slint";
 
 export global Globs {
     in property <UIMisc> misc;
@@ -15,6 +10,8 @@ export global Globs {
     in property <[LogMessage]> messages;
     in property <CategoryMessages> category_messages;
     in property <[ProductDemand]> product_demands;
+
+	in-out property <ActiveTab> active_cp_tab: ActiveTab.Events;
 
 	out property <{ small: [image], medium: [image], big: [image]}> cloud_images: {
 		small: [
@@ -37,3 +34,9 @@ export global Globs {
 		],
 	};
 }
+
+export global GlobCallbacks {
+    pure callback toggle_pause;
+    pure callback speed_change(int);
+}
+
