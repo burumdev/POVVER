@@ -8,8 +8,8 @@ export component TalkBaloon inherits VerticalLayout {
 	property <bool> is_warning: msg.level == LogLevel.Warning;
 	property <bool> is_critical: msg.level == LogLevel.Critical;
 
-	width: 300px;
-	height: 160px;
+	width: 200px;
+	height: 110px;
 
 	Rectangle {
 		Image {
@@ -20,13 +20,13 @@ export component TalkBaloon inherits VerticalLayout {
 		}
 		VerticalLayout {
 			padding-top: 5px;
-			padding-left: 32px;
-			padding-right: 32px;
+			padding-left: 17px;
+			padding-right: 17px;
 			Text {
 				horizontal-alignment: left;
 				text: msg.message;
 				wrap: word-wrap;
-				font-size: 12px;
+				font-size: 11px;
 				font-weight: 700;
 				color: is_info ? Palette.log_info : is_warning ? Palette.log_warn : Palette.log_critical;
 			}

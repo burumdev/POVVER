@@ -4,9 +4,6 @@ import { MapItem } from "../common/map-item.slint";
 import { TalkBaloon } from "../common/talkbaloon.slint";
 
 export component Factory inherits MapItem {
-	width: 300px;
-	height: 300px;
-
 	in property <int> id;
 
 	property <SunStage> sun_stage: Globs.env.the_sun.stage;
@@ -36,12 +33,12 @@ export component Factory inherits MapItem {
 			sun_stage == SunStage.Weak ?
 			@image-url("../../images/factory-dawndusk.svg") :
 			@image-url("../../images/factory.svg");
-		width: 300px;
+		width: 200px;
 	}
 
 	TalkBaloon {
 		y: 30px;
-		x: 320px;
+		x: 220px;
 		msg: last_message;
 		is_shown: baloon_shown;
 	}

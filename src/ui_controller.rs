@@ -8,11 +8,15 @@ use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, Filter
 
 use crate::{
     app_state::StatePayload,
-    simulation::{SimInt, StateAction, timer::TimerEvent},
+    simulation::{
+        SimInt,
+        StateAction,
+        timer::TimerEvent,
+        EconUpdate,
+        hub_comms::MessageEntity,
+    },
     logger::LogMessage as LoggerMessage,
 };
-use crate::simulation::EconUpdate;
-use crate::simulation::hub_comms::MessageEntity;
 
 pub enum UIFlag {
     Pause,

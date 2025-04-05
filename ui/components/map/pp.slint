@@ -5,9 +5,6 @@ import { TalkBaloon } from "../common/talkbaloon.slint";
 import { MapItem } from "../common/map-item.slint";
 
 export component PovverPlant inherits MapItem {
-	width: 300px;
-	height: 300px;
-
 	property <SunStage> sun_stage: Globs.env.the_sun.stage;
 	property <[LogMessage]> messages: Globs.category_messages.pp;
 	property <int> last_msg_index: messages.length - 1;
@@ -34,12 +31,12 @@ export component PovverPlant inherits MapItem {
 			sun_stage == SunStage.Weak ?
 			@image-url("../../images/pp-dawndusk.svg") :
 			@image-url("../../images/pp.svg");
-		width: 300px;
+		width: 200px;
 	}
 
 	TalkBaloon {
 		y: 30px;
-		x: 320px;
+		x: 220px;
 		msg: last_message;
 		is_shown: baloon_shown;
 	}
