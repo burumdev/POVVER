@@ -17,7 +17,7 @@ use crate::{
     simulation::{
         SimFlo,
         hub_jobs::*,
-        hub_constants::*,
+        sim_constants::*,
         hub_comms::*,
         StateAction,
         speed::Speed,
@@ -77,6 +77,7 @@ impl TheHub {
                         balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
                         available_energy: EnergyUnit::default(),
                         product_stocks: Vec::new(),
+                        solarpanels: Vec::with_capacity(FACTORY_MAX_SOLAR_PANELS),
                         industry: Industry::SEMICONDUCTORS,
                         product_portfolio,
                         id: 0,
@@ -234,6 +235,9 @@ impl TheHub {
                                         },
                                         FactoryHubSignal::SellingProduct(stock_index, unit_price) => {
                                             me.lock().unwrap().factory_sells_product(fid, *stock_index, *unit_price);
+                                        },
+                                        FactoryHubSignal::BuyingSolarPanels(panels_count) => {
+                                            me.lock().unwrap().factory_buys_solar_panels(fid, *panels_count);
                                         }
                                     }
                                 }

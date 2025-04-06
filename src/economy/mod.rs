@@ -10,13 +10,14 @@ pub mod economy_types;
 use economy_types::*;
 pub mod factory;
 pub mod povver_plant;
+pub mod solarpanel;
 
 use crate::{
     utils_random::{one_chance_in_many, random_inc_dec_clamp_signed, random_inc_dec_clamp_unsigned},
     utils_traits::{Flippable, AsFactor},
-    utils_data::{ReadOnlyRwLock, SlidingWindow},
-    app_state::{EconomyStateData, TimerStateData},
-    economy::products::{PRODUCTS, ProductStock},
+    utils_data::SlidingWindow,
+    app_state::EconomyStateData,
+    economy::products::PRODUCTS,
     simulation::{SimFlo, Percentage},
 };
 

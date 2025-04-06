@@ -82,6 +82,7 @@ pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
     ProducingProductDemand(ProductDemand, Money),
     SellingProduct(usize, Money),
+    BuyingSolarPanels(usize),
 }
 
 #[derive(Debug, PartialEq)]

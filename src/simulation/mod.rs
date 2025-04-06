@@ -12,7 +12,7 @@ use hub::TheHub;
 pub mod hub_comms;
 mod hub_events;
 mod hub_jobs;
-pub mod hub_constants;
+pub mod sim_constants;
 
 pub mod timer;
 pub mod sim_types;

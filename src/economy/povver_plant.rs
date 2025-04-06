@@ -17,7 +17,7 @@ use crate::{
         hub_comms::*,
         SimInt,
         SimFlo,
-        hub_constants::*,
+        sim_constants::*,
         speed::Speed,
     },
     logger::{

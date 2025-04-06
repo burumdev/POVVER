@@ -4,7 +4,7 @@ use crate::{
     simulation::{
         SimInt,
         hub::TheHub,
-        hub_constants::*,
+        sim_constants::*,
         hub_comms::*
     },
     economy::products::ProductStock,

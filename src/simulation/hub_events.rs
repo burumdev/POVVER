@@ -1,12 +1,12 @@
 use std::sync::Arc;
-
+use slint::private_unstable_api::re_exports::euclid::num::Ceil;
 use crate::{
     logger::{Logger, LogLevel::*},
     simulation::{
         SimInt,
         SimFlo,
         hub::TheHub,
-        hub_constants::*,
+        sim_constants::*,
         hub_jobs::*,
         hub_comms::*
     },
@@ -136,6 +136,29 @@ impl TheHub {
     pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: &Money) {
         //TODO: This should be a timed job
         self.factory_produce(fid, demand, unit_cost);
+    }
+
+    pub fn factory_buys_solar_panels(&mut self, fid: usize, panels_count: usize) {
+        if let Some(factory) = self.get_factory_state(fid) {
+            let fee = panels_count as SimFlo * SOLAR_PANEL_PRICE;
+            let transaction_successful = factory.write().unwrap().balance.dec(fee.val());
+            if transaction_successful {
+                let delay = (panels_count as SimFlo / 6.0).ceil() as SimInt;
+
+                self.daily_jobs.push(DailyJob {
+                    kind: DailyJobKind::PPFuelCapIncrease,
+                    delay,
+                    day_created: self.timer_state_ro.read().unwrap().date.day,
+                });
+                self.log_ui_console(format!("Factory No. {} bought {} units of solar panels. ETA is {} day(s)", fid, panels_count, delay), Info);
+            } else {
+                factory.write().unwrap().is_bankrupt = true;
+                self.log_ui_console(format!("Factory No. {} has gone bankrupt. It can't even pay for {} freaking solar panels!", fid, panels_count), Critical);
+            }
+        } else {
+            self.log_console(format!("Factory No. {} is not found. So it can't buy any solar panels now, can it?", fid), Error);
+        }
+
     }
 
     pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize, unit_price: Money) {

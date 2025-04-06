@@ -7,7 +7,8 @@ use crate::{
     economy::{
         products::{Product, ProductStock},
         industries::Industry,
-        economy_types::{Money, EnergyUnit, UpDown, ProductDemand}
+        economy_types::{Money, EnergyUnit, UpDown, ProductDemand},
+        solarpanel::SolarPanel,
     },
     utils_data::{ReadOnlyRwLock, SlidingWindow},
 };
@@ -55,6 +56,7 @@ pub struct FactoryStateData {
     pub balance: Money,
     pub available_energy: EnergyUnit,
     pub product_stocks: Vec<ProductStock>,
+    pub solarpanels: Vec<SolarPanel>,
     pub industry: Industry,
     pub product_portfolio: Vec<&'static Product>,
     pub id: usize,

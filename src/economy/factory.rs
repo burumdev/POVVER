@@ -23,6 +23,7 @@ use crate::{
     utils_data::ReadOnlyRwLock,
     utils_traits::AsFactor,
 };
+use crate::simulation::sim_constants::SOLAR_PANEL_PRICE;
 
 struct ProductionRun {
     demand: ProductDemand,
@@ -194,6 +195,17 @@ impl Factory {
             self.maybe_sell_goods();
         }
     }
+
+    fn maybe_buy_renewables(&self) {
+        //TODO: More detailed algo for renewable buying
+        let state_ro = self.state_ro.read().unwrap();
+        if state_ro.balance.val() >= 50000.0 {
+            let budget = state_ro.balance.val() - 50000.0;
+            let max_solar_panels = (budget / SOLAR_PANEL_PRICE) as usize;
+
+            self.dynamic_sender.send(Arc::new(FactoryHubSignal::BuyingSolarPanels(max_solar_panels))).unwrap();
+        }
+    }
 }
 
 impl Factory {
@@ -260,7 +272,7 @@ impl Factory {
                                         me_lock.energy_received();
                                     }
                                     HubFactorySignal::ProductionComplete(demand) => {
-                                        me_lock.production_complete(demand);
+                                        me_lock.production_complete(&demand);
                                     }
                                 }
                             }
@@ -278,7 +290,7 @@ impl Factory {
                         match action {
                             StateAction::Timer(event) => {
                                 if event.at_least_hour() {
-                                    //TODO: Hourly factory errands
+                                    //me_lock.maybe_buy_renewables();
                                 }
                                 if event.at_least_minute() {
                                     let minute = me_lock.timer_state_ro.read().unwrap().date.minute;
