@@ -188,8 +188,8 @@ impl Factory {
         })
     }
 
-    fn production_complete(&mut self, demand: &ProductDemand) {
-        let demand_index = self.production_runs.iter().position(|run| run.demand == *demand);
+    fn production_complete(&mut self, receipt: &ProductionReceipt) {
+        let demand_index = self.production_runs.iter().position(|run| run.demand == receipt.demand);
         if let Some(remove_index) = demand_index {
             self.production_runs.remove(remove_index);
             self.maybe_sell_goods();
@@ -271,8 +271,8 @@ impl Factory {
                                         me_lock.last_hundred_energy_purchases.push(receipt.clone());
                                         me_lock.energy_received();
                                     }
-                                    HubFactorySignal::ProductionComplete(demand) => {
-                                        me_lock.production_complete(&demand);
+                                    HubFactorySignal::ProductionComplete(receipt) => {
+                                        me_lock.production_complete(&receipt);
                                     }
                                 }
                             }
@@ -306,7 +306,6 @@ impl Factory {
                             }
                             StateAction::Quit => {
                                 break 'outer;
-                                me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
                             }
                             _ => ()
                         }

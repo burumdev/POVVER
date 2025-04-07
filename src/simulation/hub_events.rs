@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use slint::private_unstable_api::re_exports::euclid::num::Ceil;
+use slint::private_unstable_api::re_exports::euclid::num::{Ceil, Floor};
 use crate::{
     logger::{Logger, LogLevel::*},
     simulation::{
@@ -15,6 +15,7 @@ use crate::{
     },
     utils_traits::AsFactor,
 };
+use crate::economy::products::ProductStock;
 use crate::simulation::Percentage;
 use crate::utils_traits::HundredPercentable;
 
@@ -134,8 +135,48 @@ impl TheHub {
     }
 
     pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: &Money) {
-        //TODO: This should be a timed job
-        self.factory_produce(fid, demand, unit_cost);
+        let units = demand.as_units();
+        let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
+        let total_cost_ex_energy = unit_cost_ex_energy * units;
+
+        if let Some(factory) = self.get_factory_state(fid) {
+            let transaction_successful = factory.write().unwrap().balance.dec(total_cost_ex_energy.val());
+            if transaction_successful {
+                let energy_needed = demand.calculate_energy_need();
+                let available_energy = factory.read().unwrap().available_energy;
+
+                if available_energy >= energy_needed {
+                    let delay = units / demand.product.units_per_minute;
+                    let receipt = ProductionReceipt {
+                        demand: demand.clone(),
+                        price_per_unit: unit_cost.val(),
+                        date: self.timer_state_ro.read().unwrap().date.clone(),
+                        factory_id: fid,
+                        total_price: total_cost_ex_energy.val(),
+                    };
+
+                    self.minutely_jobs.push(MinutelyJob {
+                        kind: MinutelyJobKind::FactoryProducesProduct(receipt),
+                        delay,
+                        minute_created: self.timer_state_ro.read().unwrap().date.minute,
+                    })
+                } else {
+                    self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
+                }
+            } else {
+                factory.write().unwrap().is_bankrupt = true;
+                self.log_ui_console(
+                    format!(
+                        "Factory No. {} has not enough money to produce {} {}. It's gone bankrupt.",
+                        fid, units, demand.product.name
+                    ), Critical);
+                self.log_console(
+                    format!(
+                        "Unit cost excluding energy is {}. Total cost excl. energy is {}. Factory budget is {}",
+                        unit_cost_ex_energy.val(), total_cost_ex_energy.val(), factory.read().unwrap().balance.val()
+                    ), Critical);
+            }
+        }
     }
 
     pub fn factory_buys_solar_panels(&mut self, fid: usize, panels_count: usize) {

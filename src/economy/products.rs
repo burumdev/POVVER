@@ -37,6 +37,7 @@ pub struct Product {
     pub name: &'static str,
     pub description: &'static str,
     pub unit_production_cost: UnitProductionCost,
+    pub units_per_minute: SimInt,
     pub rnd_cost: Money,
     pub industry: Industry,
     pub demand_info: ProductDemandInfo,
@@ -63,6 +64,7 @@ impl Product {
             equipment_maintenance: Money::new(0.4),
             packaging: Money::new(0.8),
         },
+        units_per_minute: 50,
         rnd_cost: Money::new(7569.56),
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
@@ -88,6 +90,7 @@ impl Product {
             equipment_maintenance: Money::new(6.78),
             packaging: Money::new(9.23),
         },
+        units_per_minute: 5,
         rnd_cost: Money::new(69376.12),
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
@@ -113,6 +116,7 @@ impl Product {
             equipment_maintenance: Money::new(1.63),
             packaging: Money::new(0.2),
         },
+        units_per_minute: 20,
         rnd_cost: Money::new(3670.45),
         industry: Industry::SOFTWARE,
         demand_info: ProductDemandInfo {
@@ -138,6 +142,7 @@ impl Product {
             equipment_maintenance: Money::new(2.12),
             packaging: Money::new(0.1),
         },
+        units_per_minute: 1,
         rnd_cost: Money::new(87450.23),
         industry: Industry::SOFTWARE,
         demand_info: ProductDemandInfo {
@@ -163,6 +168,7 @@ impl Product {
             equipment_maintenance: Money::new(2.31),
             packaging: Money::new(4.5),
         },
+        units_per_minute: 50,
         rnd_cost: Money::new(9100.49),
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
@@ -188,6 +194,7 @@ impl Product {
             equipment_maintenance: Money::new(0.23),
             packaging: Money::new(1.2),
         },
+        units_per_minute: 18,
         rnd_cost: Money::new(105234.8),
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
@@ -213,6 +220,7 @@ impl Product {
             equipment_maintenance: Money::new(0.33),
             packaging: Money::new(42.32),
         },
+        units_per_minute: 75,
         rnd_cost: Money::new(3467.76),
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
@@ -238,6 +246,7 @@ impl Product {
             equipment_maintenance: Money::new(4.12),
             packaging: Money::new(248.54),
         },
+        units_per_minute: 32,
         rnd_cost: Money::new(83456.71),
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
@@ -263,6 +272,7 @@ impl Product {
             equipment_maintenance: Money::new(6.34),
             packaging: Money::new(120.40),
         },
+        units_per_minute: 10,
         rnd_cost: Money::new(5698.34),
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
@@ -288,6 +298,7 @@ impl Product {
             equipment_maintenance: Money::new(17.34),
             packaging: Money::new(642.39),
         },
+        units_per_minute: 2,
         rnd_cost: Money::new(253875.5),
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
@@ -313,6 +324,7 @@ impl Product {
             equipment_maintenance: Money::new(1.48),
             packaging: Money::new(0.3),
         },
+        units_per_minute: 80,
         rnd_cost: Money::new(1874.32),
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
@@ -338,6 +350,7 @@ impl Product {
             equipment_maintenance: Money::new(9.35),
             packaging: Money::new(92.12),
         },
+        units_per_minute: 12,
         rnd_cost: Money::new(47849.28),
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
@@ -363,6 +376,7 @@ impl Product {
             equipment_maintenance: Money::new(0.34),
             packaging: Money::new(42.78),
         },
+        units_per_minute: 92,
         rnd_cost: Money::new(538.29),
         industry: Industry::PROCESSED_FOODS,
         demand_info: ProductDemandInfo {
@@ -388,6 +402,7 @@ impl Product {
             equipment_maintenance: Money::new(18.34),
             packaging: Money::new(82.55),
         },
+        units_per_minute: 40,
         rnd_cost: Money::new(136592.0),
         industry: Industry::PROCESSED_FOODS,
         demand_info: ProductDemandInfo {
@@ -413,6 +428,7 @@ impl Product {
             equipment_maintenance: Money::new(6.1),
             packaging: Money::new(163.58),
         },
+        units_per_minute: 25,
         rnd_cost: Money::new(8735.39),
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
@@ -438,6 +454,7 @@ impl Product {
             equipment_maintenance: Money::new(16.11),
             packaging: Money::new(56.34),
         },
+        units_per_minute: 20,
         rnd_cost: Money::new(826658.3),
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
@@ -463,6 +480,7 @@ impl Product {
             equipment_maintenance: Money::new(3.32),
             packaging: Money::new(0.7),
         },
+        units_per_minute: 50,
         rnd_cost: Money::new(8285.2),
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
@@ -488,6 +506,7 @@ impl Product {
             equipment_maintenance: Money::new(52.4),
             packaging: Money::new(894.31),
         },
+        units_per_minute: 6,
         rnd_cost: Money::new(748293.22),
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
@@ -513,6 +532,7 @@ impl Product {
             equipment_maintenance: Money::new(21.98),
             packaging: Money::new(35.6),
         },
+        units_per_minute: 10,
         rnd_cost: Money::new(102.30),
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {
@@ -538,6 +558,7 @@ impl Product {
             equipment_maintenance: Money::new(18.23),
             packaging: Money::new(0.0),
         },
+        units_per_minute: 8,
         rnd_cost: Money::new(984_054.7),
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {

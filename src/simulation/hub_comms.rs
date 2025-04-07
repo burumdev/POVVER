@@ -42,6 +42,15 @@ pub struct EnergyReceipt {
     pub total_price: SimFlo,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProductionReceipt {
+    pub demand: ProductDemand,
+    pub price_per_unit: SimFlo,
+    pub date: Date,
+    pub factory_id: usize,
+    pub total_price: SimFlo,
+}
+
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct PPEnergyOffer {
     pub price_per_unit: Money,
@@ -66,7 +75,7 @@ pub enum HubPPSignal {
 #[derive(Debug, PartialEq)]
 pub enum HubFactorySignal {
     EnergyTransfered(EnergyReceipt),
-    ProductionComplete(ProductDemand),
+    ProductionComplete(ProductionReceipt),
 }
 
 #[derive(Debug)]
