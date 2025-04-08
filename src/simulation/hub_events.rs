@@ -187,6 +187,7 @@ impl TheHub {
                     timestamp: self.timer_state_ro.read().unwrap().timestamp,
                 });
                 self.log_ui_console(format!("Factory No. {} bought {} units of solar panels. ETA is {} day(s)", fid, panels_count, delay), Info);
+                factory.write().unwrap().is_awaiting_solarpanels = true;
             } else {
                 factory.write().unwrap().is_bankrupt = true;
                 self.log_ui_console(format!("Factory No. {} has gone bankrupt. It can't even pay for {} freaking solar panels!", fid, panels_count), Critical);

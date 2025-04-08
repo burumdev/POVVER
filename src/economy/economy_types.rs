@@ -56,7 +56,7 @@ impl Money {
     }
 
     pub fn inc(&mut self, amount: SimFlo) {
-        self.0 = (self.0 + amount).min(SimFlo::MAX);
+        self.0 = (self.0 + amount).clamp(0.0, SimFlo::MAX);
     }
 }
 
@@ -110,10 +110,10 @@ impl EnergyUnit {
         self.0 = amount.clamp(0, SimInt::MAX);
     }
     pub fn dec(&mut self, unit: SimInt) {
-        self.0 = (self.0 - unit).max(0);
+        self.0 = (self.0 - unit).clamp(0, SimInt::MAX);
     }
     pub fn inc(&mut self, unit: SimInt) {
-        self.0 = (self.0 + unit).min(SimInt::MAX);
+        self.0 = (self.0 + unit).clamp(0, SimInt::MAX);
     }
     pub fn zero(&mut self) {
         self.0 = 0;

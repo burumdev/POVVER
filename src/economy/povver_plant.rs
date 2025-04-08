@@ -113,10 +113,9 @@ impl PovverPlant {
 
                     let max_amount = balance / fuel_price;
                     if max_amount >= 1.0 {
-                        let amount = (((max_amount / 10.0) + 1.0) as SimInt).min(fuel_capacity);
-                        if amount == fuel_capacity {
-                            self.maybe_upgrade_fuel_capacity(balance);
-                        }
+                        let amount = (((max_amount / 10.0) + 1.0) as SimInt).clamp(1, fuel_capacity);
+                        self.maybe_upgrade_fuel_capacity(amount);
+
                         self.log_ui_console(format!("Buying fuel for amount {amount}"), Info);
                         self.get_dynamic_sender().send(Arc::new(PPHubSignal::BuyFuel(amount))).unwrap();
                     } else {
@@ -154,13 +153,13 @@ impl PovverPlant {
         };
 
         let fuel_needed = energy_needed / PP_ENERGY_PER_FUEL;
-        let producable = (fuel * PP_ENERGY_PER_FUEL).min(production_capacity.val());
+
+        let producable = (fuel * PP_ENERGY_PER_FUEL).clamp(0, production_capacity.val());
 
         // We have ZERO energy production portential.
         // What are we gonna do?
         // TODO: handle this situation and maybe declare bankruptcy?
         if producable == 0 {
-            self.fuel_buy_threshold = fuel_needed;
             self.check_buy_fuel();
 
             return;
@@ -191,7 +190,6 @@ impl PovverPlant {
             offer.units = producable;
 
             if fuel < fuel_needed {
-                self.fuel_buy_threshold = fuel_needed;
                 self.check_buy_fuel();
             }
             // If we have production capacity shortcomings, this might be good time to try upgrading
@@ -222,11 +220,23 @@ impl PovverPlant {
 
         self.pending_energy_offers.push(offer);
         self.get_to_factory_sender_by_id(offer.to_factory_id).send(Arc::new(offer)).unwrap();
+
+        self.maybe_upgrade_fuel_capacity(fuel_needed);
     }
 
-    fn maybe_upgrade_fuel_capacity(&mut self, balance: SimFlo) {
-        if (balance / 4.0) > PP_FUEL_CAPACITY_INCREASE_COST.val() &&
-            !self.state_ro.read().unwrap().is_awaiting_fuel_capacity
+    fn maybe_upgrade_fuel_capacity(&mut self, fuel_needed: SimInt) {
+        let (balance, fuel_capacity, is_awaiting_fuel_capacity) = {
+            let state = self.state_ro.read().unwrap();
+            (
+                state.balance.val(),
+                state.fuel_capacity,
+                state.is_awaiting_fuel_capacity,
+            )
+        };
+
+        self.fuel_buy_threshold = fuel_needed.clamp(0, fuel_capacity);
+
+        if self.fuel_buy_threshold == fuel_capacity && balance / 4.0 > PP_FUEL_CAPACITY_INCREASE_COST && !is_awaiting_fuel_capacity
         {
             self.get_dynamic_sender().send(Arc::new(PPHubSignal::IncreaseFuelCapacity)).unwrap();
         }

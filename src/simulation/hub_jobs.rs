@@ -139,7 +139,7 @@ impl TheHub {
         self.log_ui_console(format!("Transfering {} fuel to Povver Plant.", receipt.units), Info);
 
         let mut pp = self.povver_plant_state.write().unwrap();
-        pp.fuel += receipt.units;
+        pp.fuel += receipt.units.clamp(0, pp.fuel_capacity);
         pp.is_awaiting_fuel = false;
         self.comms.hub_to_pp(Arc::new(HubPPSignal::FuelTransfered(receipt)));
     }
@@ -216,6 +216,7 @@ impl TheHub {
             let panels = vec![SolarPanel::new(); count];
 
             factory.write().unwrap().solarpanels.extend(panels);
+            factory.write().unwrap().is_awaiting_solarpanels = false;
             self.log_ui_console(format!("Factory No. {} bought {} solarpanels. Watch'em go!", fid, count), Info);
         } else {
             self.log_console(format!("Factory No. {} is not found. So it can't buy any solar panels, period.", fid), Error);

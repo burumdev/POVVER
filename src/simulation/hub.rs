@@ -84,6 +84,7 @@ impl TheHub {
                         product_portfolio,
                         id: 0,
                         is_bankrupt: false,
+                        is_awaiting_solarpanels: false,
                     }
                 )
             )

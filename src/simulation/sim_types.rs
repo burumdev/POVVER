@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::ops::{Add, MulAssign};
 use num_traits::FromPrimitive;
 use crate::utils_traits::{AsFactor, HundredPercentable};
@@ -21,7 +20,7 @@ impl Percentage {
         Self(val.clamp(0.0, 100.0))
     }
     pub fn dec(&mut self, val: SimFlo) -> Self {
-        self.0 = (self.0 - val).max(0.0);
+        self.0 = (self.0 - val).clamp(0.0, SimFlo::MAX);
 
         *self
     }

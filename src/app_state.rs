@@ -62,6 +62,7 @@ pub struct FactoryStateData {
     pub product_portfolio: Vec<&'static Product>,
     pub id: usize,
     pub is_bankrupt: bool,
+    pub is_awaiting_solarpanels: bool,
 }
 
 #[derive(Debug)]

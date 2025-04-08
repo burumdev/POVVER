@@ -205,7 +205,7 @@ impl Factory {
     fn maybe_buy_renewables(&self) {
         //TODO: More detailed algo for renewable buying
         let state_ro = self.state_ro.read().unwrap();
-        if state_ro.balance.val() >= 50000.0 {
+        if state_ro.balance.val() >= 50000.0 && !state_ro.is_awaiting_solarpanels {
             let budget = state_ro.balance.val() - 50000.0;
             let max_solar_panels = (budget / SOLAR_PANEL_PRICE) as usize;
 
