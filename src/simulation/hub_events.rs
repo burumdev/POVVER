@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use slint::private_unstable_api::re_exports::euclid::num::{Ceil, Floor};
 use crate::{
     logger::{Logger, LogLevel::*},
     simulation::{
@@ -8,16 +7,14 @@ use crate::{
         hub::TheHub,
         sim_constants::*,
         hub_jobs::*,
-        hub_comms::*
+        hub_comms::*,
+        Percentage
     },
     economy::{
-        economy_types::{Money, ProductDemand},
+        economy_types::ProductDemand,
     },
-    utils_traits::AsFactor,
+    utils_traits::{AsFactor, HundredPercentable},
 };
-use crate::economy::products::ProductStock;
-use crate::simulation::Percentage;
-use crate::utils_traits::HundredPercentable;
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
@@ -98,7 +95,7 @@ impl TheHub {
     pub fn pp_produces_energy(&mut self, offer: &PPEnergyOffer) {
         let fid = offer.to_factory_id;
         if let Some(factory) = self.get_factory_state(fid) {
-            let fee = offer.price_per_unit * offer.units.val() as SimFlo;
+            let fee = offer.price_per_unit * offer.units as SimFlo;
             if !factory.write().unwrap().balance.dec(fee.val()) {
                 factory.write().unwrap().is_bankrupt = true;
 
@@ -116,14 +113,14 @@ impl TheHub {
                 total_price: fee.val(),
             };
 
-            let delay = offer.units.val() / 1000;
+            let delay = offer.units / 1000;
             let minute_created = receipt.date.minute;
             self.minutely_jobs.push(MinutelyJob {
                 kind: MinutelyJobKind::PPProducesEnergy(receipt),
                 delay,
                 minute_created,
             });
-            self.log_ui_console(format!("PP is producing {} units of energy for factory No. {}. ETA is {} minutes.", offer.units.val(), fid, delay), Info);
+            self.log_ui_console(format!("PP is producing {} units of energy for factory No. {}. ETA is {} minutes.", offer.units, fid, delay), Info);
 
         } else {
             self.log_console(format!("Factory No. {} is not found. PP energy production canceled.", fid), Error);
@@ -134,10 +131,10 @@ impl TheHub {
         self.comms.send_signal_broadcast(Arc::new(*demand))
     }
 
-    pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: &Money) {
+    pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: SimFlo) {
         let units = demand.as_units();
         let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
-        let total_cost_ex_energy = unit_cost_ex_energy * units;
+        let total_cost_ex_energy = unit_cost_ex_energy * units as SimFlo;
 
         if let Some(factory) = self.get_factory_state(fid) {
             let transaction_successful = factory.write().unwrap().balance.dec(total_cost_ex_energy.val());
@@ -145,7 +142,7 @@ impl TheHub {
                 let energy_needed = demand.calculate_energy_need();
                 let available_energy = factory.read().unwrap().available_energy;
 
-                if available_energy >= energy_needed {
+                if available_energy.val() >= energy_needed {
                     let delay = units / demand.product.units_per_minute;
                     let receipt = ProductionReceipt {
                         demand: demand.clone(),
@@ -202,7 +199,7 @@ impl TheHub {
 
     }
 
-    pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize, unit_price: Money) {
+    pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize, unit_price: SimFlo) {
         if let Some(factory) = self.get_factory_state(fid) {
             if factory.read().unwrap().product_stocks.get(stock_index).is_some() {
                 let mut fac = factory.write().unwrap();
@@ -213,7 +210,7 @@ impl TheHub {
                     let met_percent = Percentage::new((stock.units / demand.units) as SimFlo * 100.0);
                     demand.demand_meet_percent = met_percent;
                     demand.percent.set(met_percent.val() / demand.percent.val() * 100.0);
-                    let total_price = stock.units * unit_price;
+                    let total_price = stock.units as SimFlo * unit_price;
                     fac.balance.inc(total_price.val());
 
                     self.log_ui_console(format!("Factory No. {} sold {} units of {} for a total price of {}.", fid, stock.units, stock.product.name, total_price.val()), Info);

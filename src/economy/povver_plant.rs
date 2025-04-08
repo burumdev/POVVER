@@ -7,7 +7,6 @@ use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
     app_state::{EconomyStateData, PovverPlantStateData},
-    economy::economy_types::{Money, EnergyUnit},
     utils_data::{SlidingWindow, ReadOnlyRwLock},
     utils_traits::AsFactor,
     simulation::{
@@ -145,7 +144,6 @@ impl PovverPlant {
             self.log_console(format!("Energy demand from factory No. {} is already pending.", demand.factory_id), Info);
             return;
         }
-        let energy_per_fuel = PP_ENERGY_PER_FUEL;
         let energy_needed = demand.energy_needed;
         let (fuel, production_capacity) = {
             let state = self.state_ro.read().unwrap();
@@ -155,20 +153,20 @@ impl PovverPlant {
             )
         };
 
-        let fuel_needed = (energy_needed / energy_per_fuel).val();
-        let producable = EnergyUnit::new((fuel * energy_per_fuel.val()).min(production_capacity.val()));
+        let fuel_needed = energy_needed / PP_ENERGY_PER_FUEL;
+        let producable = (fuel * PP_ENERGY_PER_FUEL).min(production_capacity.val());
 
         // We have ZERO energy production portential.
         // What are we gonna do?
         // TODO: handle this situation and maybe declare bankruptcy?
-        if producable.val() == 0 {
+        if producable == 0 {
             self.fuel_buy_threshold = fuel_needed;
             self.check_buy_fuel();
 
             return;
         }
 
-        let mut price_per_unit = Money::new(self.fuel_price_paid_per_unit_average / PP_ENERGY_PER_FUEL.val() as SimFlo);
+        let mut price_per_unit = self.fuel_price_paid_per_unit_average / PP_ENERGY_PER_FUEL as SimFlo;
 
         let mut offer = PPEnergyOffer {
             to_factory_id: demand.factory_id,
@@ -180,12 +178,12 @@ impl PovverPlant {
         // Request maximum profit added on top.
         if producable >= energy_needed {
             offer.units = energy_needed;
-            price_per_unit.inc(price_per_unit.val() * self.profit_margin.as_factor());
+            price_per_unit += price_per_unit.val() * self.profit_margin.as_factor();
 
             self.log_ui_console(
                 format!("Sending FULL energy offer to factory no: {}, amount: {} and price per EU: {}",
                     offer.to_factory_id,
-                    offer.units.val(),
+                    offer.units,
                     price_per_unit.val(),
                 ), Info
             );
@@ -198,24 +196,24 @@ impl PovverPlant {
             }
             // If we have production capacity shortcomings, this might be good time to try upgrading
             // production capacity and to a less extent fuel capacity to match it if we have the money.
-            if production_capacity < energy_needed {
+            if production_capacity.val() < energy_needed {
                 self.maybe_upgrade_production_capacity();
             }
 
             // If our production falls short of demand, we can offer a lesser amount of energy to the
             // factory. With a discount in profit margin proportional to the deficit.
-            let deficit = (energy_needed - producable).val();
-            let deficit_percent = Percentage::new((deficit as SimFlo / energy_needed.val() as SimFlo) * 100.0);
+            let deficit = energy_needed - producable;
+            let deficit_percent = Percentage::new((deficit as SimFlo / energy_needed as SimFlo) * 100.0);
 
             let discounted_percent = self.profit_margin.val() - self.profit_margin.val() * deficit_percent.as_factor();
 
-            price_per_unit.inc(price_per_unit.val() * discounted_percent.as_factor());
+            price_per_unit += price_per_unit.val() * discounted_percent.as_factor();
 
             self.log_ui_console(
                 format!("Sending partial energy offer to factory no: {}, amount: {} and price per EU: {}",
                     offer.to_factory_id,
-                    offer.units.val(),
-                    price_per_unit.val(),
+                    offer.units,
+                    price_per_unit,
                 ), Info
             );
         }

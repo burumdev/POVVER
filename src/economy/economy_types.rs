@@ -1,4 +1,3 @@
-use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use slint::ToSharedString;
 
 use crate::{
@@ -32,55 +31,11 @@ impl PartialOrd for Money {
         self.0.partial_cmp(&other.0)
     }
 }
-impl Mul<SimInt> for Money {
-    type Output = Self;
-    fn mul(self, rhs: SimInt) -> Self::Output {
-        Self(self.0 * rhs as SimFlo)
+impl From<SimFlo> for Money {
+    fn from(val: SimFlo) -> Self {
+        Self::new(val)
     }
 }
-impl Mul<Money> for SimInt {
-    type Output = Money;
-    fn mul(self, rhs: Money) -> Self::Output {
-        Money(self as SimFlo * rhs.0)
-    }
-}
-impl Mul<SimFlo> for Money {
-    type Output = Self;
-    fn mul(self, rhs: SimFlo) -> Self::Output {
-        Self(self.0 * rhs)
-    }
-}
-impl Mul<Money> for SimFlo {
-    type Output = Money;
-    fn mul(self, rhs: Money) -> Self::Output {
-        Money(self * rhs.0)
-    }
-}
-impl Add for Money {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        Self(self.0 + rhs.0)
-    }
-}
-impl Add<SimFlo> for Money {
-    type Output = Self;
-    fn add(self, rhs: SimFlo) -> Self::Output {
-        Self(self.0 + rhs)
-    }
-}
-impl Add<SimInt> for Money {
-    type Output = Self;
-    fn add(self, rhs: SimInt) -> Self::Output {
-        Self(self.0 + rhs as SimFlo)
-    }
-}
-impl Sub for Money {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-
 impl Money {
     pub fn val(&self) -> SimFlo {
         self.0
@@ -157,43 +112,8 @@ impl EnergyUnit {
     pub fn dec(&mut self, unit: SimInt) {
         self.0 = (self.0 - unit).max(0);
     }
-    pub fn inc(&mut self, unit: EnergyUnit) {
-        self.0 = (self.0 + unit.0).min(SimInt::MAX);
-    }
-}
-impl AddAssign for EnergyUnit {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0
-    }
-}
-impl Mul for EnergyUnit {
-    type Output = Self;
-    fn mul(self, rhs: Self) -> Self::Output {
-        Self(self.0 * rhs.0)
-    }
-}
-impl Mul<SimInt> for EnergyUnit {
-    type Output = Self;
-    fn mul(self, rhs: SimInt) -> Self::Output {
-        Self(self.0 * rhs)
-    }
-}
-impl Mul<EnergyUnit> for SimInt {
-    type Output = EnergyUnit;
-    fn mul(self, rhs: EnergyUnit) -> Self::Output {
-        EnergyUnit(self * rhs.0)
-    }
-}
-impl Div for EnergyUnit {
-    type Output = Self;
-    fn div(self, other: Self) -> Self {
-        Self(self.0 / other.0)
-    }
-}
-impl Sub for EnergyUnit {
-    type Output = Self;
-    fn sub(self, other: Self) -> Self {
-        Self(self.0 - other.0)
+    pub fn inc(&mut self, unit: SimInt) {
+        self.0 = (self.0 + unit).min(SimInt::MAX);
     }
 }
 impl PartialOrd for EnergyUnit {
@@ -234,7 +154,7 @@ impl ProductDemand {
     pub fn as_units(&self) -> SimInt {
         (self.percent.val() * self.product.demand_info.unit_per_percent as SimFlo) as SimInt
     }
-    pub fn calculate_energy_need(&self) -> EnergyUnit {
+    pub fn calculate_energy_need(&self) -> SimInt {
         self.as_units() * self.product.unit_production_cost.energy
     }
 }

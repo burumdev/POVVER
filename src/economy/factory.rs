@@ -16,7 +16,7 @@ use crate::{
         Percentage
     },
     economy::{
-        economy_types::{EnergyUnit, Money, ProductDemand},
+        economy_types::{Money, ProductDemand},
         products::Product,
     },
     logger::{LogMessage, Logger, LogLevel::*},
@@ -28,7 +28,7 @@ use crate::simulation::sim_constants::SOLAR_PANEL_PRICE;
 struct ProductionRun {
     demand: ProductDemand,
     cost: Money,
-    energy_needed: EnergyUnit,
+    energy_needed: SimInt,
 }
 
 pub struct Factory {
@@ -111,9 +111,9 @@ impl Factory {
 
                 let unit_cost_ex_energy = product.get_unit_cost_excl_energy();
                 let units = demand.as_units();
-                let total_cost_ex_energy = unit_cost_ex_energy * units as SimFlo;
+                let total_cost_ex_energy = unit_cost_ex_energy.val() * units as SimFlo;
 
-                if total_cost_ex_energy <= balance * 0.75 {
+                if total_cost_ex_energy <= balance.val() * 0.75 {
                     let energy_needed = demand.calculate_energy_need();
                     let energy_demand = FactoryEnergyDemand {
                         factory_id,
@@ -128,7 +128,7 @@ impl Factory {
 
                     self.production_runs.push(ProductionRun {
                         demand,
-                        cost: total_cost_ex_energy,
+                        cost: total_cost_ex_energy.into(),
                         energy_needed
                     })
                 }
@@ -142,8 +142,8 @@ impl Factory {
         if !self.production_runs.is_empty() {
             // TODO: A more sophisticated algo to evaluate the price here might be better option.
             let prun = self.production_runs.last_mut().unwrap();
-            let energy_cost = offer.price_per_unit * offer.units.val() as SimFlo;
-            let remaining_budget = balance - (prun.cost + energy_cost);
+            let energy_cost = offer.price_per_unit.val() * offer.units as SimFlo;
+            let remaining_budget = balance.val() - (prun.cost.val() + energy_cost);
             if remaining_budget.val() > 0.0 {
                 prun.cost.inc(energy_cost.val());
 
@@ -161,15 +161,15 @@ impl Factory {
         };
 
         if let Some(index) = self.production_runs.iter().rposition(|run| {
-            run.energy_needed <= energy_available && run.cost <= balance
+            run.energy_needed <= energy_available.val() && run.cost <= balance
         }) {
             let run = &self.production_runs[index];
-            let unit_cost = Money::new(run.cost.val() / run.demand.units as SimFlo);
+            let unit_cost = run.cost.val() / run.demand.units as SimFlo;
             self.produce_product_demand(run.demand, unit_cost);
         }
     }
 
-    fn produce_product_demand(&mut self, demand: ProductDemand, unit_cost: Money) {
+    fn produce_product_demand(&mut self, demand: ProductDemand, unit_cost: SimFlo) {
         self.dynamic_sender.send(
             Arc::new(FactoryHubSignal::ProducingProductDemand(demand, unit_cost))
         ).unwrap();
@@ -182,8 +182,8 @@ impl Factory {
             if econ_state_ro.product_demands.iter().position(|demand|
                 demand.product == stock.product && demand.percent.val() > self.product_demand_sell_threshold.val()
             ).is_some() {
-                let unit_price = stock.unit_production_cost + stock.unit_production_cost * self.profit_margin.as_factor();
-                self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(stock_index, unit_price))).unwrap();
+                let unit_price = stock.unit_production_cost.val() + stock.unit_production_cost.val() * self.profit_margin.as_factor();
+                self.dynamic_sender.send(Arc::new(FactoryHubSignal::SellingProduct(stock_index, unit_price.into()))).unwrap();
             }
         })
     }
@@ -258,7 +258,7 @@ impl Factory {
                         s if s.is::<PPEnergyOffer>() => {
                             if let Some(offer) = signal_any.downcast_ref::<PPEnergyOffer>() {
                                 let mut me_lock = me.lock().unwrap();
-                                me_lock.log_ui_console(format!("Got energy offer from PP: {} units.", offer.units.val()), Info);
+                                me_lock.log_ui_console(format!("Got energy offer from PP: {} units.", offer.units), Info);
                                 me_lock.evaluate_pp_energy_offer(offer);
                             }
                         },
@@ -267,7 +267,7 @@ impl Factory {
                                 let mut me_lock = me.lock().unwrap();
                                 match signal_from_hub {
                                     HubFactorySignal::EnergyTransfered(receipt) => {
-                                        me_lock.log_ui_console(format!("{} units of energy received.", receipt.units.val()), Info);
+                                        me_lock.log_ui_console(format!("{} units of energy received.", receipt.units), Info);
                                         me_lock.last_hundred_energy_purchases.push(receipt.clone());
                                         me_lock.energy_received();
                                     }

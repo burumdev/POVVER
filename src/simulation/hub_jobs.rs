@@ -9,7 +9,6 @@ use crate::{
     },
     economy::{
         products::ProductStock,
-        economy_types::Money,
     },
 };
 
@@ -144,8 +143,8 @@ impl TheHub {
     }
 
     pub fn increase_pp_prod_cap(&self) {
-        self.log_ui_console(format!("Increasing povver plant production capacity by {}.", PP_PRODUCTION_CAPACITY_INCREASE.val()), Info);
-        self.povver_plant_state.write().unwrap().production_capacity += PP_PRODUCTION_CAPACITY_INCREASE;
+        self.log_ui_console(format!("Increasing povver plant production capacity by {}.", PP_PRODUCTION_CAPACITY_INCREASE), Info);
+        self.povver_plant_state.write().unwrap().production_capacity.inc(PP_PRODUCTION_CAPACITY_INCREASE);
         self.povver_plant_state.write().unwrap().is_awaiting_production_capacity = false;
         self.comms.hub_to_pp(Arc::new(HubPPSignal::ProductionCapacityIncreased));
     }
@@ -156,10 +155,10 @@ impl TheHub {
         if let Some(factory) = self.get_factory_state(fid) {
             factory.write().unwrap().available_energy.inc(receipt.units);
             self.povver_plant_state.write().unwrap().balance.inc(receipt.total_price);
-            let fuel_needed = (receipt.units / PP_ENERGY_PER_FUEL).val();
+            let fuel_needed = receipt.units / PP_ENERGY_PER_FUEL;
             self.povver_plant_state.write().unwrap().fuel -= fuel_needed;
 
-            self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", receipt.units.val(), fid), Info);
+            self.log_ui_console(format!("Energy of {} units transfered to Factory No. {} from Povver Plant.", receipt.units, fid), Info);
 
             self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::EnergyTransfered(receipt.clone())));
             self.comms.hub_to_pp(Arc::new(HubPPSignal::EnergyTransfered(receipt)));
@@ -176,7 +175,7 @@ impl TheHub {
             factory.write().unwrap().product_stocks.push(ProductStock {
                 product: receipt.demand.product,
                 units,
-                unit_production_cost: Money::new(receipt.price_per_unit),
+                unit_production_cost: receipt.price_per_unit,
             });
             self.log_ui_console(format!("Factory No. {} produced {} {}", fid, units, receipt.demand.product.name), Info);
             self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::ProductionComplete(receipt)));

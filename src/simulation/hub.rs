@@ -55,8 +55,8 @@ impl TheHub {
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: PP_INIT_FUEL_CAPACITY,
             fuel_capacity: PP_INIT_FUEL_CAPACITY,
-            production_capacity: PP_INIT_PRODUCTION_CAP,
-            balance: Money::new(PP_INIT_MONEY.val() - (econ_state.read().unwrap().fuel_price.val() * PP_INIT_FUEL_CAPACITY as SimFlo)),
+            production_capacity: EnergyUnit::new(PP_INIT_PRODUCTION_CAP),
+            balance: Money::new(PP_INIT_MONEY - (econ_state.read().unwrap().fuel_price.val() * PP_INIT_FUEL_CAPACITY as SimFlo)),
             is_awaiting_fuel: false,
             is_awaiting_fuel_capacity: false,
             is_awaiting_production_capacity: false,
@@ -66,7 +66,7 @@ impl TheHub {
         let industry_products = Product::by_industry(&Industry::SEMICONDUCTORS);
         let cheapest_rnd_product = *industry_products
             .iter()
-            .min_by(|prod_a, prod_b| prod_a.rnd_cost.val().total_cmp(&prod_b.rnd_cost.val())).unwrap();
+            .min_by(|prod_a, prod_b| prod_a.rnd_cost.total_cmp(&prod_b.rnd_cost)).unwrap();
 
         let product_portfolio = vec![cheapest_rnd_product];
 
@@ -74,7 +74,7 @@ impl TheHub {
             Arc::new(
                 RwLock::new(
                     FactoryStateData {
-                        balance: Money::new(FACTORY_INIT_MONEY.val() - product_portfolio[0].rnd_cost.val()),
+                        balance: Money::new(FACTORY_INIT_MONEY - product_portfolio[0].rnd_cost),
                         available_energy: EnergyUnit::default(),
                         product_stocks: Vec::new(),
                         solarpanels: Vec::with_capacity(FACTORY_MAX_SOLAR_PANELS),
@@ -231,7 +231,7 @@ impl TheHub {
                                             me.lock().unwrap().factory_needs_energy(demand);
                                         },
                                         FactoryHubSignal::ProducingProductDemand(demand, unit_cost) => {
-                                            me.lock().unwrap().factory_will_produce(fid, demand, unit_cost);
+                                            me.lock().unwrap().factory_will_produce(fid, demand, *unit_cost);
                                         },
                                         FactoryHubSignal::SellingProduct(stock_index, unit_price) => {
                                             me.lock().unwrap().factory_sells_product(fid, *stock_index, *unit_price);

@@ -14,7 +14,7 @@ use crate::{
         SimInt,
         SimFlo,
     },
-    economy::economy_types::{EnergyUnit, Money, ProductDemand},
+    economy::economy_types::ProductDemand,
     ui_controller::Date,
 };
 
@@ -35,7 +35,7 @@ pub struct FuelReceipt {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct EnergyReceipt {
-    pub units: EnergyUnit,
+    pub units: SimInt,
     pub price_per_unit: SimFlo,
     pub date: Date,
     pub factory_id: usize,
@@ -53,15 +53,15 @@ pub struct ProductionReceipt {
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct PPEnergyOffer {
-    pub price_per_unit: Money,
-    pub units: EnergyUnit,
+    pub price_per_unit: SimFlo,
+    pub units: SimInt,
     pub to_factory_id: usize,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct FactoryEnergyDemand {
     pub factory_id: usize,
-    pub energy_needed: EnergyUnit,
+    pub energy_needed: SimInt,
 }
 
 #[derive(Debug, PartialEq)]
@@ -89,8 +89,8 @@ pub enum PPHubSignal {
 #[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
-    ProducingProductDemand(ProductDemand, Money),
-    SellingProduct(usize, Money),
+    ProducingProductDemand(ProductDemand, SimFlo),
+    SellingProduct(usize, SimFlo),
     BuyingSolarPanels(usize),
 }
 
