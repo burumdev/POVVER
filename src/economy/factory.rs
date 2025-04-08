@@ -141,6 +141,7 @@ impl Factory {
 
         if !self.production_runs.is_empty() {
             // TODO: A more sophisticated algo to evaluate the price here might be better option.
+            // For now we just accept whatever comes from pp
             let prun = self.production_runs.last_mut().unwrap();
             let energy_cost = offer.price_per_unit.val() * offer.units as SimFlo;
             let remaining_budget = balance.val() - (prun.cost.val() + energy_cost);
@@ -290,7 +291,7 @@ impl Factory {
                         match action {
                             StateAction::Timer(event) => {
                                 if event.at_least_hour() {
-                                    //me_lock.maybe_buy_renewables();
+                                    me_lock.maybe_buy_renewables();
                                 }
                                 if event.at_least_minute() {
                                     let minute = me_lock.timer_state_ro.read().unwrap().date.minute;

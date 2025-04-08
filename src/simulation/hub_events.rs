@@ -37,12 +37,11 @@ impl TheHub {
             if delay == 0 {
                 self.transfer_fuel_to_pp(receipt);
             } else {
-                let hour_created = self.timer_state_ro.read().unwrap().date.hour;
                 self.hourly_jobs.push(
                     HourlyJob {
                         kind: HourlyJobKind::PPBoughtFuel(receipt),
                         delay,
-                        hour_created,
+                        timestamp: self.timer_state_ro.read().unwrap().timestamp,
                     }
                 );
                 self.log_ui_console(format!("PP bought fuel for amount {amount}. ETA is {delay} hours."), Info);
@@ -64,7 +63,7 @@ impl TheHub {
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPFuelCapIncrease,
                 delay,
-                day_created: self.timer_state_ro.read().unwrap().date.day,
+                timestamp: self.timer_state_ro.read().unwrap().timestamp,
             });
             self.log_ui_console(format!("PP is upgrading it's fuel capacity. ETA is {delay} days."), Info);
             println!();
@@ -84,7 +83,7 @@ impl TheHub {
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPProductionCapIncrease,
                 delay,
-                day_created: self.timer_state_ro.read().unwrap().date.day,
+                timestamp: self.timer_state_ro.read().unwrap().timestamp,
             });
             self.log_ui_console(format!("PP is upgrading it's production capacity. ETA is {delay} days."), Info);
         } else {
@@ -114,11 +113,10 @@ impl TheHub {
             };
 
             let delay = offer.units / 1000;
-            let minute_created = receipt.date.minute;
             self.minutely_jobs.push(MinutelyJob {
                 kind: MinutelyJobKind::PPProducesEnergy(receipt),
                 delay,
-                minute_created,
+                timestamp: self.timer_state_ro.read().unwrap().timestamp,
             });
             self.log_ui_console(format!("PP is producing {} units of energy for factory No. {}. ETA is {} minutes.", offer.units, fid, delay), Info);
 
@@ -155,7 +153,7 @@ impl TheHub {
                     self.minutely_jobs.push(MinutelyJob {
                         kind: MinutelyJobKind::FactoryProducesProduct(receipt),
                         delay,
-                        minute_created: self.timer_state_ro.read().unwrap().date.minute,
+                        timestamp: self.timer_state_ro.read().unwrap().timestamp,
                     })
                 } else {
                     self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
@@ -186,7 +184,7 @@ impl TheHub {
                 self.daily_jobs.push(DailyJob {
                     kind: DailyJobKind::PPFuelCapIncrease,
                     delay,
-                    day_created: self.timer_state_ro.read().unwrap().date.day,
+                    timestamp: self.timer_state_ro.read().unwrap().timestamp,
                 });
                 self.log_ui_console(format!("Factory No. {} bought {} units of solar panels. ETA is {} day(s)", fid, panels_count, delay), Info);
             } else {

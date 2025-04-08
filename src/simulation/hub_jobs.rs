@@ -22,7 +22,7 @@ pub enum MinutelyJobKind {
 pub struct MinutelyJob {
     pub kind: MinutelyJobKind,
     pub delay: SimInt,
-    pub minute_created: SimInt,
+    pub timestamp: u128,
 }
 
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ pub enum HourlyJobKind {
 pub struct HourlyJob {
     pub kind: HourlyJobKind,
     pub delay: SimInt,
-    pub hour_created: SimInt,
+    pub timestamp: u128,
 }
 
 #[derive(Debug, Clone)]
@@ -47,17 +47,17 @@ pub enum DailyJobKind {
 pub struct DailyJob {
     pub kind: DailyJobKind,
     pub delay: SimInt,
-    pub day_created: SimInt,
+    pub timestamp: u128,
 }
 
 impl TheHub {
     pub fn do_minutely_jobs(&mut self) {
-        let this_minute = self.timer_state_ro.read().unwrap().date.minute;
+        let now = self.timer_state_ro.read().unwrap().timestamp;
 
         let mut due_jobs = Vec::new();
         self.minutely_jobs
             .retain_mut(|job| {
-                if (job.minute_created + job.delay) % 60 == this_minute {
+                if (job.timestamp + job.delay as u128) <= now {
                     due_jobs.push(job.clone());
                     return false;
                 }
@@ -78,12 +78,12 @@ impl TheHub {
     }
 
     pub fn do_hourly_jobs(&mut self) {
-        let this_hour = self.timer_state_ro.read().unwrap().date.hour;
+        let now = self.timer_state_ro.read().unwrap().timestamp;
 
         let mut due_jobs = Vec::new();
         self.hourly_jobs
             .retain_mut(|job| {
-                if (job.hour_created + job.delay) % 23 == this_hour {
+                if (job.timestamp + (job.delay * 60) as u128) <= now {
                     due_jobs.push(job.clone());
                     return false;
                 }
@@ -101,12 +101,12 @@ impl TheHub {
     }
 
     pub fn do_daily_jobs(&mut self) {
-        let today = self.timer_state_ro.read().unwrap().date.day;
+        let now = self.timer_state_ro.read().unwrap().timestamp;
 
         let mut due_jobs = Vec::new();
         self.daily_jobs
             .retain_mut(|job| {
-                if (job.day_created + job.delay) % 30 == today {
+                if (job.timestamp + (job.delay * 60 * 24) as u128) <= now {
                     due_jobs.push(job.clone());
                     return false;
                 }

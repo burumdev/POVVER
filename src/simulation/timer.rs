@@ -75,6 +75,7 @@ impl Timer {
         let month_data = get_month_data(init_date.month as usize);
         let timer_state = Arc::new(RwLock::new(TimerStateData {
             date: init_date,
+            timestamp: tick_count,
             month_data,
         }));
 
@@ -140,6 +141,7 @@ impl Timer {
             }
 
             ts_lock.date = date;
+            ts_lock.timestamp = self.tick_count;
         } else { // Paused
             thread::sleep(Duration::from_millis(500));
             event = TimerEvent::Paused;

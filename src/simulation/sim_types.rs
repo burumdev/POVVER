@@ -1,9 +1,11 @@
+use std::fmt::Display;
 use std::ops::{Add, MulAssign};
 use num_traits::FromPrimitive;
 use crate::utils_traits::{AsFactor, HundredPercentable};
 
 pub type SimInt = i32;
 pub type SimFlo = f32;
+
 pub type TickDuration = u64;
 pub const DEFAULT_TICK_DURATION: TickDuration = 64;
 

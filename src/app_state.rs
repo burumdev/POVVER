@@ -16,6 +16,7 @@ use crate::{
 #[derive(Debug)]
 pub struct TimerStateData {
     pub date: Date,
+    pub timestamp: u128,
     pub month_data: &'static Month,
 }
 
