@@ -13,7 +13,8 @@ use crate::{
         StateAction,
         hub_comms::*,
         speed::Speed,
-        Percentage
+        Percentage,
+        sim_constants::*
     },
     economy::{
         economy_types::{Money, ProductDemand},
@@ -23,7 +24,6 @@ use crate::{
     utils_data::ReadOnlyRwLock,
     utils_traits::AsFactor,
 };
-use crate::simulation::sim_constants::SOLAR_PANEL_PRICE;
 
 struct ProductionRun {
     demand: ProductDemand,
@@ -84,7 +84,7 @@ impl Factory {
     }
 
     fn maybe_produce_goods(&mut self) {
-        let (factory_id, balance, producable_demands) = {
+        let (factory_id, balance, available_energy, producable_demands) = {
             let econ_state_ro = self.econ_state_ro.read().unwrap();
             let state_ro = self.state_ro.read().unwrap();
             let producable_demands = econ_state_ro
@@ -101,6 +101,7 @@ impl Factory {
             (
                 state_ro.id,
                 state_ro.balance,
+                state_ro.available_energy.val(),
                 producable_demands,
             )
         };
@@ -114,23 +115,27 @@ impl Factory {
                 let total_cost_ex_energy = unit_cost_ex_energy.val() * units as SimFlo;
 
                 if total_cost_ex_energy <= balance.val() * 0.75 {
-                    let energy_needed = demand.calculate_energy_need();
-                    let energy_demand = FactoryEnergyDemand {
-                        factory_id,
-                        energy_needed,
-                    };
+                    let energy_needed = demand.calculate_energy_need() - available_energy;
+                    if energy_needed > 0 {
+                        let energy_demand = FactoryEnergyDemand {
+                            factory_id,
+                            energy_needed,
+                        };
 
-                    self.dynamic_sender.send(Arc::new(
-                        FactoryHubSignal::EnergyDemand(
-                            energy_demand,
-                        ))
-                    ).unwrap();
+                        self.dynamic_sender.send(Arc::new(
+                            FactoryHubSignal::EnergyDemand(
+                                energy_demand,
+                            ))
+                        ).unwrap();
 
-                    self.production_runs.push(ProductionRun {
-                        demand,
-                        cost: total_cost_ex_energy.into(),
-                        energy_needed
-                    })
+                        self.production_runs.push(ProductionRun {
+                            demand,
+                            cost: total_cost_ex_energy.into(),
+                            energy_needed
+                        })
+                    } else {
+                        self.produce_product_demand(demand, unit_cost_ex_energy);
+                    }
                 }
             }
         }

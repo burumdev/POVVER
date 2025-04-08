@@ -6,7 +6,7 @@ use std::time::Duration;
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
-    app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData},
+    app_state::{PovverPlantStateData, FactoryStateData, HubState, EconomyStateData, TimerStateData, EnvStateData},
     economy::{
         povver_plant::PovverPlant,
         factory::Factory,
@@ -37,6 +37,7 @@ pub struct TheHub {
     pub factories_state: Arc<RwLock<Vec<Arc<RwLock<FactoryStateData>>>>>,
     pub econ_state: Arc<RwLock<EconomyStateData>>,
     pub timer_state_ro: ReadOnlyRwLock<TimerStateData>,
+    pub env_state_ro: ReadOnlyRwLock<EnvStateData>,
     pub minutely_jobs: Vec<MinutelyJob>,
     pub hourly_jobs: Vec<HourlyJob>,
     pub daily_jobs: Vec<DailyJob>,
@@ -48,6 +49,7 @@ impl TheHub {
     pub fn new(
         econ_state: Arc<RwLock<EconomyStateData>>,
         timer_state_ro: ReadOnlyRwLock<TimerStateData>,
+        env_state_ro: ReadOnlyRwLock<EnvStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
         let comms = HubComms::new(1);
@@ -132,6 +134,7 @@ impl TheHub {
                 factories,
                 econ_state,
                 timer_state_ro,
+                env_state_ro,
                 minutely_jobs: Vec::new(),
                 hourly_jobs: Vec::new(),
                 daily_jobs: Vec::new(),
@@ -257,7 +260,7 @@ impl TheHub {
                                 me_lock.do_minutely_jobs();
                             }
                             if event.at_least_hour() {
-                                me_lock.do_hourly_jobs();
+                                me_lock.do_hourly_jobs(&event);
                             }
                             if event.at_least_day() {
                                 me_lock.do_daily_jobs();

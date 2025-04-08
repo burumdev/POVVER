@@ -115,6 +115,9 @@ impl EnergyUnit {
     pub fn inc(&mut self, unit: SimInt) {
         self.0 = (self.0 + unit).min(SimInt::MAX);
     }
+    pub fn zero(&mut self) {
+        self.0 = 0;
+    }
 }
 impl PartialOrd for EnergyUnit {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {

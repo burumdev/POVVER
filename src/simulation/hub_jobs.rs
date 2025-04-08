@@ -11,6 +11,8 @@ use crate::{
         products::ProductStock,
     },
 };
+use crate::economy::solarpanel::SolarPanel;
+use crate::simulation::timer::TimerEvent;
 
 #[derive(Debug, Clone)]
 pub enum MinutelyJobKind {
@@ -41,6 +43,7 @@ pub struct HourlyJob {
 pub enum DailyJobKind {
     PPFuelCapIncrease,
     PPProductionCapIncrease,
+    FactoryBoughtSolarpanels(usize, usize)
 }
 
 #[derive(Debug, Clone)]
@@ -77,7 +80,7 @@ impl TheHub {
         }
     }
 
-    pub fn do_hourly_jobs(&mut self) {
+    pub fn do_hourly_jobs(&mut self, event: &TimerEvent) {
         let now = self.timer_state_ro.read().unwrap().timestamp;
 
         let mut due_jobs = Vec::new();
@@ -98,6 +101,9 @@ impl TheHub {
                 }
             }
         }
+
+        self.factories_energy_expired();
+        self.factories_renewable_produce_energy(event);
     }
 
     pub fn do_daily_jobs(&mut self) {
@@ -121,6 +127,9 @@ impl TheHub {
                 }
                 DailyJobKind::PPProductionCapIncrease => {
                     self.increase_pp_prod_cap();
+                }
+                DailyJobKind::FactoryBoughtSolarpanels(fid, count) => {
+                    self.solar_panel_to_factory(fid, count);
                 }
             }
         }
@@ -181,6 +190,35 @@ impl TheHub {
             self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::ProductionComplete(receipt)));
         } else {
             self.log_console(format!("Factory No. {} is not found. {} production canceled.", fid, receipt.demand.product.name), Error);
+        }
+    }
+
+    pub fn factories_energy_expired(&self) {
+        for factory in self.factories_state.read().unwrap().iter() {
+            let mut fac_state = factory.write().unwrap();
+            fac_state.available_energy.zero();
+        }
+    }
+
+    pub fn factories_renewable_produce_energy(&self, event: &TimerEvent) {
+        let sunshine = self.env_state_ro.read().unwrap().the_sun.brightness;
+        for factory in self.factories_state.read().unwrap().iter() {
+            let mut fac_state = factory.write().unwrap();
+            for solarpanel in fac_state.solarpanels.iter_mut() {
+                factory.write().unwrap().available_energy.inc(solarpanel.produce_energy(event, sunshine));
+            }
+            //TODO: Wind turbines
+        }
+    }
+
+    pub fn solar_panel_to_factory(&self, fid: usize, count: usize) {
+        if let Some(factory) = self.get_factory_state(fid) {
+            let panels = vec![SolarPanel::new(); count];
+
+            factory.write().unwrap().solarpanels.extend(panels);
+            self.log_ui_console(format!("Factory No. {} bought {} solarpanels. Watch'em go!", fid, count), Info);
+        } else {
+            self.log_console(format!("Factory No. {} is not found. So it can't buy any solar panels, period.", fid), Error);
         }
     }
 }

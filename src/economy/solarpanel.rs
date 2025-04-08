@@ -1,5 +1,4 @@
 use crate::{
-    economy::economy_types::EnergyUnit,
     simulation::{
         SimInt,
         timer::TimerEvent,
@@ -9,7 +8,7 @@ use crate::{
     environment::SunBrightness,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SolarPanel {
     age: SimInt,
     is_defunct: bool,
@@ -23,8 +22,8 @@ impl SolarPanel {
         }
     }
 
-    pub fn produce_energy(&mut self, timer_event: TimerEvent, sunshine: SunBrightness) -> EnergyUnit {
-        if timer_event.at_least_year() {
+    pub fn produce_energy(&mut self, timer_event: &TimerEvent, sunshine: SunBrightness) -> SimInt {
+        if timer_event.at_least_month() {
             self.age += 1;
             if self.age >= SOLAR_PANEL_MAX_AGE {
                 self.is_defunct = true;
@@ -32,12 +31,12 @@ impl SolarPanel {
         }
 
         if self.is_defunct {
-            return EnergyUnit::new(0);
+            return 0;
         }
 
-        let mut e = sunshine.val() as SimInt;
-        e -= self.age * SOLAR_PANEL_AGE_MODIFIER;
+        let mut energy = sunshine.val() as SimInt;
+        energy -= self.age * SOLAR_PANEL_AGE_MODIFIER;
 
-        EnergyUnit::new(e)
+        energy
     }
 }

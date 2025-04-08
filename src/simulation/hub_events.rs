@@ -182,7 +182,7 @@ impl TheHub {
                 let delay = (panels_count as SimFlo / 6.0).ceil() as SimInt;
 
                 self.daily_jobs.push(DailyJob {
-                    kind: DailyJobKind::PPFuelCapIncrease,
+                    kind: DailyJobKind::FactoryBoughtSolarpanels(fid, panels_count),
                     delay,
                     timestamp: self.timer_state_ro.read().unwrap().timestamp,
                 });

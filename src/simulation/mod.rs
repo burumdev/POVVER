@@ -87,6 +87,7 @@ impl Simulation {
         let (the_hub, hub_state) = TheHub::new(
             Arc::clone(&economy_state),
             ReadOnlyRwLock::from(timer_state.clone()),
+            ReadOnlyRwLock::from(env_state.clone()),
             ui_log_channel.0.clone()
         );
         let the_hub = Arc::new(Mutex::new(the_hub));
