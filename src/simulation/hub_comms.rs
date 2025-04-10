@@ -76,6 +76,7 @@ pub enum HubPPSignal {
 pub enum HubFactorySignal {
     EnergyTransfered(EnergyReceipt),
     ProductionComplete(ProductionReceipt),
+    RenewableEnergyProduced,
 }
 
 #[derive(Debug)]

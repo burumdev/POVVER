@@ -209,7 +209,9 @@ impl Factory {
             let budget = state_ro.balance.val() - 50000.0;
             let max_solar_panels = (budget / SOLAR_PANEL_PRICE) as usize;
 
-            self.dynamic_sender.send(Arc::new(FactoryHubSignal::BuyingSolarPanels(max_solar_panels))).unwrap();
+            if max_solar_panels > 0 {
+                self.dynamic_sender.send(Arc::new(FactoryHubSignal::BuyingSolarPanels(max_solar_panels))).unwrap();
+            }
         }
     }
 }
@@ -279,6 +281,9 @@ impl Factory {
                                     }
                                     HubFactorySignal::ProductionComplete(receipt) => {
                                         me_lock.production_complete(&receipt);
+                                    }
+                                    HubFactorySignal::RenewableEnergyProduced => {
+                                        me_lock.maybe_produce_goods();
                                     }
                                 }
                             }

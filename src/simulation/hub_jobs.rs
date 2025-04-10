@@ -3,6 +3,7 @@ use crate::{
     logger::{Logger, LogLevel::*},
     simulation::{
         SimInt,
+        SimFlo,
         hub::TheHub,
         sim_constants::*,
         hub_comms::*
@@ -18,6 +19,7 @@ use crate::simulation::timer::TimerEvent;
 pub enum MinutelyJobKind {
     PPProducesEnergy(EnergyReceipt),
     FactoryProducesProduct(ProductionReceipt),
+    FactoryProducedRenewableEnergy(usize, SimInt),
 }
 
 #[derive(Debug, Clone)]
@@ -75,6 +77,9 @@ impl TheHub {
                 }
                 MinutelyJobKind::FactoryProducesProduct(receipt) => {
                     self.factory_produce(receipt);
+                }
+                MinutelyJobKind::FactoryProducedRenewableEnergy(fid, energy) => {
+                    self.renewable_energy_to_factory(fid, energy);
                 }
             }
         }
@@ -200,15 +205,48 @@ impl TheHub {
         }
     }
 
-    pub fn factories_renewable_produce_energy(&self, event: &TimerEvent) {
+    pub fn factories_renewable_produce_energy(&mut self, event: &TimerEvent) {
         let sunshine = self.env_state_ro.read().unwrap().the_sun.brightness;
         for factory in self.factories_state.read().unwrap().iter() {
-            let mut fac_state = factory.write().unwrap();
-            for solarpanel in fac_state.solarpanels.iter_mut() {
-                factory.write().unwrap().available_energy.inc(solarpanel.produce_energy(event, sunshine));
+            let mut total_energy = 0;
+            let mut solar_energy = 0;
+            for solarpanel in factory.write().unwrap().solarpanels.iter_mut() {
+                let energy = solarpanel.produce_energy(event, sunshine);
+                solar_energy += energy;
             }
+
             //TODO: Wind turbines
+
+            total_energy += solar_energy;
+            if total_energy > 0 {
+                let (fid, solar_count) = {
+                    let state = factory.read().unwrap();
+                    (
+                        state.id,
+                        state.solarpanels.len(),
+                    )
+                };
+                let delay = (total_energy as SimFlo / 15.0).floor() as SimInt;
+                if delay == 0 {
+                    self.renewable_energy_to_factory(fid, total_energy);
+                    //TODO: Report both solar and wind turbines once we have the turbines
+                    self.log_ui_console(format!("Factory No. {} produced {} energy from {} solarpanels.", fid, total_energy, solar_count), Info);
+                } else {
+                    self.minutely_jobs.push(MinutelyJob {
+                        kind: MinutelyJobKind::FactoryProducedRenewableEnergy(fid, total_energy),
+                        delay,
+                        timestamp: self.timer_state_ro.read().unwrap().timestamp,
+                    });
+                    //TODO: Report both solar and wind turbines once we have the turbines
+                    self.log_ui_console(format!("Factory No. {} is producing {} energy from {} solarpanels. ETA is {} minutes.", fid, total_energy, solar_count, delay), Info);
+                }
+            }
         }
+    }
+
+    pub fn renewable_energy_to_factory(&self, fid: usize, energy: SimInt) {
+        self.get_factory_state(fid).unwrap().write().unwrap().available_energy.inc(energy);
+        self.comms.hub_to_factory(fid, Arc::new(HubFactorySignal::RenewableEnergyProduced));
     }
 
     pub fn solar_panel_to_factory(&self, fid: usize, count: usize) {
