@@ -177,20 +177,31 @@ impl TheHub {
     pub fn factory_buys_solar_panels(&mut self, fid: usize, panels_count: usize) {
         if let Some(factory) = self.get_factory_state(fid) {
             let fee = panels_count as SimFlo * SOLAR_PANEL_PRICE;
-            let transaction_successful = factory.write().unwrap().balance.dec(fee.val());
-            if transaction_successful {
-                let delay = (panels_count as SimFlo / 6.0).ceil() as SimInt;
-
-                self.daily_jobs.push(DailyJob {
-                    kind: DailyJobKind::FactoryBoughtSolarpanels(fid, panels_count),
-                    delay,
-                    timestamp: self.timer_state_ro.read().unwrap().timestamp,
-                });
-                self.log_ui_console(format!("Factory No. {} bought {} units of solar panels. ETA is {} day(s)", fid, panels_count, delay), Info);
-                factory.write().unwrap().is_awaiting_solarpanels = true;
+            let current_panels_count = factory.read().unwrap().solarpanels.len();
+            let amount_purchasable = if current_panels_count + panels_count >= FACTORY_MAX_SOLAR_PANELS {
+                FACTORY_MAX_SOLAR_PANELS - (current_panels_count - panels_count)
             } else {
-                factory.write().unwrap().is_bankrupt = true;
-                self.log_ui_console(format!("Factory No. {} has gone bankrupt. It can't even pay for {} freaking solar panels!", fid, panels_count), Critical);
+                panels_count
+            };
+
+            if amount_purchasable > 0 {
+                let transaction_successful = factory.write().unwrap().balance.dec(fee.val());
+                if transaction_successful {
+                    let delay = (panels_count as SimFlo / 6.0).ceil() as SimInt;
+
+                    self.daily_jobs.push(DailyJob {
+                        kind: DailyJobKind::FactoryBoughtSolarpanels(fid, panels_count),
+                        delay,
+                        timestamp: self.timer_state_ro.read().unwrap().timestamp,
+                    });
+                    self.log_ui_console(format!("Factory No. {} bought {} units of solar panels. ETA is {} day(s)", fid, panels_count, delay), Info);
+                    factory.write().unwrap().is_awaiting_solarpanels = true;
+                } else {
+                    factory.write().unwrap().is_bankrupt = true;
+                    self.log_ui_console(format!("Factory No. {} has gone bankrupt. It can't even pay for {} freaking solar panels!", fid, panels_count), Critical);
+                }
+            } else {
+                self.log_ui_console(format!("Factory No. {} has reached it's solarpanel limit of {FACTORY_MAX_SOLAR_PANELS}. It can't buy another one!", fid), Warning);
             }
         } else {
             self.log_console(format!("Factory No. {} is not found. So it can't buy any solar panels now, can it?", fid), Error);

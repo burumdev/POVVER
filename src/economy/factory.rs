@@ -204,13 +204,24 @@ impl Factory {
 
     fn maybe_buy_renewables(&self) {
         //TODO: More detailed algo for renewable buying
-        let state_ro = self.state_ro.read().unwrap();
-        if state_ro.balance.val() >= 50000.0 && !state_ro.is_awaiting_solarpanels {
-            let budget = state_ro.balance.val() - 50000.0;
+        let (current_solarpanels_count, balance, is_awaiting_solarpanels) = {
+            let state = self.state_ro.read().unwrap();
+            (
+                state.solarpanels.len(),
+                state.balance,
+                state.is_awaiting_solarpanels,
+            )
+        };
+
+        if balance.val() >= 50000.0 && !is_awaiting_solarpanels {
+            let budget = balance.val() - 50000.0;
             let max_solar_panels = (budget / SOLAR_PANEL_PRICE) as usize;
 
             if max_solar_panels > 0 {
-                self.dynamic_sender.send(Arc::new(FactoryHubSignal::BuyingSolarPanels(max_solar_panels))).unwrap();
+                let can_buy_count = FACTORY_MAX_SOLAR_PANELS - current_solarpanels_count;
+                let amount = if max_solar_panels <= can_buy_count { max_solar_panels } else { can_buy_count };
+
+                self.dynamic_sender.send(Arc::new(FactoryHubSignal::BuyingSolarPanels(amount))).unwrap();
             }
         }
     }

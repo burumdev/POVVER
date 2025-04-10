@@ -16,6 +16,8 @@ pub mod sim_constants;
 
 pub mod timer;
 pub mod sim_types;
+mod test_factories;
+
 pub use sim_types::*;
 
 use timer::{Timer, TimerEvent};

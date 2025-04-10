@@ -10,9 +10,7 @@ use crate::{
     economy::{
         povver_plant::PovverPlant,
         factory::Factory,
-        industries::Industry,
         economy_types::{Money, EnergyUnit},
-        products::Product,
     },
     simulation::{
         SimFlo,
@@ -29,6 +27,8 @@ use crate::{
         LogMessage,
     },
 };
+
+use crate::simulation::test_factories::get_test_factories;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -65,30 +65,7 @@ impl TheHub {
             is_bankrupt: false,
         }));
 
-        let industry_products = Product::by_industry(&Industry::SEMICONDUCTORS);
-        let cheapest_rnd_product = *industry_products
-            .iter()
-            .min_by(|prod_a, prod_b| prod_a.rnd_cost.total_cmp(&prod_b.rnd_cost)).unwrap();
-
-        let product_portfolio = vec![cheapest_rnd_product];
-
-        let factories_state = vec![
-            Arc::new(
-                RwLock::new(
-                    FactoryStateData {
-                        balance: Money::new(FACTORY_INIT_MONEY - product_portfolio[0].rnd_cost),
-                        available_energy: EnergyUnit::default(),
-                        product_stocks: Vec::new(),
-                        solarpanels: Vec::with_capacity(FACTORY_MAX_SOLAR_PANELS),
-                        industry: Industry::SEMICONDUCTORS,
-                        product_portfolio,
-                        id: 0,
-                        is_bankrupt: false,
-                        is_awaiting_solarpanels: false,
-                    }
-                )
-            )
-        ];
+        let factories_state = get_test_factories();
 
         let (factories, to_factory_senders) = {
             let mut to_factory_senders = Vec::new();
