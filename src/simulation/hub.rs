@@ -28,7 +28,7 @@ use crate::{
     },
 };
 
-use crate::simulation::test_factories::get_test_factories;
+use crate::simulation::test_factories::{get_test_factories, TEST_INDUSTRIES};
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -52,7 +52,8 @@ impl TheHub {
         env_state_ro: ReadOnlyRwLock<EnvStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     ) -> (Self, HubState) {
-        let comms = HubComms::new(1);
+        // TODO: Test factories for now (from test-factories.rs). Maybe switch to user defined in the future.
+        let comms = HubComms::new(TEST_INDUSTRIES.len());
 
         let povver_plant_state = Arc::new(RwLock::new(PovverPlantStateData {
             fuel: PP_INIT_FUEL_CAPACITY,
@@ -65,6 +66,7 @@ impl TheHub {
             is_bankrupt: false,
         }));
 
+        // TODO: Test factories for now (from test-factories.rs). Maybe switch to user defined in the future.
         let factories_state = get_test_factories();
 
         let (factories, to_factory_senders) = {
@@ -72,8 +74,9 @@ impl TheHub {
             let factories = Arc::new(Mutex::new(
                 factories_state
                     .iter()
-                    .map(|f| {
-                        to_factory_senders.push(comms.clone_to_factory_dyn_sender(0));
+                    .enumerate()
+                    .map(|(id, f)| {
+                        to_factory_senders.push(comms.clone_to_factory_dyn_sender(id));
                         Arc::new(Mutex::new(
                             Factory::new(
                                 ReadOnlyRwLock::from(Arc::clone(f)),
@@ -82,8 +85,8 @@ impl TheHub {
                                 ui_log_sender.clone(),
                                 comms.clone_broadcast_state_receiver(),
                                 comms.clone_broadcast_signal_receiver(),
-                                comms.clone_from_factory_dyn_sender(0),
-                                comms.clone_to_factory_dyn_receiver(0),
+                                comms.clone_from_factory_dyn_sender(id),
+                                comms.clone_to_factory_dyn_receiver(id),
                             )
                         ))
                     }).collect()
