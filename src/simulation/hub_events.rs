@@ -226,7 +226,7 @@ impl TheHub {
                     self.log_ui_console(format!("Factory No. {} sold {} units of {} for a total price of {}.", fid, stock.units, stock.product.name, total_price.val()), Info);
                 }
             } else {
-                self.log_ui_console(format!("factory_sells_product called with illegal stock index {}. Stock is: {:?}", stock_index, factory.read().unwrap().product_stocks), Error);
+                self.log_console(format!("factory_sells_product called with illegal stock index {}. Stock is: {:?}", stock_index, factory.read().unwrap().product_stocks), Error);
             }
         } else {
             self.log_console(format!("Factory No. {} is not found. Sale of product canceled.", fid), Error);

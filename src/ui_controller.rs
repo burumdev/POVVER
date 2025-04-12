@@ -4,7 +4,7 @@ use std::{
 };
 use tokio::sync::broadcast as tokio_broadcast;
 
-use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, FilterModel};
+use slint::{ModelRc, CloseRequestResponse, SharedString, Model, VecModel, FilterModel, ToSharedString};
 
 use crate::{
     app_state::StatePayload,
@@ -41,6 +41,7 @@ impl UIController {
         mut wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         mut log_receiver: tokio_broadcast::Receiver<LoggerMessage>,
         state: Arc<StatePayload>,
+        factory_count: usize,
     ) -> thread::JoinHandle<()> {
         let flag_sender_close = flag_sender.clone();
         let flag_sender_speed = flag_sender.clone();
@@ -66,8 +67,11 @@ impl UIController {
             let app_weak = app.as_weak();
             slint::spawn_local(async move {
                 let appw = app_weak.clone().unwrap();
+
+                // Start the UI maximized to the screen it's launched on
                 appw.window().set_maximized(true);
 
+                // Initial log messages setup
                 appw.set_messages(ModelRc::from(VecModel::from_slice(&[])));
                 let messages_rc = appw.get_messages();
                 let messages_model = messages_rc.as_any().downcast_ref::<VecModel<LogMessage>>().unwrap();
@@ -75,8 +79,16 @@ impl UIController {
                 let hub_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::Hub));
                 let pp_filtered = FilterModel::from(messages_rc.clone().filter(|msg| msg.source == MessageSource::PP));
 
-                let mut factory_filtered: ModelRc<ModelRc<LogMessage>> = ModelRc::default();
+                let factory_ids = (0..factory_count).map(|i| i as SimInt).collect::<Vec<SimInt>>();
+                let factory_model_empty = factory_ids.iter().map(|_| ModelRc::from(VecModel::from_slice(&[]))).collect::<Vec<_>>();
+                let factory_filtered: ModelRc<ModelRc<LogMessage>> = ModelRc::from(VecModel::from_slice(&factory_model_empty));
 
+                // This is necessary gymnastics in order to prevent rerender of factories on the map
+                // Every time factory states change. We use a simple integer array that doesn't change
+                // to prevent the rerenders.
+                appw.set_factory_ids(ModelRc::from(VecModel::from_slice(&factory_ids)));
+
+                // Main UI loop. This will update UI state when signals from the outside pour in
                 while let Ok(action) = wakeup_receiver.recv().await {
                     match action {
                         StateAction::Timer(event) => {
@@ -122,6 +134,35 @@ impl UIController {
                                                 production_capacity: pp_lock.production_capacity.val(),
                                             })
                                         }
+                                        if timer_lock.date.minute % 7 == 0 {
+                                            let factories_lock = state.factories.read().unwrap();
+                                            appw.set_factories(
+                                                ModelRc::from(
+                                                    factories_lock.iter().map(|fs| {
+                                                        let fstate = fs.read().unwrap();
+                                                        let product_stocks = ModelRc::from(fstate.product_stocks.iter().map(|ps| ProductStock {
+                                                            name: ps.product.name.to_shared_string(),
+                                                            amount: ps.units
+                                                        }).collect::<Vec<ProductStock>>().as_slice());
+                                                        let product_portfolio = ModelRc::from(fstate.product_portfolio.iter().map(|port|
+                                                            port.name.to_shared_string()).collect::<Vec<SharedString>>().as_slice()
+                                                        );
+
+                                                        FactoryState {
+                                                            id: fstate.id as SimInt,
+                                                            balance: fstate.balance.val(),
+                                                            available_energy: fstate.available_energy.val(),
+                                                            product_stocks,
+                                                            solarpanels: fstate.solarpanels.len() as SimInt,
+                                                            industry: fstate.industry.name.to_shared_string(),
+                                                            product_portfolio,
+                                                            is_bankrupt: fstate.is_bankrupt,
+                                                            is_awaiting_solarpanels: fstate.is_awaiting_solarpanels,
+                                                        }
+                                                    }).collect::<Vec<FactoryState>>().as_slice(),
+                                                )
+                                            )
+                                        }
                                     }
                                     if let Ok(message) = log_receiver.try_recv() {
                                         // I'm not sure if it's the most efficient way to do this categorization of
@@ -137,13 +178,7 @@ impl UIController {
                                                     vec.push(message.clone().into());
                                                 }
                                             } else {
-                                                factory_filtered = ModelRc::from(
-                                                    VecModel::from_slice(
-                                                        &[
-                                                            ModelRc::from(VecModel::from_slice(&[message.clone().into()]))
-                                                        ]
-                                                    )
-                                                );
+                                                factory_filtered.set_row_data(fac_id as usize, ModelRc::from(VecModel::from_slice(&[message.clone().into()])));
                                             }
                                         }
 

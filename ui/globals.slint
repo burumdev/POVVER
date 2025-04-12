@@ -1,4 +1,4 @@
-import { ActiveTab, TimerData, MonthData, EnvData, MacroEconData, PPState, UIMisc, LogMessage, CategoryMessages, ProductDemand } from "./state.slint";
+import { ActiveTab, TimerData, MonthData, EnvData, MacroEconData, PPState, UIMisc, LogMessage, CategoryMessages, ProductDemand, FactoryState } from "./state.slint";
 
 export global Globs {
     in property <UIMisc> misc;
@@ -7,6 +7,11 @@ export global Globs {
 	in property <EnvData> env;
 	in property <MacroEconData> macroecon;
 	in property <PPState> pp;
+	in property <[FactoryState]> factories;
+	// In order to prevent rerender with factory state
+	// We introduce a simple [0, 1, 2, 3 ...] array to stabilize
+	// Factories shown on the map with least amount of rerenders
+	in property <[int]> factory_ids;
     in property <[LogMessage]> messages;
     in property <CategoryMessages> category_messages;
     in property <[ProductDemand]> product_demands;

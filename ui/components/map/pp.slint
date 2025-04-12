@@ -15,8 +15,8 @@ export component PovverPlant inherits MapItem {
 		interval: 100ms;
 		running: false;
 		triggered => {
-			baloon_shown = !baloon_shown;
 			self.running = false;
+			baloon_shown = true;
 		}
 	}
 

@@ -109,6 +109,24 @@ export struct PPState {
     is_bankrupt: bool,
 }
 
+// Factories
+export struct ProductStock {
+	name: string,
+	amount: int,
+}
+
+export struct FactoryState {
+    id: int,
+    balance: float,
+    available_energy: int,
+    product_stocks: [ProductStock],
+    solarpanels: int,
+    industry: string,
+    product_portfolio: [string],
+    is_bankrupt: bool,
+    is_awaiting_solarpanels: bool,
+}
+
 // LOG MESSAGES
 export enum MessageSource {
 	Hub,

@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct Industry {
-    name: &'static str,
-    description: &'static str,
+    pub name: &'static str,
+    pub description: &'static str,
 }
 
 impl Industry {

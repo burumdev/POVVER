@@ -16,7 +16,9 @@ import {
 	LogLevel,
 	MessageSource,
 	CategoryMessages,
-	ProductDemand
+	ProductDemand,
+	FactoryState,
+	ProductStock
 } from "./state.slint";
 
 import { Utils } from "./utils.slint";
@@ -41,22 +43,26 @@ export {
     LogLevel,
     MessageSource,
     CategoryMessages,
-    ProductDemand
+    ProductDemand,
+    FactoryState,
+    ProductStock,
 }
 
 export component PovverMain inherits Window {
     default-font-family: "Monaspice Ar Nerd Font";
     title: "POVVER";
 
+    in property <UIMisc> misc <=> Globs.misc;
     in property <TimerData> timer <=> Globs.timer;
     in property <MonthData> month <=> Globs.month;
     in property <EnvData> env <=> Globs.env;
     in property <MacroEconData> macroecon <=> Globs.macroecon;
     in property <PPState> pp <=> Globs.pp;
-    in property <UIMisc> misc <=> Globs.misc;
     in property <[LogMessage]> messages <=> Globs.messages;
     in property <CategoryMessages> category_messages <=> Globs.category_messages;
     in property <[ProductDemand]> product_demands <=> Globs.product_demands;
+    in property <[FactoryState]> factories <=> Globs.factories;
+    in property <[int]> factory_ids <=> Globs.factory_ids;
 
 	// Event callbacks
     pure callback toggle_pause <=> GlobCallbacks.toggle_pause;

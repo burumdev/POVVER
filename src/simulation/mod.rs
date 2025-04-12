@@ -30,6 +30,7 @@ use crate::{
     utils_data::ReadOnlyRwLock,
     logger::LogMessage,
 };
+use crate::simulation::test_factories::TEST_INDUSTRIES;
 
 #[derive(Debug, Clone)]
 pub enum EconUpdate {
@@ -133,6 +134,8 @@ impl Simulation {
                 wakeup_receiver.resubscribe(),
                 log_receiver,
                 Arc::clone(&state_payload),
+                //TODO: User defined dynamic factory count
+                TEST_INDUSTRIES.len(),
             ),
         ];
 

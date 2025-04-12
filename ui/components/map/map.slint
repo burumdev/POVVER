@@ -42,8 +42,9 @@ export component Map inherits Rectangle {
 			z: 4;
 		}
 
-		Factory {
-			x: 50px;
+		for id in Globs.factory_ids: Factory {
+			id: id;
+			x: 50px + id * 1px * 450;
 			y: 450px;
 			z: 4;
 		}
