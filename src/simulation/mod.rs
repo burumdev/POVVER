@@ -127,15 +127,19 @@ impl Simulation {
         let log_receiver = self.ui_log_channel.1.resubscribe();
         let state_payload = self.app_state.get_state_payload();
 
-        let join_handles = vec![
+        let mut join_handles = vec![
             self.ui_controller.run(
                 ui_flag_sender,
                 wakeup_receiver.resubscribe(),
                 log_receiver,
                 Arc::clone(&state_payload),
             ),
-            TheHub::start(Arc::clone(&self.the_hub), wakeup_receiver),
         ];
+
+        // Let's give the UI enough time to initialize
+        // before we launch the hub.
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        join_handles.push(TheHub::start(Arc::clone(&self.the_hub), wakeup_receiver));
 
         let broadcast_action = |action: StateAction| {
             if let Err(e) = wakeup_sender.send(action.clone()) {
