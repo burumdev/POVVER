@@ -214,8 +214,8 @@ impl TheHub {
                                         FactoryHubSignal::EnergyDemand(demand) => {
                                             me.lock().unwrap().factory_needs_energy(demand);
                                         },
-                                        FactoryHubSignal::ProducingProductDemand(demand, unit_cost) => {
-                                            me.lock().unwrap().factory_will_produce(fid, demand, *unit_cost);
+                                        FactoryHubSignal::ProducingProductDemand(demand, units, unit_cost) => {
+                                            me.lock().unwrap().factory_will_produce(fid, demand, *units, *unit_cost);
                                         },
                                         FactoryHubSignal::SellingProduct(stock_index, unit_price) => {
                                             me.lock().unwrap().factory_sells_product(fid, *stock_index, *unit_price);

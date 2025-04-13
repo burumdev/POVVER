@@ -27,6 +27,7 @@ use crate::{
 
 struct ProductionRun {
     demand: ProductDemand,
+    units: SimInt,
     cost: Money,
     energy_needed: SimInt,
 }
@@ -114,8 +115,11 @@ impl Factory {
                 let units = demand.as_units();
                 let total_cost_ex_energy = unit_cost_ex_energy.val() * units as SimFlo;
 
-                if total_cost_ex_energy <= balance.val() * 0.75 {
-                    let energy_needed = demand.calculate_energy_need() - available_energy;
+                let budget_units = ((balance.val() * 0.75 - total_cost_ex_energy) / unit_cost_ex_energy) as SimInt;
+                // If we can produce at least one percent of the demand, we'll do it.
+                if budget_units > product.demand_info.unit_per_percent {
+                    let budget = budget_units as SimFlo * unit_cost_ex_energy;
+                    let energy_needed = budget_units * product.unit_production_cost.energy - available_energy;
                     if energy_needed > 0 {
                         let energy_demand = FactoryEnergyDemand {
                             factory_id,
@@ -130,11 +134,12 @@ impl Factory {
 
                         self.production_runs.push(ProductionRun {
                             demand,
+                            units: budget_units,
                             cost: total_cost_ex_energy.into(),
                             energy_needed
                         })
                     } else {
-                        self.produce_product_demand(demand, unit_cost_ex_energy);
+                        self.produce_product_demand(demand, budget_units, unit_cost_ex_energy);
                     }
                 }
             }
@@ -170,14 +175,14 @@ impl Factory {
             run.energy_needed <= energy_available.val() && run.cost <= balance
         }) {
             let run = &self.production_runs[index];
-            let unit_cost = run.cost.val() / run.demand.units as SimFlo;
-            self.produce_product_demand(run.demand, unit_cost);
+            let unit_cost = run.cost.val() / run.units as SimFlo;
+            self.produce_product_demand(run.demand, run.units, unit_cost);
         }
     }
 
-    fn produce_product_demand(&mut self, demand: ProductDemand, unit_cost: SimFlo) {
+    fn produce_product_demand(&mut self, demand: ProductDemand, units: SimInt, unit_cost: SimFlo) {
         self.dynamic_sender.send(
-            Arc::new(FactoryHubSignal::ProducingProductDemand(demand, unit_cost))
+            Arc::new(FactoryHubSignal::ProducingProductDemand(demand, units, unit_cost))
         ).unwrap();
     }
 

@@ -185,7 +185,7 @@ impl TheHub {
         let fid = receipt.factory_id;
 
         if let Some(factory) = self.get_factory_state(fid) {
-            let units = receipt.demand.units;
+            let units = receipt.units_produced;
             factory.write().unwrap().product_stocks.push(ProductStock {
                 product: receipt.demand.product,
                 units,

@@ -45,6 +45,7 @@ pub struct EnergyReceipt {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProductionReceipt {
     pub demand: ProductDemand,
+    pub units_produced: SimInt,
     pub price_per_unit: SimFlo,
     pub date: Date,
     pub factory_id: usize,
@@ -90,7 +91,7 @@ pub enum PPHubSignal {
 #[derive(Debug, PartialEq)]
 pub enum FactoryHubSignal {
     EnergyDemand(FactoryEnergyDemand),
-    ProducingProductDemand(ProductDemand, SimFlo),
+    ProducingProductDemand(ProductDemand, SimInt, SimFlo),
     SellingProduct(usize, SimFlo),
     BuyingSolarPanels(usize),
 }

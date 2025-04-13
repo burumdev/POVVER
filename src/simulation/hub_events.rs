@@ -129,22 +129,22 @@ impl TheHub {
         self.comms.send_signal_broadcast(Arc::new(*demand))
     }
 
-    pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, unit_cost: SimFlo) {
-        let units = demand.as_units();
+    pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, units: SimInt, unit_cost: SimFlo) {
         let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
         let total_cost_ex_energy = unit_cost_ex_energy * units as SimFlo;
 
         if let Some(factory) = self.get_factory_state(fid) {
             let transaction_successful = factory.write().unwrap().balance.dec(total_cost_ex_energy.val());
             if transaction_successful {
-                let energy_needed = demand.calculate_energy_need();
+                let energy_needed = units * demand.product.unit_production_cost.energy;
                 let available_energy = factory.read().unwrap().available_energy;
 
                 if available_energy.val() >= energy_needed {
                     let delay = units / demand.product.units_per_minute;
                     let receipt = ProductionReceipt {
                         demand: demand.clone(),
-                        price_per_unit: unit_cost.val(),
+                        units_produced: units,
+                        price_per_unit: unit_cost,
                         date: self.timer_state_ro.read().unwrap().date.clone(),
                         factory_id: fid,
                         total_price: total_cost_ex_energy.val(),

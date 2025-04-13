@@ -371,9 +371,9 @@ impl Product {
         unit_production_cost: UnitProductionCost {
             energy: 3,
             labor: 1.5,
-            raw_materials: 17.43,
+            raw_materials: 1.43,
             equipment_maintenance: 0.34,
-            packaging: 42.78,
+            packaging: 2.78,
         },
         units_per_minute: 92,
         rnd_cost: 538.29,
@@ -433,7 +433,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 75.0,
             max_percentage: 100.0,
-            unit_per_percent: 60,
+            unit_per_percent: 30,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
                 dec_quarter: 12,
