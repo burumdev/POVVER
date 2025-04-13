@@ -84,9 +84,9 @@ impl UIController {
                 let factory_filtered: ModelRc<ModelRc<LogMessage>> = ModelRc::from(VecModel::from_slice(&factory_model_empty));
 
                 // This is necessary gymnastics in order to prevent rerender of factories on the map
-                // Every time factory states change. We use a simple integer array that doesn't change
+                // Every time factory states change. We use a simple integer that doesn't change
                 // to prevent the rerenders.
-                appw.set_factory_ids(ModelRc::from(VecModel::from_slice(&factory_ids)));
+                appw.set_factory_count(factory_count as SimInt);
 
                 // Main UI loop. This will update UI state when signals from the outside pour in
                 while let Ok(action) = wakeup_receiver.recv().await {
