@@ -115,10 +115,17 @@ impl Factory {
                 let units = demand.as_units();
                 let total_cost_ex_energy = unit_cost_ex_energy.val() * units as SimFlo;
 
-                let budget_units = ((balance.val() * 0.75 - total_cost_ex_energy) / unit_cost_ex_energy) as SimInt;
+                let budget = (balance.val() * 0.75) - total_cost_ex_energy;
+                // If the factory can't even produce a single unit of the product,
+                // It probably has gone bankrupt, so... //TODO
+                if budget < unit_cost_ex_energy {
+                    self.log_ui_console(format!("Can't produce even a single unit of {}", product.name), Critical);
+                    return;
+                }
+
+                let budget_units = (budget / unit_cost_ex_energy) as SimInt;
                 // If we can produce at least one percent of the demand, we'll do it.
                 if budget_units > product.demand_info.unit_per_percent {
-                    let budget = budget_units as SimFlo * unit_cost_ex_energy;
                     let energy_needed = budget_units * product.unit_production_cost.energy - available_energy;
                     if energy_needed > 0 {
                         let energy_demand = FactoryEnergyDemand {
@@ -181,6 +188,7 @@ impl Factory {
     }
 
     fn produce_product_demand(&mut self, demand: ProductDemand, units: SimInt, unit_cost: SimFlo) {
+        self.log_ui_console(format!("Producing {} units of {} for a demand of {} units.", units, demand.product.name, demand.units), Info);
         self.dynamic_sender.send(
             Arc::new(FactoryHubSignal::ProducingProductDemand(demand, units, unit_cost))
         ).unwrap();

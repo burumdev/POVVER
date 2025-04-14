@@ -34,7 +34,7 @@ impl SolarPanel {
             return 0;
         }
 
-        let mut energy = sunshine.val() as SimInt;
+        let mut energy = (sunshine.val() / 2.0).ceil() as SimInt;
         energy -= self.age * SOLAR_PANEL_AGE_MODIFIER;
 
         energy

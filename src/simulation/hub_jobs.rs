@@ -107,7 +107,6 @@ impl TheHub {
             }
         }
 
-        self.factories_energy_expired();
         self.factories_renewable_produce_energy(event);
     }
 
@@ -138,6 +137,9 @@ impl TheHub {
                 }
             }
         }
+
+        // If the factory doesn't use it's available energy in a day, it will be expired the next day.
+        self.factories_energy_expired();
     }
 
     pub fn transfer_fuel_to_pp(&self, receipt: FuelReceipt) {

@@ -99,6 +99,7 @@ impl TheHub {
         let povver_plant = Arc::new(Mutex::new(PovverPlant::new(
             ReadOnlyRwLock::from(Arc::clone(&povver_plant_state)),
             ReadOnlyRwLock::from(Arc::clone(&econ_state)),
+            ReadOnlyRwLock::clone(&timer_state_ro),
             ui_log_sender.clone(),
             comms.clone_broadcast_state_receiver(),
             comms.clone_pp_dyn_channel(),

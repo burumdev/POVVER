@@ -6,7 +6,7 @@ use std::time::Duration;
 use tokio::sync::broadcast as tokio_broadcast;
 
 use crate::{
-    app_state::{EconomyStateData, PovverPlantStateData},
+    app_state::{EconomyStateData, PovverPlantStateData, TimerStateData},
     utils_data::{SlidingWindow, ReadOnlyRwLock},
     utils_traits::AsFactor,
     simulation::{
@@ -35,6 +35,7 @@ pub struct PovverPlant {
     last_hundred_sales: SlidingWindow<EnergyReceipt>,
     state_ro: ReadOnlyRwLock<PovverPlantStateData>,
     econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
+    timer_state_ro: ReadOnlyRwLock<TimerStateData>,
     ui_log_sender: tokio_broadcast::Sender<LogMessage>,
     wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
     dynamic_channel: DynamicChannel,
@@ -47,6 +48,7 @@ impl PovverPlant {
     pub fn new(
         state_ro: ReadOnlyRwLock<PovverPlantStateData>,
         econ_state_ro: ReadOnlyRwLock<EconomyStateData>,
+        timer_state_ro: ReadOnlyRwLock<TimerStateData>,
         ui_log_sender: tokio_broadcast::Sender<LogMessage>,
         wakeup_receiver: tokio_broadcast::Receiver<StateAction>,
         dynamic_channel: DynamicChannel,
@@ -67,6 +69,7 @@ impl PovverPlant {
             last_hundred_sales: SlidingWindow::new(100),
             state_ro,
             econ_state_ro,
+            timer_state_ro,
             ui_log_sender,
             wakeup_receiver,
             dynamic_channel,
@@ -127,7 +130,11 @@ impl PovverPlant {
                 }
             },
             f if f > self.fuel_buy_threshold => {
-                self.log_ui_console(format!("Fuel check completed. Amount {fuel} is sufficient."), Info);
+                let hour = self.timer_state_ro.read().unwrap().date.hour;
+                // Report fuel level every 3 hours
+                if hour % 3 == 0 {
+                    self.log_ui_console(format!("Fuel check completed. Amount {fuel} is sufficient."), Info);
+                }
             },
             _ => unreachable!()
         }
@@ -156,7 +163,7 @@ impl PovverPlant {
 
         let producable = (fuel * PP_ENERGY_PER_FUEL).clamp(0, production_capacity.val());
 
-        // We have ZERO energy production portential.
+        // We have ZERO energy production potential.
         // What are we gonna do?
         // TODO: handle this situation and maybe declare bankruptcy?
         if producable == 0 {
@@ -353,15 +360,16 @@ impl PovverPlant {
                 });
                 if let Ok(action) = wakeup_receiver.try_recv() {
                     if !state_ro.read().unwrap().is_bankrupt {
+                        let mut me_lock = me.lock().unwrap();
                         match action {
                             StateAction::Timer(TimerEvent::HourChange) => {
-                                me.lock().unwrap().check_buy_fuel();
+                                me_lock.check_buy_fuel();
                             }
                             StateAction::SpeedChange(td) => {
                                 sleeptime = ((td / 2) * 1000) - 250;
                             }
                             StateAction::Quit => {
-                                me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
+                                me_lock.log_console("Quit signal received.".to_string(), Warning);
                                 break 'outer;
                             }
                             _ => ()

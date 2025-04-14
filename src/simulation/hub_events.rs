@@ -26,7 +26,7 @@ impl TheHub {
                 .balance.dec(fee);
 
         if transaction_successful {
-            let delay = (amount as SimFlo / 5.0).floor() as SimInt;
+            let delay = (amount as SimFlo / 10.0).floor() as SimInt;
             let date = self.timer_state_ro.read().unwrap().date.clone();
             let receipt = FuelReceipt {
                 units: amount, price_per_unit: price.val(),
@@ -59,7 +59,7 @@ impl TheHub {
 
         if transaction_successful {
             self.povver_plant_state.write().unwrap().is_awaiting_fuel_capacity = true;
-            let delay = 5;
+            let delay = 2;
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPFuelCapIncrease,
                 delay,
@@ -113,13 +113,16 @@ impl TheHub {
             };
 
             let delay = offer.units / 1000;
-            self.minutely_jobs.push(MinutelyJob {
-                kind: MinutelyJobKind::PPProducesEnergy(receipt),
-                delay,
-                timestamp: self.timer_state_ro.read().unwrap().timestamp,
-            });
-            self.log_ui_console(format!("PP is producing {} units of energy for factory No. {}. ETA is {} minutes.", offer.units, fid, delay), Info);
-
+            if delay == 0 {
+                self.pp_energy_to_factory(receipt);
+            } else {
+                self.minutely_jobs.push(MinutelyJob {
+                    kind: MinutelyJobKind::PPProducesEnergy(receipt),
+                    delay,
+                    timestamp: self.timer_state_ro.read().unwrap().timestamp,
+                });
+                self.log_ui_console(format!("PP is producing {} units of energy for factory No. {}. ETA is {} minutes.", offer.units, fid, delay), Info);
+            }
         } else {
             self.log_console(format!("Factory No. {} is not found. PP energy production canceled.", fid), Error);
         }

@@ -8,6 +8,10 @@ pub mod products;
 
 pub mod economy_types;
 use economy_types::*;
+
+pub mod economy_constants;
+use economy_constants::*;
+
 pub mod factory;
 pub mod povver_plant;
 pub mod solarpanel;
@@ -36,7 +40,7 @@ impl Economy {
         let state = Arc::new(RwLock::new(EconomyStateData {
             inflation_rate: rng.gen_range(2.0..10.0),
             inflation_direction,
-            fuel_price: Money::new(rng.gen_range(100.00..200.00)),
+            fuel_price: Money::new(200.0),
             product_demands: Vec::new(),
             past_25_product_demands: SlidingWindow::new(25),
         }));
