@@ -123,7 +123,10 @@ impl Factory {
                     return;
                 }
 
-                let budget_units = (budget / unit_cost_ex_energy) as SimInt;
+                let mut budget_units = (budget / unit_cost_ex_energy) as SimInt;
+                // Don't produce more than the demand.
+                budget_units = budget_units.clamp(0, units);
+
                 // If we can produce at least one percent of the demand, we'll do it.
                 if budget_units > product.demand_info.unit_per_percent {
                     let energy_needed = budget_units * product.unit_production_cost.energy - available_energy;

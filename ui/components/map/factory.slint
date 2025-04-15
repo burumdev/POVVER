@@ -13,10 +13,6 @@ export component Factory inherits MapItem {
 	property <LogMessage> last_message: messages[last_msg_index];
 	property <bool> baloon_shown: false;
 
-	init => {
-		debug("FACTORY NO: " + id + " INITIALIZED");
-	}
-
 	timer := Timer {
 		interval: 100ms;
 		running: false;

@@ -218,11 +218,12 @@ impl TheHub {
                 let mut fac = factory.write().unwrap();
                 let stock = fac.product_stocks.remove(stock_index);
                 if let Some(demand) = self.econ_state.write().unwrap().product_demands.iter_mut().find(|demand| demand.product == stock.product) {
-                    //TODO: A more complicated code to determine how many to buy would be better.
+                    // TODO: A more complicated code to determine how many to buy would be better.
                     // For now all units are bought at the price set by the factory.
-                    let met_percent = Percentage::new((stock.units / demand.units) as SimFlo * 100.0);
+                    let met_percent = Percentage::new(stock.units as SimFlo / demand.units as SimFlo * 100.0);
                     demand.demand_meet_percent = met_percent;
-                    demand.percent.set(met_percent.val() / demand.percent.val() * 100.0);
+                    demand.units -= stock.units;
+                    demand.percent.set(demand.percent.val() - (demand.percent.val() * met_percent.as_factor()));
                     let total_price = stock.units as SimFlo * unit_price;
                     fac.balance.inc(total_price.val());
 
