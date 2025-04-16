@@ -174,19 +174,26 @@ impl Simulation {
             }
 
             let timer_event = self.timer.tick(misc.is_paused);
+            if timer_event.at_least_minute() {
+                let minute = self.app_state.timer.read().unwrap().date.minute;
+                if minute % 4 == 0 {
+                    // This is mainly to update ui for product demands in economy panel
+                    broadcast_action(StateAction::EconUpdate(EconUpdate::Demands));
+                }
+            }
             if timer_event.at_least_hour() {
                 self.env.update();
                 broadcast_action(StateAction::Env);
 
                 self.economy.update_product_demands();
-                wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Demands)).unwrap();
+                broadcast_action(StateAction::EconUpdate(EconUpdate::Demands));
             }
             if timer_event.at_least_day() {
                 self.economy.maybe_new_product_demands();
             }
             if timer_event.at_least_month() {
                 self.economy.update_macroeconomics();
-                wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
+                broadcast_action(StateAction::EconUpdate(EconUpdate::Macro));
             }
 
             // Send timer signal to recipients to wake them up for timed jobs.

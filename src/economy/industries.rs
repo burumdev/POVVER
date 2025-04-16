@@ -53,6 +53,8 @@ impl PartialEq for Industry {
     }
 }
 
+// This might be usefaul if we present a menu to the user for factory creation
+#[allow(unused)]
 pub const INDUSTRIES: &[Industry] = &[
     Industry::SEMICONDUCTORS,
     Industry::SOFTWARE,

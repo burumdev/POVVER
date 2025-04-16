@@ -17,10 +17,10 @@ impl<T> SlidingWindow<T> {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+/*    pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
-
+*/
     pub fn add(&mut self, value: T) {
         if self.data.len() >= self.capacity {
             self.data.pop_front();
@@ -32,13 +32,13 @@ impl<T> SlidingWindow<T> {
         self.data.iter()
     }
 
-    pub fn last_n(&self, item_count: usize) -> Result<impl Iterator<Item = &T>, String> {
+/*    pub fn last_n(&self, item_count: usize) -> Result<impl Iterator<Item = &T>, String> {
         if item_count <= self.capacity {
             Ok(self.data.range(self.capacity - item_count..=self.capacity))
         } else {
             Err(format!("Utils SlidingWindow: Index {item_count} is out of bounds."))
         }
-    }
+    }*/
 }
 
 #[derive(Debug)]

@@ -44,9 +44,10 @@ impl TimerEvent {
         self == &TimerEvent::MonthChange ||
             self == &TimerEvent::YearChange
     }
-    pub fn at_least_year(&self) -> bool {
+/*    pub fn at_least_year(&self) -> bool {
         self == &TimerEvent::YearChange
     }
+*/
 }
 
 pub struct Timer

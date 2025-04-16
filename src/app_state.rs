@@ -136,16 +136,6 @@ impl AppState {
         })
     }
 
-    pub fn get_factory_state_ro(&self, id: usize) -> ReadOnlyRwLock<FactoryStateData> {
-        ReadOnlyRwLock::from(
-            Arc::clone(self.hub.factories.read().unwrap()
-                .iter()
-                .find(|factory| {
-                    factory.read().unwrap().id == id
-                }).unwrap()
-        ))
-    }
-
     pub fn set_misc(&mut self, misc: Misc) {
         match misc {
             Misc::IsPaused(val) => {
@@ -166,9 +156,5 @@ impl AppState {
         } else {
             None
         }
-    }
-
-    pub fn is_misc_updated(&self) -> bool {
-        self.is_misc_updated
     }
 }
