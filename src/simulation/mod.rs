@@ -174,23 +174,19 @@ impl Simulation {
             }
 
             let timer_event = self.timer.tick(misc.is_paused);
-            match &timer_event {
-                te if te.at_least_hour() => {
-                    self.env.update();
-                    broadcast_action(StateAction::Env);
-                    self.economy.update_product_demands();
+            if timer_event.at_least_hour() {
+                self.env.update();
+                broadcast_action(StateAction::Env);
 
-                    if te.at_least_day() {
-                        self.economy.maybe_new_product_demands();
-                    }
-                    if te.at_least_month() {
-                        self.economy.update_macroeconomics();
-                        wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
-                    }
-
-                    wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Demands)).unwrap();
-                },
-                _ => ()
+                self.economy.update_product_demands();
+                wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Demands)).unwrap();
+            }
+            if timer_event.at_least_day() {
+                self.economy.maybe_new_product_demands();
+            }
+            if timer_event.at_least_month() {
+                self.economy.update_macroeconomics();
+                wakeup_sender.send(StateAction::EconUpdate(EconUpdate::Macro)).unwrap();
             }
 
             // Send timer signal to recipients to wake them up for timed jobs.

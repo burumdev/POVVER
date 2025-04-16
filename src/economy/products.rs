@@ -63,7 +63,7 @@ impl Product {
             equipment_maintenance: 0.4,
             packaging: 0.8,
         },
-        units_per_minute: 50,
+        units_per_minute: 5,
         rnd_cost: 7569.56,
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
@@ -89,7 +89,7 @@ impl Product {
             equipment_maintenance: 6.78,
             packaging: 9.23,
         },
-        units_per_minute: 5,
+        units_per_minute: 1,
         rnd_cost: 69376.12,
         industry: Industry::SEMICONDUCTORS,
         demand_info: ProductDemandInfo {
@@ -115,7 +115,7 @@ impl Product {
             equipment_maintenance: 1.63,
             packaging: 0.2,
         },
-        units_per_minute: 20,
+        units_per_minute: 10,
         rnd_cost: 3670.45,
         industry: Industry::SOFTWARE,
         demand_info: ProductDemandInfo {
@@ -167,7 +167,7 @@ impl Product {
             equipment_maintenance: 2.31,
             packaging: 4.5,
         },
-        units_per_minute: 50,
+        units_per_minute: 20,
         rnd_cost: 9100.49,
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
@@ -193,7 +193,7 @@ impl Product {
             equipment_maintenance: 0.23,
             packaging: 1.2,
         },
-        units_per_minute: 18,
+        units_per_minute: 3,
         rnd_cost: 105234.8,
         industry: Industry::BANK,
         demand_info: ProductDemandInfo {
@@ -219,7 +219,7 @@ impl Product {
             equipment_maintenance: 0.33,
             packaging: 42.32,
         },
-        units_per_minute: 75,
+        units_per_minute: 20,
         rnd_cost: 3467.76,
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
@@ -245,7 +245,7 @@ impl Product {
             equipment_maintenance: 4.12,
             packaging: 248.54,
         },
-        units_per_minute: 32,
+        units_per_minute: 3,
         rnd_cost: 83456.71,
         industry: Industry::COSMETICS,
         demand_info: ProductDemandInfo {
@@ -271,7 +271,7 @@ impl Product {
             equipment_maintenance: 6.34,
             packaging: 120.40,
         },
-        units_per_minute: 10,
+        units_per_minute: 5,
         rnd_cost: 5698.34,
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
@@ -297,7 +297,7 @@ impl Product {
             equipment_maintenance: 17.34,
             packaging: 642.39,
         },
-        units_per_minute: 2,
+        units_per_minute: 1,
         rnd_cost: 253875.5,
         industry: Industry::MISSILES,
         demand_info: ProductDemandInfo {
@@ -323,7 +323,7 @@ impl Product {
             equipment_maintenance: 1.48,
             packaging: 0.3,
         },
-        units_per_minute: 80,
+        units_per_minute: 40,
         rnd_cost: 1874.32,
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
@@ -349,7 +349,7 @@ impl Product {
             equipment_maintenance: 9.35,
             packaging: 92.12,
         },
-        units_per_minute: 12,
+        units_per_minute: 6,
         rnd_cost: 47849.28,
         industry: Industry::ARMS,
         demand_info: ProductDemandInfo {
@@ -375,7 +375,7 @@ impl Product {
             equipment_maintenance: 0.34,
             packaging: 2.78,
         },
-        units_per_minute: 92,
+        units_per_minute: 24,
         rnd_cost: 538.29,
         industry: Industry::PROCESSED_FOODS,
         demand_info: ProductDemandInfo {
@@ -401,7 +401,7 @@ impl Product {
             equipment_maintenance: 18.34,
             packaging: 82.55,
         },
-        units_per_minute: 40,
+        units_per_minute: 10,
         rnd_cost: 136592.0,
         industry: Industry::PROCESSED_FOODS,
         demand_info: ProductDemandInfo {
@@ -427,7 +427,7 @@ impl Product {
             equipment_maintenance: 6.1,
             packaging: 163.58,
         },
-        units_per_minute: 25,
+        units_per_minute: 15,
         rnd_cost: 8735.39,
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
@@ -453,7 +453,7 @@ impl Product {
             equipment_maintenance: 16.11,
             packaging: 56.34,
         },
-        units_per_minute: 20,
+        units_per_minute: 8,
         rnd_cost: 826658.3,
         industry: Industry::PHARMACEUTICALS,
         demand_info: ProductDemandInfo {
@@ -479,7 +479,7 @@ impl Product {
             equipment_maintenance: 3.32,
             packaging: 0.7,
         },
-        units_per_minute: 50,
+        units_per_minute: 26,
         rnd_cost: 8285.2,
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
@@ -505,7 +505,7 @@ impl Product {
             equipment_maintenance: 52.4,
             packaging: 894.31,
         },
-        units_per_minute: 6,
+        units_per_minute: 4,
         rnd_cost: 748293.22,
         industry: Industry::E_YAY,
         demand_info: ProductDemandInfo {
@@ -531,7 +531,7 @@ impl Product {
             equipment_maintenance: 21.98,
             packaging: 35.6,
         },
-        units_per_minute: 10,
+        units_per_minute: 5,
         rnd_cost: 102.30,
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {
@@ -557,7 +557,7 @@ impl Product {
             equipment_maintenance: 18.23,
             packaging: 0.0,
         },
-        units_per_minute: 8,
+        units_per_minute: 1,
         rnd_cost: 984_054.7,
         industry: Industry::UNIVERSITY,
         demand_info: ProductDemandInfo {
