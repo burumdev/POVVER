@@ -122,7 +122,8 @@ impl PovverPlant {
                         self.log_ui_console(format!("Buying fuel for amount {amount}"), Info);
                         self.get_dynamic_sender().send(Arc::new(PPHubSignal::BuyFuel(amount))).unwrap();
                     } else {
-                        //TODO: Probably pp got bankrupt here
+                        self.log_ui_console("Can't even buy new fuel. Let's declare bankruptcy and take a holiday.".to_string(), Critical);
+                        self.get_dynamic_sender().send(Arc::new(PPHubSignal::DeclaringBankrupcy)).unwrap();
                     }
                 } else {
                     self.log_ui_console("Awaiting new fuel. Fuel level is critical!".to_string(), Critical);
@@ -375,7 +376,6 @@ impl PovverPlant {
                             _ => ()
                         }
                     } else { // PP is BANKRUPT!
-                        //TODO
                         me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
                     }
                 }

@@ -117,9 +117,12 @@ impl Factory {
 
                 let budget = (balance.val() * 0.75) - total_cost_ex_energy;
                 // If the factory can't even produce a single unit of the product,
-                // It probably has gone bankrupt, so... //TODO
+                // It probably has gone bankrupt here.
                 if budget < unit_cost_ex_energy {
                     self.log_ui_console(format!("Can't produce even a single unit of {}", product.name), Critical);
+                    thread::sleep(Duration::from_secs(3)); // 3..2..1.. We're bankrupt!
+                    self.dynamic_sender.send(Arc::new(FactoryHubSignal::DeclaringBankrupcy)).unwrap();
+
                     return;
                 }
 
@@ -280,10 +283,7 @@ impl Factory {
                                 }
                             }
                         },
-                        _ => {
-                            //TODO
-                            me.lock().unwrap().log_console(format!("Got message: {:?}. But is not an energy demand?", signal), Critical);
-                        }
+                        _ => ()
                     }
                 }
 
@@ -315,10 +315,7 @@ impl Factory {
                                 }
                             }
                         },
-                        _ => {
-                            //TODO
-                            me.lock().unwrap().log_console(format!("Got dynamic message: {:?}. But is not an energy offer?", signal), Critical);
-                        }
+                        _ => ()
                     }
                 }
 
@@ -348,7 +345,6 @@ impl Factory {
                             _ => ()
                         }
                     } else { // Factory is BANKRUPT!
-                        //TODO
                         me.lock().unwrap().log_ui_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
                     }
                 }

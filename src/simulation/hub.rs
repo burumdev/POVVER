@@ -196,6 +196,10 @@ impl TheHub {
                                 PPHubSignal::IncreaseProductionCapacity => {
                                     me.lock().unwrap().pp_increases_production_capacity();
                                 },
+                                PPHubSignal::DeclaringBankrupcy => {
+                                    me.lock().unwrap().povver_plant_state.write().unwrap().is_bankrupt = true;
+                                    me.lock().unwrap().log_ui_console("Povver Plant decleared bankruptcy.".to_string(), Warning);
+                                },
                             }
                         },
                         _ => ()
@@ -223,6 +227,11 @@ impl TheHub {
                                         },
                                         FactoryHubSignal::BuyingSolarPanels(panels_count) => {
                                             me.lock().unwrap().factory_buys_solar_panels(fid, *panels_count);
+                                        },
+                                        FactoryHubSignal::DeclaringBankrupcy => {
+                                            let factory = me.lock().unwrap().get_factory_state(fid).unwrap();
+                                            factory.write().unwrap().is_bankrupt = true;
+                                            me.lock().unwrap().log_ui_console(format!("Factory No. {} decleared bankruptcy.", fid), Warning);
                                         }
                                     }
                                 }

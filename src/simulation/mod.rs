@@ -29,8 +29,8 @@ use crate::{
     ui_controller::{Date, UIController, UIFlag},
     utils_data::ReadOnlyRwLock,
     logger::LogMessage,
+    simulation::test_factories::TEST_INDUSTRIES,
 };
-use crate::simulation::test_factories::TEST_INDUSTRIES;
 
 #[derive(Debug, Clone)]
 pub enum EconUpdate {

@@ -86,6 +86,7 @@ pub enum PPHubSignal {
     ProduceEnergy(PPEnergyOffer),
     IncreaseFuelCapacity,
     IncreaseProductionCapacity,
+    DeclaringBankrupcy,
 }
 
 #[derive(Debug, PartialEq)]
@@ -94,6 +95,7 @@ pub enum FactoryHubSignal {
     ProducingProductDemand(ProductDemand, SimInt, SimFlo),
     SellingProduct(usize, SimFlo),
     BuyingSolarPanels(usize),
+    DeclaringBankrupcy,
 }
 
 #[derive(Debug, PartialEq)]
