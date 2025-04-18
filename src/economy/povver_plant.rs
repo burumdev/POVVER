@@ -12,7 +12,6 @@ use crate::{
     simulation::{
         StateAction,
         Percentage,
-        timer::TimerEvent,
         hub_comms::*,
         SimInt,
         SimFlo,
@@ -360,23 +359,26 @@ impl PovverPlant {
                     }
                 });
                 if let Ok(action) = wakeup_receiver.try_recv() {
-                    if !state_ro.read().unwrap().is_bankrupt {
-                        let mut me_lock = me.lock().unwrap();
-                        match action {
-                            StateAction::Timer(TimerEvent::HourChange) => {
-                                me_lock.check_buy_fuel();
+                    match action {
+                        StateAction::Timer(event) => {
+                            if state_ro.read().unwrap().is_bankrupt == true {
+                                if event.at_least_day() {
+                                    me.lock().unwrap().log_ui_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
+                                }
+                            } else {
+                                if event.at_least_hour() {
+                                    me.lock().unwrap().check_buy_fuel();
+                                }
                             }
-                            StateAction::SpeedChange(td) => {
-                                sleeptime = ((td / 2) * 1000) - 250;
-                            }
-                            StateAction::Quit => {
-                                me_lock.log_console("Quit signal received.".to_string(), Warning);
-                                break 'outer;
-                            }
-                            _ => ()
                         }
-                    } else { // PP is BANKRUPT!
-                        me.lock().unwrap().log_console("Gone belly up! We're bankrupt! Pivoting to potato salad production ASAP!".to_string(), Critical);
+                        StateAction::SpeedChange(td) => {
+                            sleeptime = ((td / 2) * 1000) - 250;
+                        }
+                        StateAction::Quit => {
+                            me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
+                            break 'outer;
+                        }
+                        _ => ()
                     }
                 }
                 thread::sleep(Duration::from_micros(sleeptime));

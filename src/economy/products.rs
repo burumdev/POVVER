@@ -71,11 +71,11 @@ impl Product {
             max_percentage: 80.0,
             unit_per_percent: 25,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 2,
-                dec_quarter: 6,
-                dec_half: 12,
-                dec_three_quarters: 16,
-                deadline: 24,
+                inc_quarter: 1,
+                dec_quarter: 2,
+                dec_half: 4,
+                dec_three_quarters: 8,
+                deadline: 16,
             }
         }
     };
@@ -98,10 +98,10 @@ impl Product {
             unit_per_percent: 10,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
-                dec_quarter: 4,
-                dec_half: 8,
-                dec_three_quarters: 12,
-                deadline: 16,
+                dec_quarter: 3,
+                dec_half: 6,
+                dec_three_quarters: 8,
+                deadline: 12,
             }
         }
     };
@@ -123,11 +123,11 @@ impl Product {
             max_percentage: 75.0,
             unit_per_percent: 32,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 4,
-                dec_quarter: 6,
-                dec_half: 8,
-                dec_three_quarters: 10,
-                deadline: 12,
+                inc_quarter: 2,
+                dec_quarter: 3,
+                dec_half: 5,
+                dec_three_quarters: 7,
+                deadline: 9,
             }
         }
     };
@@ -149,11 +149,11 @@ impl Product {
             max_percentage: 70.0,
             unit_per_percent: 3,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 2,
-                dec_quarter: 10,
-                dec_half: 16,
-                dec_three_quarters: 24,
-                deadline: 32,
+                inc_quarter: 1,
+                dec_quarter: 5,
+                dec_half: 8,
+                dec_three_quarters: 12,
+                deadline: 16,
             }
         }
     };
@@ -176,10 +176,10 @@ impl Product {
             unit_per_percent: 42,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
-                dec_quarter: 16,
-                dec_half: 24,
-                dec_three_quarters: 32,
-                deadline: 64,
+                dec_quarter: 4,
+                dec_half: 6,
+                dec_three_quarters: 8,
+                deadline: 10,
             }
         }
     };
@@ -202,10 +202,10 @@ impl Product {
             unit_per_percent: 21,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
-                dec_quarter: 8,
-                dec_half: 12,
-                dec_three_quarters: 14,
-                deadline: 16,
+                dec_quarter: 4,
+                dec_half: 8,
+                dec_three_quarters: 12,
+                deadline: 20,
             }
         }
     };
@@ -227,11 +227,11 @@ impl Product {
             max_percentage: 50.0,
             unit_per_percent: 32,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 8,
-                dec_quarter: 10,
-                dec_half: 12,
-                dec_three_quarters: 14,
-                deadline: 16,
+                inc_quarter: 2,
+                dec_quarter: 4,
+                dec_half: 6,
+                dec_three_quarters: 8,
+                deadline: 12,
             }
         }
     };
@@ -253,11 +253,11 @@ impl Product {
             max_percentage: 75.0,
             unit_per_percent: 17,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 4,
-                dec_quarter: 8,
-                dec_half: 12,
-                dec_three_quarters: 16,
-                deadline: 20,
+                inc_quarter: 1,
+                dec_quarter: 2,
+                dec_half: 3,
+                dec_three_quarters: 4,
+                deadline: 5,
             }
         }
     };
@@ -280,10 +280,10 @@ impl Product {
             unit_per_percent: 40,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 2,
-                dec_quarter: 10,
-                dec_half: 16,
-                dec_three_quarters: 24,
-                deadline: 64,
+                dec_quarter: 4,
+                dec_half: 8,
+                dec_three_quarters: 12,
+                deadline: 14,
             }
         }
     };
@@ -308,8 +308,8 @@ impl Product {
                 inc_quarter: 3,
                 dec_quarter: 14,
                 dec_half: 20,
-                dec_three_quarters: 32,
-                deadline: 64,
+                dec_three_quarters: 22,
+                deadline: 23,
             }
         }
     };
@@ -461,11 +461,11 @@ impl Product {
             max_percentage: 82.0,
             unit_per_percent: 13,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 3,
-                dec_quarter: 12,
-                dec_half: 24,
-                dec_three_quarters: 48,
-                deadline: 64,
+                inc_quarter: 1,
+                dec_quarter: 6,
+                dec_half: 8,
+                dec_three_quarters: 12,
+                deadline: 32,
             }
         }
     };
@@ -487,11 +487,11 @@ impl Product {
             max_percentage: 45.0,
             unit_per_percent: 110,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 8,
-                dec_quarter: 12,
-                dec_half: 14,
-                dec_three_quarters: 16,
-                deadline: 18,
+                inc_quarter: 2,
+                dec_quarter: 4,
+                dec_half: 6,
+                dec_three_quarters: 8,
+                deadline: 10,
             }
         }
     };
@@ -515,9 +515,9 @@ impl Product {
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 4,
                 dec_quarter: 8,
-                dec_half: 12,
-                dec_three_quarters: 16,
-                deadline: 24,
+                dec_half: 10,
+                dec_three_quarters: 12,
+                deadline: 14,
             }
         }
     };
@@ -565,11 +565,11 @@ impl Product {
             max_percentage: 60.0,
             unit_per_percent: 22,
             demand_timeline: ProductDemandTimeline {
-                inc_quarter: 4,
-                dec_quarter: 8,
-                dec_half: 12,
-                dec_three_quarters: 16,
-                deadline: 24,
+                inc_quarter: 2,
+                dec_quarter: 4,
+                dec_half: 8,
+                dec_three_quarters: 12,
+                deadline: 16,
             }
         }
     };

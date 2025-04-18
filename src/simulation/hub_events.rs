@@ -112,7 +112,7 @@ impl TheHub {
                 total_price: fee.val(),
             };
 
-            let delay = offer.units / 1000;
+            let delay = offer.units / 100;
             if delay == 0 {
                 self.pp_energy_to_factory(receipt);
             } else {
@@ -143,7 +143,9 @@ impl TheHub {
                 let available_energy = factory.read().unwrap().available_energy;
 
                 if available_energy.val() >= energy_needed {
-                    let delay = units / demand.product.units_per_minute;
+                    //TODO: Turn this * 3 modifier into an efficiency metric that can be improved by factory investments
+                    // So it goes like 3..2..1.. BOOM! And factory produces stuff as fast as possible.
+                    let delay = (units / demand.product.units_per_minute) * 3;
                     let receipt = ProductionReceipt {
                         demand: demand.clone(),
                         units_produced: units,

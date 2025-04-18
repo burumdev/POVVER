@@ -246,15 +246,14 @@ impl TheHub {
 
                     match action {
                         StateAction::Timer(event) => {
-                            let mut me_lock = me.lock().unwrap();
                             if event.at_least_minute() {
-                                me_lock.do_minutely_jobs();
+                                me.lock().unwrap().do_minutely_jobs();
                             }
                             if event.at_least_hour() {
-                                me_lock.do_hourly_jobs(&event);
+                                me.lock().unwrap().do_hourly_jobs(&event);
                             }
                             if event.at_least_day() {
-                                me_lock.do_daily_jobs();
+                                me.lock().unwrap().do_daily_jobs();
                             }
                         },
                         StateAction::SpeedChange(td) => {

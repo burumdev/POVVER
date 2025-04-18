@@ -6,7 +6,7 @@ pub type SimInt = i32;
 pub type SimFlo = f32;
 
 pub type TickDuration = u64;
-pub const DEFAULT_TICK_DURATION: TickDuration = 64;
+pub const DEFAULT_TICK_DURATION: TickDuration = 128;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Percentage(SimFlo);

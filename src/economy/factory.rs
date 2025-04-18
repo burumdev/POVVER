@@ -76,11 +76,11 @@ impl Factory {
 }
 
 impl Factory {
-    fn product_index_in_prod_run(&self, product: &Product) -> Option<usize> {
+    fn product_in_prod_run(&self, product: &Product) -> Option<usize> {
         self.production_runs.iter().position(|run| run.demand.product == product)
     }
 
-    fn product_index_in_stock(&self, product: &Product) -> Option<usize> {
+    fn product_in_stock(&self, product: &Product) -> Option<usize> {
         self.state_ro.read().unwrap().product_stocks.iter().position(|stock| stock.product == product)
     }
 
@@ -95,7 +95,7 @@ impl Factory {
                 .filter(
                     |demand|
                         demand.product.industry == state_ro.industry && state_ro.product_portfolio.contains(&demand.product) &&
-                        self.product_index_in_prod_run(demand.product).is_none() && self.product_index_in_stock(demand.product).is_none()
+                        self.product_in_prod_run(demand.product).is_none() && self.product_in_stock(demand.product).is_none()
                 )
                 .collect::<Vec<_>>();
 
@@ -133,6 +133,12 @@ impl Factory {
                 // If we can produce at least one percent of the demand, we'll do it.
                 if budget_units > product.demand_info.unit_per_percent {
                     let energy_needed = budget_units * product.unit_production_cost.energy - available_energy;
+                    self.production_runs.push(ProductionRun {
+                        demand,
+                        units: budget_units,
+                        cost: total_cost_ex_energy.into(),
+                        energy_needed
+                    });
                     if energy_needed > 0 {
                         let energy_demand = FactoryEnergyDemand {
                             factory_id,
@@ -144,13 +150,6 @@ impl Factory {
                                 energy_demand,
                             ))
                         ).unwrap();
-
-                        self.production_runs.push(ProductionRun {
-                            demand,
-                            units: budget_units,
-                            cost: total_cost_ex_energy.into(),
-                            energy_needed
-                        })
                     } else {
                         self.produce_product_demand(demand, budget_units, unit_cost_ex_energy);
                     }
@@ -292,25 +291,23 @@ impl Factory {
                     match signal_any {
                         s if s.is::<PPEnergyOffer>() => {
                             if let Some(offer) = signal_any.downcast_ref::<PPEnergyOffer>() {
-                                let mut me_lock = me.lock().unwrap();
-                                me_lock.log_ui_console(format!("Got energy offer from PP: {} units.", offer.units), Info);
-                                me_lock.evaluate_pp_energy_offer(offer);
+                                me.lock().unwrap().log_ui_console(format!("Got energy offer from PP: {} units.", offer.units), Info);
+                                me.lock().unwrap().evaluate_pp_energy_offer(offer);
                             }
                         },
                         s if s.is::<HubFactorySignal>() => {
                             if let Some(signal_from_hub) = signal_any.downcast_ref::<HubFactorySignal>() {
-                                let mut me_lock = me.lock().unwrap();
                                 match signal_from_hub {
                                     HubFactorySignal::EnergyTransfered(receipt) => {
-                                        me_lock.log_ui_console(format!("{} units of energy received.", receipt.units), Info);
-                                        me_lock.last_hundred_energy_purchases.push(receipt.clone());
-                                        me_lock.energy_received();
+                                        me.lock().unwrap().log_ui_console(format!("{} units of energy received.", receipt.units), Info);
+                                        me.lock().unwrap().last_hundred_energy_purchases.push(receipt.clone());
+                                        me.lock().unwrap().energy_received();
                                     }
                                     HubFactorySignal::ProductionComplete(receipt) => {
-                                        me_lock.production_complete(&receipt);
+                                        me.lock().unwrap().production_complete(&receipt);
                                     }
                                     HubFactorySignal::RenewableEnergyProduced => {
-                                        me_lock.maybe_produce_goods();
+                                        me.lock().unwrap().maybe_produce_goods();
                                     }
                                 }
                             }
@@ -320,32 +317,33 @@ impl Factory {
                 }
 
                 if let Ok(action) = wakeup_receiver.try_recv() {
-                    if !state_ro.read().unwrap().is_bankrupt {
-                        let mut me_lock = me.lock().unwrap();
-                        match action {
-                            StateAction::Timer(event) => {
-                                if event.at_least_hour() {
-                                    me_lock.maybe_buy_renewables();
+                    match action {
+                        StateAction::Timer(event) => {
+                            if state_ro.read().unwrap().is_bankrupt == true {
+                                if event.at_least_day() {
+                                    me.lock().unwrap().log_ui_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
                                 }
+                            } else {
                                 if event.at_least_minute() {
-                                    let minute = me_lock.timer_state_ro.read().unwrap().date.minute;
+                                    let minute = me.lock().unwrap().timer_state_ro.read().unwrap().date.minute;
                                     if minute % 5 == 0 {
-                                        me_lock.maybe_produce_goods();
+                                        me.lock().unwrap().maybe_produce_goods();
                                     } else if minute % 6 == 0 {
-                                        me_lock.maybe_sell_goods();
+                                        me.lock().unwrap().maybe_sell_goods();
                                     }
                                 }
+                                if event.at_least_hour() {
+                                    me.lock().unwrap().maybe_buy_renewables();
+                                }
                             }
-                            StateAction::SpeedChange(td) => {
-                                sleeptime = ((td / 2) * 1000) - 100;
-                            }
-                            StateAction::Quit => {
-                                break 'outer;
-                            }
-                            _ => ()
                         }
-                    } else { // Factory is BANKRUPT!
-                        me.lock().unwrap().log_ui_console("Gone belly up! We're bankrupt! Pivoting to ball bearing production ASAP!".to_string(), Critical);
+                        StateAction::SpeedChange(td) => {
+                            sleeptime = ((td / 2) * 1000) - 100;
+                        }
+                        StateAction::Quit => {
+                            break 'outer;
+                        }
+                        _ => ()
                     }
                 }
                 thread::sleep(Duration::from_micros(sleeptime));

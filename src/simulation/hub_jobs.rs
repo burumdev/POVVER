@@ -228,7 +228,7 @@ impl TheHub {
                         state.solarpanels.len(),
                     )
                 };
-                let delay = (total_energy as SimFlo / 15.0).floor() as SimInt;
+                let delay = (total_energy as SimFlo / 10.0).floor() as SimInt;
                 if delay == 0 {
                     self.renewable_energy_to_factory(fid, total_energy);
                     //TODO: Report both solar and wind turbines once we have the turbines

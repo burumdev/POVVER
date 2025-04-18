@@ -174,9 +174,9 @@ impl Simulation {
             }
 
             let timer_event = self.timer.tick(misc.is_paused);
+            let date = self.app_state.timer.read().unwrap().date.clone();
             if timer_event.at_least_minute() {
-                let minute = self.app_state.timer.read().unwrap().date.minute;
-                if minute % 4 == 0 {
+                if date.minute % 4 == 0 {
                     // This is mainly to update ui for product demands in economy panel
                     broadcast_action(StateAction::EconUpdate(EconUpdate::Demands));
                 }
@@ -187,9 +187,10 @@ impl Simulation {
 
                 self.economy.update_product_demands();
                 broadcast_action(StateAction::EconUpdate(EconUpdate::Demands));
-            }
-            if timer_event.at_least_day() {
-                self.economy.maybe_new_product_demands();
+
+                if date.hour % 6 == 0 {
+                    self.economy.maybe_new_product_demands();
+                }
             }
             if timer_event.at_least_month() {
                 self.economy.update_macroeconomics();
