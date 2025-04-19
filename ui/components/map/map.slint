@@ -44,8 +44,8 @@ export component Map inherits Rectangle {
 
 		for id in Globs.factory_count: Factory {
 			id: id;
-			x: 50px + id * 1px * 450;
-			y: 450px;
+			x: id >= 3 ? 50px + (450px * (1 + id - 3)) : 50px + (id * 450px);
+			y: id >= 3 ? 750px : 450px;
 			z: 4;
 		}
 

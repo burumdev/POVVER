@@ -354,7 +354,7 @@ impl Factory {
 
 impl Logger for Factory {
     fn get_log_prefix(&self) -> String {
-        format!("Factory No. {}", self.state_ro.read().unwrap().id)
+        format!("Factory No. {}", self.state_ro.read().unwrap().id + 1)
     }
     fn get_message_source(&self) -> MessageEntity {
         MessageEntity::Factory(self.state_ro.read().unwrap().id as SimInt)

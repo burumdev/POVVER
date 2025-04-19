@@ -9,7 +9,13 @@ use crate::{
     simulation::sim_constants::{FACTORY_INIT_MONEY, FACTORY_MAX_SOLAR_PANELS},
 };
 
-pub const TEST_INDUSTRIES: [Industry; 3] = [Industry::SEMICONDUCTORS, Industry::COSMETICS, Industry::PROCESSED_FOODS];
+pub const TEST_INDUSTRIES: [Industry; 5] = [
+    Industry::SEMICONDUCTORS,
+    Industry::COSMETICS,
+    Industry::PROCESSED_FOODS,
+    Industry::ARMS,
+    Industry::BANK,
+];
 
 pub fn get_test_factories() -> Vec<Arc<RwLock<FactoryStateData>>> {
     let mut factory_states = Vec::new();
