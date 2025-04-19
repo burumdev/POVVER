@@ -2,11 +2,13 @@
 name = "povver"
 version = "0.1.0"
 edition = "2024"
+authors = ["Barış Ürüm"]
+license = "GPL-2.0-only"
+license-file = "LICENSE"
 
 [dependencies]
 crossbeam-channel = "0.5.14"
 num-traits = "0.2.19"
-pollster = "0.4.0"
 rand = "0.8.5"
 slint = { version = "1.10", features = [ "backend-winit", "renderer-winit-skia" ] }
 tokio = { version = "1.43.0", features = ["sync"] }
