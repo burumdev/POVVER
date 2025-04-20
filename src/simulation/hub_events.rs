@@ -59,7 +59,7 @@ impl TheHub {
 
         if transaction_successful {
             self.povver_plant_state.write().unwrap().is_awaiting_fuel_capacity = true;
-            let delay = 2;
+            let delay = 1;
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPFuelCapIncrease,
                 delay,
@@ -79,7 +79,7 @@ impl TheHub {
 
         if transaction_successful {
             self.povver_plant_state.write().unwrap().is_awaiting_production_capacity = true;
-            let delay = 7;
+            let delay = 3;
             self.daily_jobs.push(DailyJob {
                 kind: DailyJobKind::PPProductionCapIncrease,
                 delay,
@@ -134,35 +134,35 @@ impl TheHub {
 
     pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, units: SimInt, unit_cost: SimFlo) {
         let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
-        let total_cost_ex_energy = unit_cost_ex_energy * units as SimFlo;
+        let energy_cost = demand.product.unit_production_cost.energy;
 
         if let Some(factory) = self.get_factory_state(fid) {
+            let available_energy = factory.read().unwrap().available_energy;
+            let producable_units = (available_energy.val() / energy_cost).clamp(0, units);
+            if producable_units < units {
+                self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}. Producing {} units instead.", fid, units, demand.product.name, producable_units), Warning);
+            }
+
+            let total_cost_ex_energy = unit_cost_ex_energy * producable_units as SimFlo;
             let transaction_successful = factory.write().unwrap().balance.dec(total_cost_ex_energy.val());
             if transaction_successful {
-                let energy_needed = units * demand.product.unit_production_cost.energy;
-                let available_energy = factory.read().unwrap().available_energy;
+                //TODO: Turn this * 3 modifier into an efficiency metric that can be improved by factory investments
+                // So it goes like 3..2..1.. BOOM! And factory produces stuff as fast as possible.
+                let delay = (producable_units / demand.product.units_per_minute) * 3;
+                let receipt = ProductionReceipt {
+                    demand: demand.clone(),
+                    units_produced: producable_units,
+                    price_per_unit: unit_cost,
+                    date: self.timer_state_ro.read().unwrap().date.clone(),
+                    factory_id: fid,
+                    total_price: total_cost_ex_energy.val(),
+                };
 
-                if available_energy.val() >= energy_needed {
-                    //TODO: Turn this * 3 modifier into an efficiency metric that can be improved by factory investments
-                    // So it goes like 3..2..1.. BOOM! And factory produces stuff as fast as possible.
-                    let delay = (units / demand.product.units_per_minute) * 3;
-                    let receipt = ProductionReceipt {
-                        demand: demand.clone(),
-                        units_produced: units,
-                        price_per_unit: unit_cost,
-                        date: self.timer_state_ro.read().unwrap().date.clone(),
-                        factory_id: fid,
-                        total_price: total_cost_ex_energy.val(),
-                    };
-
-                    self.minutely_jobs.push(MinutelyJob {
-                        kind: MinutelyJobKind::FactoryProducesProduct(receipt),
-                        delay,
-                        timestamp: self.timer_state_ro.read().unwrap().timestamp,
-                    })
-                } else {
-                    self.log_ui_console(format!("Factory No. {} has not enough energy to produce {} {}", fid, units, demand.product.name), Critical);
-                }
+                self.minutely_jobs.push(MinutelyJob {
+                    kind: MinutelyJobKind::FactoryProducesProduct(receipt),
+                    delay,
+                    timestamp: self.timer_state_ro.read().unwrap().timestamp,
+                });
             } else {
                 factory.write().unwrap().is_bankrupt = true;
                 self.log_ui_console(

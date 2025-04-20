@@ -112,13 +112,9 @@ impl Factory {
                 let product = &demand.product;
 
                 let unit_cost_ex_energy = product.get_unit_cost_excl_energy();
-                let units = demand.as_units();
-                let total_cost_ex_energy = unit_cost_ex_energy.val() * units as SimFlo;
-
-                let budget = (balance.val() * 0.75) - total_cost_ex_energy;
                 // If the factory can't even produce a single unit of the product,
                 // It probably has gone bankrupt here.
-                if budget < unit_cost_ex_energy {
+                if balance.val() < unit_cost_ex_energy {
                     self.log_ui_console(format!("Can't produce even a single unit of {}", product.name), Critical);
                     thread::sleep(Duration::from_secs(3)); // 3..2..1.. We're bankrupt!
                     self.dynamic_sender.send(Arc::new(FactoryHubSignal::DeclaringBankrupcy)).unwrap();
@@ -126,17 +122,22 @@ impl Factory {
                     return;
                 }
 
+                let demand_units = demand.as_units();
+
+                let budget = balance.val() * 0.75;
+
                 let mut budget_units = (budget / unit_cost_ex_energy) as SimInt;
                 // Don't produce more than the demand.
-                budget_units = budget_units.clamp(0, units);
+                budget_units = budget_units.clamp(0, demand_units);
 
                 // If we can produce at least one percent of the demand, we'll do it.
                 if budget_units > product.demand_info.unit_per_percent {
-                    let energy_needed = budget_units * product.unit_production_cost.energy - available_energy;
+                    let cost = Money::new(budget_units as SimFlo * unit_cost_ex_energy);
+                    let energy_needed = budget_units * (product.unit_production_cost.energy - available_energy);
                     self.production_runs.push(ProductionRun {
                         demand,
                         units: budget_units,
-                        cost: total_cost_ex_energy.into(),
+                        cost,
                         energy_needed
                     });
                     if energy_needed > 0 {
@@ -264,7 +265,7 @@ impl Factory {
             )
         };
 
-        thread::Builder::new().name("POVVER_F".to_string() + &my_id.to_string()).spawn(move || {
+        thread::Builder::new().name("POVVER_F_".to_string() + &my_id.to_string()).spawn(move || {
             let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 100;
             'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
@@ -354,7 +355,7 @@ impl Factory {
 
 impl Logger for Factory {
     fn get_log_prefix(&self) -> String {
-        format!("Factory No. {}", self.state_ro.read().unwrap().id + 1)
+        format!("Factory No. {}", self.state_ro.read().unwrap().id)
     }
     fn get_message_source(&self) -> MessageEntity {
         MessageEntity::Factory(self.state_ro.read().unwrap().id as SimInt)

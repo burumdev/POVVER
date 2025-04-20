@@ -7,7 +7,7 @@ pub const SOLAR_PANEL_AGE_MODIFIER: SimInt = 10;
 
 // POVVER PLANT
 pub const PP_INIT_MONEY: SimFlo = 66000.0;
-pub const PP_INIT_FUEL_CAPACITY: SimInt = 25;
+pub const PP_INIT_FUEL_CAPACITY: SimInt = 50;
 pub const PP_INIT_PRODUCTION_CAP: SimInt = 24000;
 pub const PP_INIT_FUEL_BUY_THRESHOLD: SimInt = 15;
 pub const PP_FUEL_CAPACITY_INCREASE_COST: SimFlo = 10000.0;

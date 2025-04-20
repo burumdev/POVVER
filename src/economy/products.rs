@@ -317,8 +317,8 @@ impl Product {
         name: "Ammo",
         description: "These brass cylinders with lead and nitrocellulose in them get spent so quickly that we can't keep-up with the demand. Too bad the consumers themselves may also get spent spending them.",
         unit_production_cost: UnitProductionCost {
-            energy: 24,
-            labor: 83.72,
+            energy: 4,
+            labor: 23.72,
             raw_materials: 14.78,
             equipment_maintenance: 1.48,
             packaging: 0.3,
@@ -329,7 +329,7 @@ impl Product {
         demand_info: ProductDemandInfo {
             min_percentage: 90.0,
             max_percentage: 100.0,
-            unit_per_percent: 100,
+            unit_per_percent: 50,
             demand_timeline: ProductDemandTimeline {
                 inc_quarter: 1,
                 dec_quarter: 16,
@@ -343,7 +343,7 @@ impl Product {
         name: "Semi-Auto",
         description: "All armies around the world, government, private or the mafia love our guns. They sleep with them. They oil their inner tubes for the smooth operation of.. ammo.",
         unit_production_cost: UnitProductionCost {
-            energy: 640,
+            energy: 40,
             labor: 78.19,
             raw_materials: 75.34,
             equipment_maintenance: 9.35,
@@ -499,7 +499,7 @@ impl Product {
         name: "Assistant Intruder",
         description: "An E-YAY assistant that can be used defensively and offensively. We profit either way.",
         unit_production_cost: UnitProductionCost {
-            energy: 88,
+            energy: 18,
             labor: 1920.54,
             raw_materials: 4110.32,
             equipment_maintenance: 52.4,
