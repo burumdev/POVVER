@@ -24,6 +24,7 @@ use crate::{
         LogMessage,
     },
 };
+use crate::simulation::TickDuration;
 
 pub struct PovverPlant {
     profit_margin: Percentage,
@@ -41,6 +42,7 @@ pub struct PovverPlant {
     hub_broadcast_receiver: BroadcastDynReceiver,
     to_factory_senders: Vec<DynamicSender>,
     from_factory_receivers: Vec<BroadcastDynReceiver>,
+    sleeptime: Duration,
 }
 
 impl PovverPlant {
@@ -75,11 +77,19 @@ impl PovverPlant {
             hub_broadcast_receiver,
             to_factory_senders,
             from_factory_receivers,
+            sleeptime: Self::recalculate_sleeptime(Speed::NORMAL.get_tick_duration()),
         }
     }
 }
 
 impl PovverPlant {
+    fn recalculate_sleeptime(tick_duration: TickDuration) -> Duration {
+        // tick durations are in milliseconds so we multiply with 1k to get micros
+        let micros = (tick_duration / 2) * 1000 - 250;
+
+        Duration::from_micros(micros)
+    }
+
     fn get_dynamic_sender(&self) -> &DynamicSender {
         &self.dynamic_channel.0
     }
@@ -113,15 +123,16 @@ impl PovverPlant {
                         )
                     };
 
-                    let max_amount = balance / fuel_price;
-                    if max_amount >= 1.0 {
-                        let amount = (((max_amount / 10.0) + 1.0) as SimInt).clamp(1, fuel_capacity);
-                        self.maybe_upgrade_fuel_capacity(amount);
+                    let max_amount = ((balance / 10.0) / fuel_price) as SimInt;
+                    if max_amount >= 1 {
+                        let amount = max_amount.clamp(1, fuel_capacity) - fuel;
 
                         self.log_ui_console(format!("Buying fuel for amount {amount}"), Info);
+
                         self.get_dynamic_sender().send(Arc::new(PPHubSignal::BuyFuel(amount))).unwrap();
                     } else {
                         self.log_ui_console("Can't even buy new fuel. Let's declare bankruptcy and take a holiday.".to_string(), Critical);
+
                         self.get_dynamic_sender().send(Arc::new(PPHubSignal::DeclaringBankrupcy)).unwrap();
                     }
                 } else {
@@ -210,7 +221,7 @@ impl PovverPlant {
             let deficit = energy_needed - producable;
             let deficit_percent = Percentage::new((deficit as SimFlo / energy_needed as SimFlo) * 100.0);
 
-            let discounted_percent = self.profit_margin.val() - self.profit_margin.val() * deficit_percent.as_factor();
+            let discounted_percent = self.profit_margin.val() - (self.profit_margin.val() * deficit_percent.as_factor());
 
             price_per_unit += price_per_unit.val() * discounted_percent.as_factor();
 
@@ -226,12 +237,20 @@ impl PovverPlant {
         offer.price_per_unit = price_per_unit;
 
         self.pending_energy_offers.push(offer);
+
         self.get_to_factory_sender_by_id(offer.to_factory_id).send(Arc::new(offer)).unwrap();
 
-        self.maybe_upgrade_fuel_capacity(fuel_needed);
+        self.maybe_update_fuel_buy_threshold(fuel_needed);
+        self.maybe_upgrade_fuel_capacity();
     }
 
-    fn maybe_upgrade_fuel_capacity(&mut self, fuel_needed: SimInt) {
+    fn maybe_update_fuel_buy_threshold(&mut self, fuel_needed: SimInt) {
+        if fuel_needed >= self.fuel_buy_threshold {
+            self.fuel_buy_threshold = fuel_needed.clamp(0, self.state_ro.read().unwrap().fuel_capacity);
+        }
+    }
+
+    fn maybe_upgrade_fuel_capacity(&mut self) {
         let (balance, fuel_capacity, is_awaiting_fuel_capacity) = {
             let state = self.state_ro.read().unwrap();
             (
@@ -241,9 +260,7 @@ impl PovverPlant {
             )
         };
 
-        self.fuel_buy_threshold = fuel_needed.clamp(0, fuel_capacity);
-
-        if self.fuel_buy_threshold == fuel_capacity && balance / 4.0 > PP_FUEL_CAPACITY_INCREASE_COST && !is_awaiting_fuel_capacity
+        if self.fuel_buy_threshold == fuel_capacity && balance / 4.0 >= PP_FUEL_CAPACITY_INCREASE_COST && !is_awaiting_fuel_capacity
         {
             self.get_dynamic_sender().send(Arc::new(PPHubSignal::IncreaseFuelCapacity)).unwrap();
         }
@@ -262,6 +279,7 @@ impl PovverPlant {
         let index = self.pending_energy_offers.iter().position(|of| of.to_factory_id == offer.to_factory_id);
         if let Some(index) = index {
             let plucked_offer = self.pending_energy_offers.remove(index);
+
             self.get_dynamic_sender().send(Arc::new(PPHubSignal::ProduceEnergy(plucked_offer))).unwrap();
             self.log_ui_console(format!("Energy to factory No. {} is coming right up!", offer.to_factory_id), Info);
         } else {
@@ -297,7 +315,6 @@ impl PovverPlant {
         };
 
         thread::Builder::new().name("POVVER_PLANT".to_string()).spawn(move || {
-            let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 250;
             'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
                     let signal_any = signal.as_any();
@@ -372,7 +389,7 @@ impl PovverPlant {
                             }
                         }
                         StateAction::SpeedChange(td) => {
-                            sleeptime = ((td / 2) * 1000) - 250;
+                            me.lock().unwrap().sleeptime = Self::recalculate_sleeptime(td);
                         }
                         StateAction::Quit => {
                             me.lock().unwrap().log_console("Quit signal received.".to_string(), Warning);
@@ -381,7 +398,8 @@ impl PovverPlant {
                         _ => ()
                     }
                 }
-                thread::sleep(Duration::from_micros(sleeptime));
+                
+                thread::sleep(me.lock().unwrap().sleeptime);
             }
         }).unwrap()
     }

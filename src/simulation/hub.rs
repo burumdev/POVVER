@@ -29,6 +29,7 @@ use crate::{
 };
 
 use crate::simulation::test_factories::{get_test_factories, TEST_INDUSTRIES};
+use crate::simulation::TickDuration;
 
 pub struct TheHub {
     pub povver_plant: Arc<Mutex<PovverPlant>>,
@@ -42,7 +43,8 @@ pub struct TheHub {
     pub hourly_jobs: Vec<HourlyJob>,
     pub daily_jobs: Vec<DailyJob>,
     pub ui_log_sender: tokio_broadcast::Sender<LogMessage>,
-    pub comms: HubComms
+    pub comms: HubComms,
+    sleeptime: Duration,
 }
 
 impl TheHub {
@@ -121,7 +123,8 @@ impl TheHub {
                 hourly_jobs: Vec::new(),
                 daily_jobs: Vec::new(),
                 ui_log_sender,
-                comms
+                comms,
+                sleeptime: Self::recalculate_sleeptime(Speed::NORMAL.get_tick_duration())
             },
             HubState {
                 povver_plant: povver_plant_state,
@@ -132,6 +135,20 @@ impl TheHub {
 }
 
 impl TheHub {
+    fn recalculate_sleeptime(tick_duration: TickDuration) -> Duration {
+        // tick durations are in milliseconds so we multiply with 1k to get micros
+        let micros = (tick_duration / 2) * 1000 - 500;
+
+        Duration::from_micros(micros)
+    }
+
+    // Used for delaying the actions of entities sending spam messages to get their work done as
+    // quickly as possible.
+    pub fn activity_delay_duration(&self) -> Duration {
+        let delay = self.sleeptime * 20;
+        delay
+    }
+
     pub fn get_factory_state(&self, factory_id: usize) -> Option<Arc<RwLock<FactoryStateData>>> {
         let factories_state = self.factories_state.read().unwrap();
         let factory_state = factories_state.iter().find(|fac| fac.read().unwrap().id == factory_id);
@@ -176,7 +193,6 @@ impl TheHub {
         };
 
         thread::Builder::new().name("POVVER_HUB".to_string()).spawn(move || {
-            let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 500;
             loop {
                 if let Ok(signal) = pp_dyn_receiver.try_recv() {
                     let signal_any = signal.as_any();
@@ -257,7 +273,7 @@ impl TheHub {
                             }
                         },
                         StateAction::SpeedChange(td) => {
-                            sleeptime = ((td / 2) * 1000) - 500;
+                            me.lock().unwrap().sleeptime = Self::recalculate_sleeptime(td);
                         }
                         StateAction::Env => {},
                         StateAction::Misc => {},
@@ -274,7 +290,7 @@ impl TheHub {
                     }
                 }
 
-                thread::sleep(Duration::from_micros(sleeptime));
+                thread::sleep(me.lock().unwrap().sleeptime);
             }
         }).unwrap()
     }

@@ -24,6 +24,7 @@ use crate::{
     utils_data::ReadOnlyRwLock,
     utils_traits::AsFactor,
 };
+use crate::simulation::TickDuration;
 
 struct ProductionRun {
     demand: ProductDemand,
@@ -45,6 +46,7 @@ pub struct Factory {
     last_hundred_energy_purchases: Vec<EnergyReceipt>,
     product_demand_sell_threshold: Percentage,
     profit_margin: Percentage,
+    sleeptime: Duration,
 }
 
 impl Factory {
@@ -71,11 +73,21 @@ impl Factory {
             last_hundred_energy_purchases: Vec::new(),
             product_demand_sell_threshold: Percentage::new(0.0),
             profit_margin: Percentage::new(20.0),
+            sleeptime: Self::recalculate_sleeptime(Speed::NORMAL.get_tick_duration()),
         }
     }
 }
 
 impl Factory {
+    fn recalculate_sleeptime(tick_duration: TickDuration) -> Duration {
+        // tick durations are in milliseconds so we multiply with 1k to get micros
+        //TODO: Add a random number to the tail of this calculation so that factory loop
+        // cycles won't overlap in time.
+        let micros = (tick_duration / 2) * 1000 - 100;
+
+        Duration::from_micros(micros)
+    }
+
     fn product_in_prod_run(&self, product: &Product) -> Option<usize> {
         self.production_runs.iter().position(|run| run.demand.product == product)
     }
@@ -116,7 +128,6 @@ impl Factory {
                 // It probably has gone bankrupt here.
                 if balance.val() < unit_cost_ex_energy {
                     self.log_ui_console(format!("Can't produce even a single unit of {}", product.name), Critical);
-                    thread::sleep(Duration::from_secs(3)); // 3..2..1.. We're bankrupt!
                     self.dynamic_sender.send(Arc::new(FactoryHubSignal::DeclaringBankrupcy)).unwrap();
 
                     return;
@@ -163,7 +174,7 @@ impl Factory {
         let balance = self.state_ro.read().unwrap().balance;
 
         if !self.production_runs.is_empty() {
-            // TODO: A more sophisticated algo to evaluate the price here might be better option.
+            //TODO: A more sophisticated algo to evaluate the price here might be better option.
             // For now we just accept whatever comes from pp
             let prun = self.production_runs.last_mut().unwrap();
             let energy_cost = offer.price_per_unit.val() * offer.units as SimFlo;
@@ -189,7 +200,9 @@ impl Factory {
         }) {
             let run = &self.production_runs[index];
             let unit_cost = run.cost.val() / run.units as SimFlo;
-            self.produce_product_demand(run.demand, run.units, unit_cost);
+            // Demand units might be different from run units
+            let units = run.units.clamp(0, run.demand.units);
+            self.produce_product_demand(run.demand, units, unit_cost);
         }
     }
 
@@ -223,6 +236,7 @@ impl Factory {
 
     fn maybe_buy_renewables(&self) {
         //TODO: More detailed algo for renewable buying
+        //TODO: Add wind turbines here
         let (current_solarpanels_count, balance, is_awaiting_solarpanels) = {
             let state = self.state_ro.read().unwrap();
             (
@@ -266,7 +280,6 @@ impl Factory {
         };
 
         thread::Builder::new().name("POVVER_F_".to_string() + &my_id.to_string()).spawn(move || {
-            let mut sleeptime = ((Speed::NORMAL.get_tick_duration() / 2) * 1000) - 100;
             'outer: loop {
                 if let Ok(signal) = hub_broadcast_receiver.try_recv() {
                     let signal_any = signal.as_any();
@@ -339,7 +352,7 @@ impl Factory {
                             }
                         }
                         StateAction::SpeedChange(td) => {
-                            sleeptime = ((td / 2) * 1000) - 100;
+                            me.lock().unwrap().sleeptime = Self::recalculate_sleeptime(td);
                         }
                         StateAction::Quit => {
                             break 'outer;
@@ -347,7 +360,8 @@ impl Factory {
                         _ => ()
                     }
                 }
-                thread::sleep(Duration::from_micros(sleeptime));
+
+                thread::sleep(me.lock().unwrap().sleeptime);
             }
         }).unwrap()
     }

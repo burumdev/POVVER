@@ -3,7 +3,7 @@ name = "povver"
 version = "0.1.0"
 edition = "2024"
 authors = ["Barış Ürüm"]
-license = "GPL-2.0-only"
+license = "GPL-3.0-only"
 
 [dependencies]
 crossbeam-channel = "0.5.14"

@@ -144,6 +144,7 @@ impl Timer {
             ts_lock.date = date;
             ts_lock.timestamp = self.tick_count;
         } else { // Paused
+            // We wait half a second each tick when paused to cool down the CPU
             thread::sleep(Duration::from_millis(500));
             event = TimerEvent::Paused;
         }
