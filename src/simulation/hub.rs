@@ -142,13 +142,6 @@ impl TheHub {
         Duration::from_micros(micros)
     }
 
-    // Used for delaying the actions of entities sending spam messages to get their work done as
-    // quickly as possible.
-    pub fn activity_delay_duration(&self) -> Duration {
-        let delay = self.sleeptime * 20;
-        delay
-    }
-
     pub fn get_factory_state(&self, factory_id: usize) -> Option<Arc<RwLock<FactoryStateData>>> {
         let factories_state = self.factories_state.read().unwrap();
         let factory_state = factories_state.iter().find(|fac| fac.read().unwrap().id == factory_id);

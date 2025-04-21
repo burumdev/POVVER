@@ -20,9 +20,6 @@ use crate::{
 
 impl TheHub {
     pub fn pp_buys_fuel(&mut self, amount: SimInt) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration() * 2);
-
         let price = self.econ_state.read().unwrap().fuel_price;
         let fee = price.val() * amount as SimFlo;
 
@@ -58,9 +55,6 @@ impl TheHub {
     }
 
     pub fn pp_increases_fuel_capacity(&mut self) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration() * 3);
-
         let transaction_successful =
             self.povver_plant_state.write().unwrap()
                 .balance.dec(PP_FUEL_CAPACITY_INCREASE_COST.val());
@@ -81,9 +75,6 @@ impl TheHub {
     }
 
     pub fn pp_increases_production_capacity(&mut self) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration() * 5);
-
         let transaction_successful =
             self.povver_plant_state.write().unwrap()
                 .balance.dec(PP_PRODUCTION_CAPACITY_INCREASE_COST.val());
@@ -103,9 +94,6 @@ impl TheHub {
     }
 
     pub fn pp_produces_energy(&mut self, offer: &PPEnergyOffer) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration());
-
         let fid = offer.to_factory_id;
         if let Some(factory) = self.get_factory_state(fid) {
             let fee = offer.price_per_unit * offer.units as SimFlo;
@@ -143,16 +131,10 @@ impl TheHub {
     }
 
     pub fn factory_needs_energy(&mut self, demand: &FactoryEnergyDemand) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration());
-
         self.comms.send_signal_broadcast(Arc::new(*demand))
     }
 
     pub fn factory_will_produce(&mut self, fid: usize, demand: &ProductDemand, units: SimInt, unit_cost: SimFlo) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration() * 2);
-
         let unit_cost_ex_energy = demand.product.get_unit_cost_excl_energy();
         let energy_cost = demand.product.unit_production_cost.energy;
 
@@ -200,9 +182,6 @@ impl TheHub {
     }
 
     pub fn factory_buys_solar_panels(&mut self, fid: usize, panels_count: usize) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration() * 4);
-
         if let Some(factory) = self.get_factory_state(fid) {
             let fee = panels_count as SimFlo * SOLAR_PANEL_PRICE;
             let current_panels_count = factory.read().unwrap().solarpanels.len();
@@ -238,9 +217,6 @@ impl TheHub {
     }
 
     pub fn factory_sells_product(&mut self, fid: usize, stock_index: usize, unit_price: SimFlo) {
-        // Bureaucreaueautic delay
-        thread::sleep(self.activity_delay_duration() * 1);
-
         if let Some(factory) = self.get_factory_state(fid) {
             if factory.read().unwrap().product_stocks.get(stock_index).is_some() {
                 let mut fac = factory.write().unwrap();

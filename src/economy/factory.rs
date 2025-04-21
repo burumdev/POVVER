@@ -288,11 +288,11 @@ impl Factory {
                             if let Some(demand) = signal_any.downcast_ref::<FactoryEnergyDemand>() {
                                 if demand.factory_id != my_id {
                                     //TODO
-                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
+                                    //me.lock().unwrap().log_console(format!("Got message: {:?} is from another guy :)", signal), Critical);
                                     // MAYBE SELL SOME LEFTOVER ENERGY TO THE FACTORY IN NEED
                                 } else {
                                     //TODO
-                                    me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
+                                    //me.lock().unwrap().log_console(format!("Got message: {:?} is from me haha :)", signal), Critical);
                                 }
                             }
                         },
