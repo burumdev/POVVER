@@ -39,7 +39,7 @@ export component EconomyTab inherits TabContent {
 				items: [
 					{
 						label: "Inflation rate",
-						value: macroecon.inflation-rate,
+						value: macroecon.inflation-rate.to-fixed(2),
 						value_postfix: " %",
 					},
 					{
@@ -48,7 +48,7 @@ export component EconomyTab inherits TabContent {
 					},
 					{
 						label: "Fuel price",
-						value: macroecon.fuel-price,
+						value: macroecon.fuel-price.to-fixed(2),
 						value_postfix: " ϟ",
 					},
 				];
