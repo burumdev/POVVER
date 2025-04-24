@@ -1,15 +1,19 @@
 [package]
 name = "povver"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Barış Ürüm"]
 license = "GPL-3.0-only"
+repository = "https://github.com/burumdev/POVVER"
+description = "An ABM (Agent-based model) simulator of simplified manufacturing economics and energy distribution between industries. It follows a multithreaded, actor style, concurrent timeline and event management. A native desktop built with Slint UI library is also included."
+keywords = ["simulation", "ABM", "economics", "energy", "GUI"]
+categories = ["simulation", "games", "concurrency"]
 
 [dependencies]
 crossbeam-channel = "0.5.14"
 num-traits = "0.2.19"
 rand = "0.8.5"
-slint = { version = "1.10", features = [ "backend-winit", "renderer-winit-skia" ] }
+slint = { version = "1.11.0", features = [ "backend-winit", "renderer-winit-skia" ] }
 tokio = { version = "1.43.0", features = ["sync"] }
 
 [build-dependencies]

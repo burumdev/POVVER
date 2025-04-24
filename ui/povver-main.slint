@@ -46,6 +46,7 @@ export {
     ProductDemand,
     FactoryState,
     ProductStock,
+    GlobCallbacks
 }
 
 export component PovverMain inherits Window {
@@ -63,10 +64,6 @@ export component PovverMain inherits Window {
     in property <[ProductDemand]> product_demands <=> Globs.product_demands;
     in property <[FactoryState]> factories <=> Globs.factories;
     in property <int> factory_count <=> Globs.factory_count;
-
-	// Event callbacks
-    pure callback toggle_pause <=> GlobCallbacks.toggle_pause;
-    pure callback speed_change <=> GlobCallbacks.speed_change;
 
     HorizontalLayout {
         Map {}

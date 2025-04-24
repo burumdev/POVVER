@@ -50,10 +50,10 @@ impl UIController {
             let app = PovverMain::new().unwrap();
 
             // Event handlers
-            app.on_toggle_pause(move || {
+            app.global::<GlobCallbacks>().on_toggle_pause(move || {
                 flag_sender.send(UIFlag::Pause).unwrap();
             });
-            app.on_speed_change(move |speed_index| {
+            app.global::<GlobCallbacks>().on_speed_change(move |speed_index| {
                 flag_sender_speed.send(UIFlag::SpeedChange(speed_index)).unwrap();
             });
             app.window().on_close_requested(move || {

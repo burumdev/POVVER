@@ -22,7 +22,7 @@ export component PovverPlantTab inherits TabContent {
 			},
 			{
 				label: "Money",
-				value: pp_state.balance,
+				value: pp_state.balance.to-fixed(2),
 				value_postfix: " ϟ",
 			},
 			{

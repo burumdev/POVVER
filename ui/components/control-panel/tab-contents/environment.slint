@@ -60,15 +60,15 @@ export component EnvironmentTab inherits TabContent {
 			},
 			{
 				label: "Sunshine factor",
-				value: month.sunshine_factor,
+				value: month.sunshine_factor.to-fixed(2),
 			},
 			{
 				label: "Windspeed factor",
-				value: month.windspeed_factor,
+				value: month.windspeed_factor.to-fixed(2),
 			},
 			{
 				label: "Cloud forming factor",
-				value: month.cloud_forming_factor,
+				value: month.cloud_forming_factor.to-fixed(2),
 			},
 		];
 	}
