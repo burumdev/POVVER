@@ -21,8 +21,8 @@ It has a distributed, multithreaded, event driven structure and tries to enforce
 single source of truth by exposing entity states as read-only to themselves.
 
 As a result, a central processing entity called "The Hub" takes the role of modifying important entity states.
-State management should not be handled by the entities themselves. Entities can only hold a state if and only if that state can't be manipulated by the entitity to its advantage.
-So in the program a factory can keep a record of its past energy purchase receipts, but can't hold its own bank balance.
+State management should not be handled by the entities themselves. Entities can only hold a state if that state can't be manipulated by the entitity to its advantage.
+So a factory can keep a record of its past energy purchase receipts, but can't hold its own bank balance.
 A further ideal approach to turn this setup to a completely trustless network would be to integrate a blockchain with smart contract capabilities like Solana or Ethereum.
 This might be a goal for later versions.
 
